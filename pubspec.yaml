@@ -13,7 +13,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # --- Firebase Dependencies (Coordinated Versions for Compatibility) ---
-  firebase_core: ^2.24.2 # Anchored version for compatibility
+  # These versions are chosen to be mutually compatible and resolve conflicts.
+  firebase_core: ^2.24.2 # Anchored version for compatibility across other Firebase packages
   firebase_auth: ^4.15.2
   cloud_firestore: ^4.13.4
   firebase_storage: ^11.5.4
