@@ -791,11 +791,11 @@ class AnimatedCount extends StatefulWidget {
   final Duration duration;
 
   const AnimatedCount({
-    Key? key,
+    super.key,
     required this.count,
     this.style,
     this.duration = const Duration(milliseconds: 900),
-  }) : super(key: key);
+  });
 
   @override
   State<AnimatedCount> createState() => _AnimatedCountState();
@@ -856,7 +856,7 @@ class _AnimatedCountState extends State<AnimatedCount> with SingleTickerProvider
 class AnimatedPenaltyCross extends StatefulWidget {
   final int delay;
 
-  const AnimatedPenaltyCross({Key? key, this.delay = 0}) : super(key: key);
+  const AnimatedPenaltyCross({super.key, this.delay = 0});
 
   @override
   State<AnimatedPenaltyCross> createState() => _AnimatedPenaltyCrossState();

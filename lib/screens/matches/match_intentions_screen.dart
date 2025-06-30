@@ -64,7 +64,7 @@ class _MatchIntentionsScreenState extends State<MatchIntentionsScreen> {
                   return Card(
                     color: selected
                         ? theme.colorScheme.secondaryContainer
-                        : theme.colorScheme.surfaceVariant,
+                        : theme.colorScheme.surfaceContainerHighest,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),

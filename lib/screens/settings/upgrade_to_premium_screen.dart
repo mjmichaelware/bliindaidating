@@ -66,7 +66,7 @@ class UpgradeToPremiumScreen extends StatelessWidget {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
 
               const Spacer(),
 

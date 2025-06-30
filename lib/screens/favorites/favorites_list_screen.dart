@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:bliindaidating/shared/glowing_button.dart';
 
 class FavoritesListScreen extends StatefulWidget {
   const FavoritesListScreen({super.key});

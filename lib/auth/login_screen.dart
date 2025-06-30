@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart'; // Keep for debugPrint if not provided by material.dart
+// Keep for debugPrint if not provided by material.dart
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:bliindaidating/shared/glowing_button.dart';

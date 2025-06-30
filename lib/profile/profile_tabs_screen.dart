@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:bliindaidating/profile/about_me_screen.dart';
-import 'package:bliindaidating/profile/availability_screen.dart';
-import 'package:bliindaidating/profile/interests_screen.dart';
 
 class ProfileTabsScreen extends StatelessWidget {
   const ProfileTabsScreen({super.key});

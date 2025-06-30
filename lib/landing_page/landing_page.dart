@@ -123,7 +123,6 @@ class _AnimatedGlowText extends StatelessWidget {
     required this.style,
     required this.glowColorTween,
     this.blurRadius = 10.0,
-    this.offset = 0.0,
     this.animationDuration = const Duration(seconds: 4),
     this.animationCurve = Curves.easeInOutSine,
   });
