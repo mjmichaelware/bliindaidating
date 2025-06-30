@@ -18,6 +18,7 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
+    /* Keep your existing loading screen styles */
     body {
       margin: 0;
       display: flex;
@@ -63,29 +64,25 @@
     <div class="loading-spinner"></div>
     <div class="loading-text">Loading your destiny...</div>
   </div>
+  
+  <!-- The Flutter app will be rendered here. -->
+  <div id="flutter_app"></div>
+
+  <!-- CRITICAL FIX: Revert to basic Flutter web bootstrap. -->
+  <!-- Remove all custom _flutter.loader.load() or loadEntrypoint() calls. -->
+  <!-- Rely on flutter_bootstrap.js to handle the entrypoint automatically. -->
   <script src="flutter_bootstrap.js" async></script>
 
-  <!-- CRITICAL FIX: Use the latest Flutter web initialization API: _flutter.loader.load() -->
   <script>
-    // This script ensures that the Flutter engine correctly loads your Dart main() function.
-    // It uses the recommended 'load' API for newer Flutter versions.
-    window.addEventListener('load', function () {
-      _flutter.loader.load().then(function (engineInitializer) {
-        return engineInitializer.initializeEngine();
-      }).then(function (appRunner) {
-        return appRunner.runApp();
-      });
-
-      // Optional: Fade out loading container after Flutter app starts
+    // This script handles fading out the loading screen once Flutter is ready.
+    // It listens for the 'flutter-first-frame' event, which indicates the Flutter app has started rendering.
+    window.addEventListener('flutter-first-frame', function () {
       const loadingContainer = document.getElementById('loading_container');
       if (loadingContainer) {
-        // Give Flutter a moment to start rendering before fading out the loader
-        setTimeout(() => {
-          loadingContainer.classList.add('loading-fade-out');
-          loadingContainer.addEventListener('transitionend', function() {
-            loadingContainer.remove();
-          });
-        }, 500); // Adjust delay as needed
+        loadingContainer.classList.add('loading-fade-out');
+        loadingContainer.addEventListener('transitionend', function() {
+          loadingContainer.remove();
+        });
       }
     });
   </script>
