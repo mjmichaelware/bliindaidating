@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart'; // For context.go
 import 'dart:math' as math; // For mathematical operations like random numbers
+import 'package:flutter_svg/flutter_svg.dart'; // REQUIRED for SvgPicture.asset
 
-// REMOVED: Firebase imports and any reliance on FirebaseAuth
 // Importing public custom painters from LandingPage for consistent background
 import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains NebulaBackgroundPainter and ParticleFieldPainter
 
@@ -137,13 +137,11 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Blind AI Dating Portal', // Corrected spelling
-          style: TextStyle(
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        // REPLACED: Original Text title with SVG asset
+        title: SvgPicture.asset(
+          'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg',
+          height: 40, // Adjust height as needed to fit the app bar
+          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn), // Optional: tint SVG white for visibility
         ),
         backgroundColor: Colors.transparent, // Make app bar transparent to show background effects
         elevation: 0,
@@ -211,9 +209,9 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                           Text(
                             'Welcome to Blind AI Dating', // Corrected spelling
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 10),
@@ -366,12 +364,126 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 30), // Spacing before the new section
+
+                  // NEW: "Our Approach" Section
+                  Card(
+                    color: Colors.white.withOpacity(0.1),
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center, // Center content
+                        children: [
+                          // Hero Image (SVG)
+                          SvgPicture.asset(
+                            'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg',
+                            height: isSmallScreen ? 150 : 200, // Responsive height
+                            colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn), // Light tint for visibility
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Title and Subheading
+                          Text(
+                            'Our Approach: Go On Your Last First Date',
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'We’re love scientists, engineering meaningful connections.',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.deepPurpleAccent,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Explanatory Paragraph
+                          Text(
+                            'Blind AI Dating is built on the belief that true connections blossom from shared values and genuine understanding, not fleeting glances. Our advanced AI carefully matches you based on deep compatibility, encouraging conversations that lead to promising real-life dates, rather than endless swiping. We focus on getting you off the app and into a relationship that lasts.',
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white70),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 30),
+
+                          // Testimonials Section Title
+                          Text(
+                            'What Our Users Will Say:',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Simulated Testimonials
+                          _buildTestimonialCard(
+                            context,
+                            '"I never thought I\'d find someone who truly understood me. Blind AI Dating connected us on a level no other app could. It really was my last first date!"',
+                            '— Alex R., Found True Connection',
+                          ),
+                          const SizedBox(height: 15),
+                          _buildTestimonialCard(
+                            context,
+                            '"The conversations felt so natural and deep from the start. Thanks to Blind AI Dating, we\'re building a future together."',
+                            '— Jamie L., Engaged!',
+                          ),
+                          const SizedBox(height: 15),
+                          _buildTestimonialCard(
+                            context,
+                            '"Finally, an app that prioritizes substance over surface. The AI insights were spot on, leading me to someone I genuinely adore."',
+                            '— Chris V., Authentic Match',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30), // Spacing after the new section
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Helper widget to build a testimonial card
+  Widget _buildTestimonialCard(BuildContext context, String quote, String author) {
+    return Card(
+      color: Colors.deepPurple.shade700.withOpacity(0.4), // Slightly different shade for testimonials
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              quote,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.white,
+                    fontStyle: FontStyle.italic,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              author,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w600,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
