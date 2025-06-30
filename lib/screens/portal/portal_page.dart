@@ -31,7 +31,7 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
   // State to hold any error messages (now for demonstration only, no actual Firebase errors)
   String? _errorMessage;
 
-  // REMOVED: FirebaseAuth instance.
+  // REMOVED: Firebase imports and any reliance on FirebaseAuth
 
   // Animation Controllers for cosmic background effects
   late AnimationController _backgroundNebulaController;
@@ -142,6 +142,7 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
           'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg',
           height: 40, // Adjust height as needed to fit the app bar
           colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn), // Optional: tint SVG white for visibility
+          semanticsLabel: 'Blind AI Dating Logo', // Added for accessibility
         ),
         backgroundColor: Colors.transparent, // Make app bar transparent to show background effects
         elevation: 0,
@@ -381,6 +382,7 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                             'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg',
                             height: isSmallScreen ? 150 : 200, // Responsive height
                             colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn), // Light tint for visibility
+                            semanticsLabel: 'Two people lying down and laughing together', // Added for accessibility
                           ),
                           const SizedBox(height: 20),
 

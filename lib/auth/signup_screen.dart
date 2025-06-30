@@ -1,3 +1,5 @@
+// lib/auth/signup_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,7 +18,8 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmController = TextEditingController();
+  // Removed _confirmController as per request: "Email and password is all it should be asking for"
+  // final _confirmController = TextEditingController(); // REMOVED
 
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
@@ -39,7 +42,8 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmController.dispose();
+    // Removed dispose for _confirmController
+    // _confirmController.dispose(); // REMOVED
     _shakeController.dispose();
     super.dispose();
   }
@@ -49,30 +53,49 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
     final email = _emailController.text.trim();
     final pass = _passwordController.text.trim();
-    final confirm = _confirmController.text.trim();
+    // Removed confirm variable
+    // final confirm = _confirmController.text.trim(); // REMOVED
 
-    if (email.isEmpty || pass.isEmpty || confirm.isEmpty) {
-      _showError('Fill all fields to manifest your cosmic destiny.');
+    if (email.isEmpty || pass.isEmpty) { // Updated validation to remove confirm check
+      _showError('Please fill in both email and password.'); // Updated error message
       return;
     }
 
-    if (pass != confirm) {
-      _showError('Secret keys must align. They do not match.');
-      return;
-    }
+    // Removed password confirmation check as _confirmController is removed
+    // if (pass != confirm) { // REMOVED
+    //   _showError('Secret keys must align. They do not match.'); // REMOVED
+    //   return; // REMOVED
+    // } // REMOVED
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: pass);
-      if (mounted) GoRouter.of(context).go('/home');
+      // Firebase Authentication: Create User
+      // Ensure Firebase.initializeApp() is called before this point in your app's lifecycle.
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: pass,
+      );
+      
+      if (mounted) {
+        // Navigate to the profile setup screen upon successful registration
+        GoRouter.of(context).go('/profile_setup');
+      }
     } on FirebaseAuthException catch (e) {
+      // Handle Firebase specific errors with updated messages
       _showError(switch (e.code) {
-        'weak-password' => 'Your secret key is too fragile. Strengthen it.',
-        'email-already-in-use' => 'Essence already exists. Try entering instead.',
-        'invalid-email' => 'Essence address format is invalid.',
-        _ => 'A cosmic anomaly occurred. Please try again.',
+        'weak-password' => 'Your password is too weak. Please choose a stronger one.', // Updated message
+        'email-already-in-use' => 'An account with this email already exists. Try logging in instead.', // Updated message
+        'invalid-email' => 'The email address format is invalid.', // Updated message
+        _ => 'An unexpected error occurred during registration. Please try again.', // Generic error
       });
     } catch (e) {
-      _showError('Unexpected vortex: $e');
+      // Handle any other unexpected errors
+      setState(() {
+        _errorMessage = 'An unexpected error occurred: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -152,24 +175,25 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                       ),
                       const SizedBox(height: 24),
                       _inputField(
-                        label: 'Essence Address',
+                        label: 'Email Address', // Changed label
                         icon: Icons.email_outlined,
                         controller: _emailController,
                       ),
                       const SizedBox(height: 20),
                       _inputField(
-                        label: 'Weave Your Secret Key',
+                        label: 'Password', // Changed label
                         icon: Icons.lock_outline,
                         controller: _passwordController,
                         obscure: true,
                       ),
-                      const SizedBox(height: 20),
-                      _inputField(
-                        label: 'Confirm Your Secret Key',
-                        icon: Icons.key_outlined,
-                        controller: _confirmController,
-                        obscure: true,
-                      ),
+                      // Removed the Confirm Password input field
+                      // const SizedBox(height: 20), // REMOVED
+                      // _inputField( // REMOVED
+                      //   label: 'Confirm Your Secret Key', // REMOVED
+                      //   icon: Icons.key_outlined, // REMOVED
+                      //   controller: _confirmController, // REMOVED
+                      //   obscure: true, // REMOVED
+                      // ), // REMOVED
                       const SizedBox(height: 24),
                       if (_errorMessage != null)
                         Padding(

@@ -11,10 +11,7 @@ import 'package:bliindaidating/screens/portal/portal_page.dart';
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/screens/main/home_screen.dart';
-
-// --- REMOVED: All Firebase-related imports and Canvas Global Variable Access ---
-// This code has been removed to resolve persistent compilation and runtime errors.
-// Firebase initialization and authentication logic are no longer present in main.dart.
+import 'package:bliindaidating/profile/profile_setup_screen.dart'; // NEW: Import your profile setup screen
 
 
 void main() {
@@ -54,6 +51,10 @@ class BlindAIDatingApp extends StatelessWidget {
         GoRoute(
           path: '/home', // Your existing home screen route (e.g., post-authentication, now accessed via PortalPage buttons).
           builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/profile_setup', // NEW: Route for the profile setup screen
+          builder: (context, state) => const ProfileSetupScreen(),
         ),
         // Add any other top-level routes here as they exist in your app's structure.
       ],
