@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bliindaidating/utils/supabase_config.dart'; // ✅ Import Supabase config
 
 // Import your screens
 import 'package:bliindaidating/landing_page/landing_page.dart';
@@ -19,10 +20,8 @@ import 'package:bliindaidating/matching/penalty_display.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: 'YOUR_SUPABASE_URL',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY',
-  );
+  // ✅ Initialize Supabase via config helper
+  await SupabaseConfig.init();
 
   runApp(const BlindAIDatingApp());
 }
