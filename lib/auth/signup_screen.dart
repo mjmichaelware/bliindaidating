@@ -2,8 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
@@ -18,12 +19,8 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  // Removed _confirmController as per request: "Email and password is all it should be asking for"
-  // final _confirmController = TextEditingController(); // REMOVED
 
-  // FIX: Declare _isLoading variable
-  bool _isLoading = false; // ADDED THIS LINE
-
+  bool _isLoading = false;
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
   String? _errorMessage;
@@ -45,15 +42,13 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    // Removed dispose for _confirmController
-    // _confirmController.dispose(); // REMOVED
     _shakeController.dispose();
     super.dispose();
   }
 
   Future<void> _attemptSignUp() async {
     setState(() {
-      _isLoading = true; // Now _isLoading is defined
+      _isLoading = true;
       _errorMessage = null;
     });
 
@@ -62,33 +57,37 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
     if (email.isEmpty || pass.isEmpty) {
       _showError('Please fill in both email and password.');
-      setState(() { _isLoading = false; }); // Ensure loading state is reset on validation error
+      setState(() { _isLoading = false; });
       return;
     }
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      final AuthResponse response = await Supabase.instance.client.auth.signUp(
         email: email,
         password: pass,
       );
-      
-      if (mounted) {
-        GoRouter.of(context).go('/profile_setup');
+
+      if (response.user != null) {
+        debugPrint('User registered successfully with Supabase: ${response.user!.email}');
+        if (mounted) {
+          context.go('/profile_setup');
+        }
+      } else if (response.session == null && response.user == null) {
+        _showError('Registration successful! Please check your email to verify your account.');
+      } else if (response.user == null && response.session != null) {
+        _showError('Account created, but could not log in automatically. Please log in.');
       }
-    } on FirebaseAuthException catch (e) {
-      _showError(switch (e.code) {
-        'weak-password' => 'Your password is too weak. Please choose a stronger one.',
-        'email-already-in-use' => 'An account with this email already exists. Try logging in instead.',
-        'invalid-email' => 'The email address format is invalid.',
-        _ => 'An unexpected error occurred during registration. Please try again.',
-      });
+    } on AuthException catch (e) {
+      debugPrint('Supabase Auth error during signup: ${e.message}');
+      _showError('Registration failed: ${e.message}');
     } catch (e) {
+      debugPrint('Unexpected error during signup: $e');
       setState(() {
         _errorMessage = 'An unexpected error occurred: ${e.toString()}';
       });
     } finally {
       setState(() {
-        _isLoading = false; // Now _isLoading is defined
+        _isLoading = false;
       });
     }
   }
@@ -141,13 +140,13 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                   constraints: const BoxConstraints(maxWidth: 480),
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.shade900.withOpacity(0.8),
+                    color: Colors.deepPurple.shade900.withAlpha((255 * 0.8).round()),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
+                        color: Colors.black.withAlpha((255 * 0.4).round()),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
-                        color: Colors.black.withOpacity(0.4),
                       )
                     ],
                   ),
@@ -197,15 +196,19 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                       GlowingButton(
                         text: 'Manifest My Destiny',
                         icon: Icons.control_point_duplicate,
-                        onPressed: _isLoading ? null : _attemptSignUp, // Disable button when loading
+                        onPressed: _isLoading
+                            ? () {} // Provide an empty function when loading
+                            : _attemptSignUp,
                         gradientColors: [Colors.purple.shade700, Colors.red.shade600],
                       ),
                       const SizedBox(height: 16),
                       TextButton(
-                        onPressed: () => GoRouter.of(context).go('/login'),
+                        onPressed: () {
+                          context.go('/login');
+                        },
                         child: Text(
                           'Already Forged Your Path? Enter Here',
-                          style: TextStyle(color: Colors.white.withOpacity(0.85)),
+                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.85).round())),
                         ),
                       ),
                     ],

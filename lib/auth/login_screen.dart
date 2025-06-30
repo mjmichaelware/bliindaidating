@@ -1,9 +1,13 @@
+// lib/auth/login_screen.dart
+
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
-import 'package:bliindaidating/shared/glowing_button.dart';
-import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Supabase import
+import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:flutter_svg/flutter_svg.dart'; // For SvgPicture.asset
+
+import 'package:bliindaidating/shared/glowing_button.dart'; // Assuming this is correct
+import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart'; // Assuming this is correct
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,12 +17,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
   String? _errorMessage;
+  bool _isLoading = false; // Added for loading state
 
   @override
   void initState() {
@@ -42,28 +47,50 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   Future<void> _attemptLogin() async {
-    setState(() => _errorMessage = null);
+    setState(() {
+      _isLoading = true; // Set loading state
+      _errorMessage = null;
+    });
 
     final email = _emailController.text.trim();
-    final pass = _passwordController.text.trim();
+    final password = _passwordController.text.trim();
 
-    if (email.isEmpty || pass.isEmpty) {
-      _showError('Please enter your essence address and secret key.');
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please enter both email and password.'); // Updated message
+      setState(() { _isLoading = false; }); // Reset loading state
       return;
     }
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: pass);
-      if (mounted) GoRouter.of(context).go('/home');
-    } on FirebaseAuthException catch (e) {
-      _showError(switch (e.code) {
-        'user-not-found' => 'No essence found. Have you forged your path yet?',
-        'wrong-password' => 'The secret key does not match.',
-        'invalid-email' => 'The essence address seems invalid.',
-        _ => 'A cosmic disturbance occurred. Try again.',
-      });
+      // --- Supabase Authentication: Sign In ---
+      final AuthResponse response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (response.user != null) {
+        debugPrint('User logged in successfully with Supabase: ${response.user!.email}');
+        if (mounted) {
+          context.go('/home'); // Navigate to the home screen on successful login
+        }
+      } else {
+        // This case might happen if no user is returned but no explicit error
+        _showError('Login failed. Please check your credentials.');
+      }
+    } on AuthException catch (e) {
+      // Handle Supabase Auth specific errors
+      debugPrint('Supabase Auth error during login: ${e.message}');
+      _showError('Login failed: ${e.message}');
     } catch (e) {
-      _showError('Unexpected anomaly: $e');
+      // Handle any other unexpected errors
+      debugPrint('Unexpected error during login: $e');
+      setState(() {
+        _errorMessage = 'An unexpected error occurred: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false; // Reset loading state
+      });
     }
   }
 
@@ -103,6 +130,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final isSmall = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Login',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           const Positioned.fill(child: AnimatedOrbBackground()),
@@ -115,21 +156,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   constraints: const BoxConstraints(maxWidth: 480),
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.shade900.withOpacity(0.8),
+                    color: Colors.deepPurple.shade900.withAlpha((255 * 0.8).round()), // withAlpha
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
+                        color: Colors.black.withAlpha((255 * 0.4).round()), // withAlpha
                         blurRadius: 20,
                         offset: const Offset(0, 10),
-                        color: Colors.black.withOpacity(0.4),
                       )
                     ],
                   ),
                   child: Column(
                     children: [
                       SvgPicture.asset(
-                        'assets/svg/DrawKit Vector Illustration Love & Dating (2).svg',
+                        'assets/svg/DrawKit Vector Illustration Love & Dating (1).svg', // Example SVG
                         height: isSmall ? 120 : 150,
+                        semanticsLabel: 'Login illustration',
                       ),
                       const SizedBox(height: 24),
                       Text(
@@ -142,21 +184,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 24),
                       _inputField(
-                        label: 'Essence Address',
+                        label: 'Email Address', // Updated label
                         icon: Icons.email_outlined,
                         controller: _emailController,
                       ),
                       const SizedBox(height: 20),
                       _inputField(
-                        label: 'Secret Key',
+                        label: 'Password', // Updated label
                         icon: Icons.lock_outline,
                         controller: _passwordController,
                         obscure: true,
                       ),
-                      const SizedBox(height: 24),
                       if (_errorMessage != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.only(top: 15.0),
                           child: Text(
                             _errorMessage!,
                             style: TextStyle(
@@ -167,18 +208,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             textAlign: TextAlign.center,
                           ),
                         ),
+                      const SizedBox(height: 30),
                       GlowingButton(
-                        text: 'Enter',
+                        text: 'Login to My Cosmos',
                         icon: Icons.login,
-                        onPressed: _attemptLogin,
-                        gradientColors: [Colors.purple.shade700, Colors.red.shade600],
+                        onPressed: _isLoading
+                            ? () {} // Provide an empty function when loading
+                            : _attemptLogin,
+                        gradientColors: [Colors.blue.shade700, Colors.cyan.shade600],
                       ),
                       const SizedBox(height: 16),
                       TextButton(
-                        onPressed: () => GoRouter.of(context).go('/signup'),
+                        onPressed: () {
+                          context.go('/signup');
+                        },
                         child: Text(
-                          'New to the Cosmos? Forge Your Path',
-                          style: TextStyle(color: Colors.white.withOpacity(0.85)),
+                          'New to the galaxy? Sign Up',
+                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.85).round())), // withAlpha
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          debugPrint('Forgot password clicked (Supabase handles this via email)');
+                        },
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.7).round())), // withAlpha
                         ),
                       ),
                     ],

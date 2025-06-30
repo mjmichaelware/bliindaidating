@@ -1,98 +1,64 @@
 // lib/services/auth_service.dart
 
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Supabase import
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
+/// A service to handle user authentication with Supabase.
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  // Stream to listen to authentication state changes (user logged in/out)
-  Stream<User?> get user {
-    return _auth.authStateChanges();
+  /// Gets the current Supabase user.
+  User? getCurrentUser() {
+    return _supabase.auth.currentUser;
   }
 
-  // --- Anonymous Sign-in (Optional, for testing or specific features) ---
-  Future<UserCredential?> signInAnon() async {
+  /// Signs in a user with email and password using Supabase Auth.
+  Future<AuthResponse> signIn(String email, String password) async {
     try {
-      UserCredential userCredential = await _auth.signInAnonymously();
-      debugPrint("Signed in anonymously: ${userCredential.user?.uid}");
-      return userCredential;
-    } catch (e) {
-      debugPrint("Error signing in anonymously: $e");
-      return null;
-    }
-  }
-
-  // --- Email & Password Sign Up ---
-  Future<UserCredential?> signUpWithEmailAndPassword(
-      String email, String password) async {
-    try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      final AuthResponse response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
-      // Immediately after successful sign-up, create a basic user document in Firestore.
-      // This is also handled by a Cloud Function (auth_triggers.py) for robustness,
-      // but client-side creation ensures immediate availability for profile setup.
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'uid': userCredential.user!.uid,
-        'email': email,
-        'displayName': userCredential.user?.displayName ?? '',
-        'createdAt': FieldValue.serverTimestamp(),
-        'profileComplete': false, // Flag for onboarding flow
-        'penaltyCount': 0, // Initialize penalty count for the dating app
-        'lookingFor':
-            '', // 'short_term', 'long_term', 'friends' - will be set during onboarding
-      });
-      debugPrint(
-          "User signed up and basic profile created: ${userCredential.user?.uid}");
-      return userCredential;
-    } on FirebaseAuthException catch (e) {
-      debugPrint(
-          "Firebase Auth Error during sign up: ${e.code} - ${e.message}");
-      // Re-throw to be caught by UI for specific error messages
-      rethrow;
+      debugPrint('Supabase sign-in response: ${response.user?.email}');
+      return response;
+    } on AuthException catch (e) {
+      debugPrint('Supabase sign-in error: ${e.message}');
+      rethrow; // Re-throw to be caught by UI
     } catch (e) {
-      debugPrint("General Error during sign up: $e");
+      debugPrint('Unexpected sign-in error: $e');
       rethrow;
     }
   }
 
-  // --- Email & Password Sign In ---
-  Future<UserCredential?> signInWithEmailAndPassword(
-      String email, String password) async {
+  /// Registers a new user with email and password using Supabase Auth.
+  Future<AuthResponse> signUp(String email, String password) async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final AuthResponse response = await _supabase.auth.signUp(
         email: email,
         password: password,
       );
-      debugPrint("User signed in: ${userCredential.user?.uid}");
-      return userCredential;
-    } on FirebaseAuthException catch (e) {
-      debugPrint(
-          "Firebase Auth Error during sign in: ${e.code} - ${e.message}");
+      debugPrint('Supabase sign-up response: ${response.user?.email}');
+      return response;
+    } on AuthException catch (e) {
+      debugPrint('Supabase sign-up error: ${e.message}');
       rethrow;
     } catch (e) {
-      debugPrint("General Error during sign in: $e");
+      debugPrint('Unexpected sign-up error: $e');
       rethrow;
     }
   }
 
-  // --- Sign Out ---
+  /// Signs out the current user from Supabase Auth.
   Future<void> signOut() async {
     try {
-      await _auth.signOut();
-      debugPrint("User signed out.");
+      await _supabase.auth.signOut();
+      debugPrint('Supabase user signed out.');
+    } on AuthException catch (e) {
+      debugPrint('Supabase sign-out error: ${e.message}');
+      rethrow;
     } catch (e) {
-      debugPrint("Error signing out: $e");
+      debugPrint('Unexpected sign-out error: $e');
+      rethrow;
     }
-  }
-
-  // --- Get current user ---
-  User? getCurrentUser() {
-    return _auth.currentUser;
   }
 }

@@ -1,103 +1,74 @@
 // lib/models/user_profile.dart
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class UserProfile {
   final String uid;
   final String email;
-  String? displayName;
-  String? bio;
+  String displayName;
+  String bio;
   String? gender;
-  DateTime? dateOfBirth;
-  List<String>? interests;
-  List<String>? photos;
+  List<String> interests;
+  String lookingFor;
   bool profileComplete;
-  int penaltyCount;
-  String lookingFor; // 'short_term', 'long_term', 'friends'
-  Timestamp createdAt;
-  Timestamp? lastActive;
-  Map<String, dynamic>? availability; // To store availability slots
+  DateTime createdAt;
+  DateTime? lastUpdated;
 
   UserProfile({
     required this.uid,
     required this.email,
-    this.displayName,
-    this.bio,
+    required this.displayName,
+    required this.bio,
     this.gender,
-    this.dateOfBirth,
-    this.interests,
-    this.photos,
-    this.profileComplete = false,
-    this.penaltyCount = 0,
+    this.interests = const [],
     this.lookingFor = '',
+    this.profileComplete = false,
     required this.createdAt,
-    this.lastActive,
-    this.availability,
+    this.lastUpdated,
   });
 
-  // Factory constructor to create a UserProfile from a Firestore DocumentSnapshot
-  factory UserProfile.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return UserProfile(
-      uid: doc.id,
-      email: data['email'] ?? '',
-      displayName: data['displayName'],
-      bio: data['bio'],
-      gender: data['gender'],
-      dateOfBirth: (data['dateOfBirth'] as Timestamp?)?.toDate(),
-      interests: (data['interests'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList(),
-      photos:
-          (data['photos'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
-      profileComplete: data['profileComplete'] ?? false,
-      penaltyCount: data['penaltyCount'] ?? 0,
-      lookingFor: data['lookingFor'] ?? '',
-      createdAt: data['createdAt'] ?? Timestamp.now(),
-      lastActive: data['lastActive'],
-      availability: data['availability'],
-    );
-  }
-
-  // Convert UserProfile object to a Map for Firestore
-  Map<String, dynamic> toFirestore() {
+  // Convert UserProfile to a Map for saving (e.g., to a generic backend or local storage)
+  Map<String, dynamic> toMap() {
     return {
       'uid': uid,
       'email': email,
       'displayName': displayName,
       'bio': bio,
       'gender': gender,
-      'dateOfBirth':
-          dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
       'interests': interests,
-      'photos': photos,
-      'profileComplete': profileComplete,
-      'penaltyCount': penaltyCount,
       'lookingFor': lookingFor,
-      'createdAt': createdAt, // Should only be set once on creation
-      'lastActive': FieldValue.serverTimestamp(), // Update on every save
-      'availability': availability,
+      'profileComplete': profileComplete,
+      'createdAt': createdAt.toIso8601String(), // Convert DateTime to String for storage
+      'lastUpdated': lastUpdated?.toIso8601String(), // Convert DateTime to String for storage
     };
   }
 
-  // Method to convert to a Map for updates (excludes fields that shouldn't change)
+  // Convert UserProfile to a Map for updating (useful for partial updates)
   Map<String, dynamic> toUpdateMap() {
-    final Map<String, dynamic> map = {
+    final Map<String, dynamic> updateData = {
       'displayName': displayName,
       'bio': bio,
       'gender': gender,
-      'dateOfBirth':
-          dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
       'interests': interests,
-      'photos': photos,
-      'profileComplete': profileComplete,
-      'penaltyCount': penaltyCount,
       'lookingFor': lookingFor,
-      'lastActive': FieldValue.serverTimestamp(),
-      'availability': availability,
+      'profileComplete': profileComplete,
+      'lastUpdated': DateTime.now().toIso8601String(), // Update timestamp
     };
-    // Remove null values so they don't overwrite existing data in Firestore
-    map.removeWhere((key, value) => value == null);
-    return map;
+    updateData.removeWhere((key, value) => value == null);
+    return updateData;
+  }
+
+  // Factory constructor to create UserProfile from a Map (e.g., loaded from a backend)
+  factory UserProfile.fromMap(Map<String, dynamic> map) {
+    return UserProfile(
+      uid: map['uid'] as String,
+      email: map['email'] as String,
+      displayName: map['displayName'] as String,
+      bio: map['bio'] as String,
+      gender: map['gender'] as String?,
+      interests: List<String>.from(map['interests'] as List),
+      lookingFor: map['lookingFor'] as String,
+      profileComplete: map['profileComplete'] as bool,
+      createdAt: DateTime.parse(map['createdAt'] as String),
+      lastUpdated: map['lastUpdated'] != null ? DateTime.parse(map['lastUpdated'] as String) : null,
+    );
   }
 }

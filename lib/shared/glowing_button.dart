@@ -16,7 +16,7 @@ class GlowingButton extends StatelessWidget {
   final double glowBlurRadius;
   final double borderRadius;
   final List<BoxShadow>? boxShadow;
-  final TextStyle? textStyle; // textStyle parameter for customization
+  final TextStyle? textStyle;
 
   const GlowingButton({
     super.key,
@@ -33,7 +33,7 @@ class GlowingButton extends StatelessWidget {
     this.glowBlurRadius = 15,
     this.borderRadius = 25.0,
     this.boxShadow,
-    this.textStyle, // Added to constructor
+    this.textStyle,
   }) : assert(
           child != null || text != null || icon != null,
           'GlowingButton must have either a child, text, or an icon.',
@@ -43,7 +43,6 @@ class GlowingButton extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget content;
 
-    // Use provided textStyle or default. Default to white color and 16pt font size.
     final TextStyle effectiveTextStyle = textStyle ?? const TextStyle(color: Colors.white, fontSize: 16);
 
     if (child != null) {
@@ -65,7 +64,6 @@ class GlowingButton extends StatelessWidget {
       content = const SizedBox.shrink();
     }
 
-    // Determine the gradient to use
     Gradient? effectiveGradient;
     if (gradientColors != null && gradientColors!.isNotEmpty) {
       effectiveGradient = LinearGradient(
@@ -76,7 +74,6 @@ class GlowingButton extends StatelessWidget {
     } else {
       effectiveGradient = gradient ??
           LinearGradient(
-            // FIX: Replaced withOpacity with withAlpha for deprecated member use
             colors: [color.withAlpha((255 * 0.8).round()), color],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -94,7 +91,6 @@ class GlowingButton extends StatelessWidget {
           boxShadow: boxShadow ??
               [
                 BoxShadow(
-                  // FIX: Replaced withOpacity with withAlpha for deprecated member use
                   color: color.withAlpha((255 * 0.5).round()),
                   blurRadius: glowBlurRadius,
                   spreadRadius: glowSpreadRadius,

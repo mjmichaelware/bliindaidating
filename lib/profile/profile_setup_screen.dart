@@ -1,12 +1,12 @@
 // lib/profile/profile_setup_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:bliindaidating/services/auth_service.dart'; // Import your AuthService
-import 'package:bliindaidating/models/user_profile.dart'; // Import your UserProfile model
-import 'package:bliindaidating/services/firestore_service.dart'; // Correct import for FirestoreService
+import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Supabase import
+import 'package:bliindaidating/services/auth_service.dart'; // Keep, for current user logic
+import 'package:bliindaidating/models/user_profile.dart'; // Keep, for profile data structure
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Your main app screen
-import 'package:cloud_firestore/cloud_firestore.dart'; // ADDED: For Timestamp and FieldValue
+import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -16,14 +16,15 @@ class ProfileSetupScreen extends StatefulWidget {
 }
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
-  final _formKey = GlobalKey<FormState>(); // Key for form validation
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
 
   String? _gender;
-  String? _lookingFor; // To capture short_term, long_term, friends
+  String? _lookingFor;
   final List<String> _selectedInterests = [];
-  bool _isLoading = false; // ADDED: For loading state
+  bool _isLoading = false;
+  String? _statusMessage;
 
   final List<String> _genders = [
     'Male',
@@ -37,24 +38,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     'Friendship'
   ];
   final List<String> _allInterests = [
-    'Reading',
-    'Hiking',
-    'Cooking',
-    'Gaming',
-    'Music',
-    'Movies',
-    'Travel',
-    'Photography',
-    'Sports',
-    'Art',
-    'Writing',
-    'Dancing',
-    'Volunteering',
-    'Fitness',
-    'Tech',
-    'Tasting',
-    'Animals',
-    'Fashion'
+    'Reading', 'Hiking', 'Cooking', 'Gaming', 'Music', 'Movies', 'Travel',
+    'Photography', 'Sports', 'Art', 'Writing', 'Dancing', 'Volunteering',
+    'Fitness', 'Tech', 'Tasting', 'Animals', 'Fashion'
   ];
 
   @override
@@ -66,65 +52,73 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   void _saveProfile() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save(); // Save form fields
+      _formKey.currentState!.save();
 
       setState(() {
-        _isLoading = true; // Set loading state
+        _isLoading = true;
+        _statusMessage = null;
       });
 
-      final User? currentUser = AuthService().getCurrentUser();
-      if (currentUser == null) {
-        // Handle case where user is not logged in (shouldn't happen here if flow is correct)
+      // Get the current user's ID from Supabase Auth
+      final User? supabaseUser = Supabase.instance.client.auth.currentUser;
+      if (supabaseUser == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: User not logged in! Please re-authenticate.')),
+          const SnackBar(content: Text('Error: User not logged in to Supabase! Please log in again.')),
         );
-        setState(() { _isLoading = false; }); // Reset loading state
+        setState(() { _isLoading = false; });
+        if (mounted) {
+          GoRouter.of(context).go('/login'); // Redirect to login if no Supabase user
+        }
         return;
       }
 
       // Create a UserProfile object with the collected data
-      // Ensure UserProfile.toUpdateMap() correctly handles nulls or provides defaults
       final UserProfile updatedProfile = UserProfile(
-        uid: currentUser.uid,
-        email: currentUser.email!,
+        uid: supabaseUser.id, // Use Supabase user ID
+        email: supabaseUser.email ?? 'no-email@supabase.com', // Use Supabase user email
         displayName: _displayNameController.text.trim(),
         bio: _bioController.text.trim(),
         gender: _gender,
         interests: _selectedInterests,
-        lookingFor: _lookingFor ?? '', // Default to empty if not selected
-        // FIX: Timestamp.now() is now correctly imported from cloud_firestore
-        createdAt: Timestamp.now(), // Use Timestamp from cloud_firestore
-        profileComplete: true, // Mark profile as complete after setup
-        lastUpdated: FieldValue.serverTimestamp(), // Add server timestamp for last update
+        lookingFor: _lookingFor ?? '',
+        createdAt: DateTime.now(),
+        profileComplete: true,
+        lastUpdated: DateTime.now(),
       );
 
       try {
-        // Use the FirestoreService to save the profile
-        // FIX: Pass userId and profileData map as expected by FirestoreService
-        await FirestoreService().updateUserProfile(
-          userId: updatedProfile.uid,
-          profileData: updatedProfile.toUpdateMap(), // Assuming toUpdateMap() provides a Map<String, dynamic>
-        );
+        // --- Supabase Database: Save Profile ---
+        // You need to have a table named 'profiles' (or 'users') in your Supabase project
+        // with columns matching your UserProfile model.
+        // Example: id (UUID), email (text), display_name (text), bio (text), gender (text),
+        // interests (jsonb or text[]), looking_for (text), created_at (timestampz),
+        // profile_complete (boolean), last_updated (timestampz).
+        // Ensure Row Level Security (RLS) is configured in Supabase for this table.
+        await Supabase.instance.client
+            .from('profiles') // Assuming your table is named 'profiles'
+            .upsert(updatedProfile.toMap()); // Use upsert to insert or update based on primary key (uid)
 
+        debugPrint('User profile ${updatedProfile.uid} updated successfully in Supabase.');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
         );
 
-        // Navigate to the main dashboard after profile setup
-        // FIX: Removed 'const' from MainDashboardScreen constructor call
-        // Assuming MainDashboardScreen is a regular widget, not a const constructor.
-        // Also using GoRouter for consistency with other navigations.
         if (mounted) {
-          GoRouter.of(context).go('/home'); // Or '/main_dashboard' if that's the correct route
+          GoRouter.of(context).go('/home'); // Navigate to the main dashboard
         }
-      } catch (e) {
-        debugPrint('Error saving profile: $e');
+      } on PostgrestException catch (e) {
+        debugPrint('Supabase database error saving profile: ${e.message}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save profile: $e')),
+          SnackBar(content: Text('Failed to save profile: ${e.message}')),
+        );
+      } catch (e) {
+        debugPrint('Unexpected error saving profile: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
         );
       } finally {
         setState(() {
-          _isLoading = false; // Reset loading state
+          _isLoading = false;
         });
       }
     }
@@ -135,7 +129,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Complete Your Profile'),
-        // Using Theme.of(context).colorScheme.primary and onPrimary for consistency
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
@@ -249,8 +242,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 8),
               Wrap(
-                spacing: 8.0, // horizontal space between chips
-                runSpacing: 4.0, // vertical space between lines
+                spacing: 8.0,
+                runSpacing: 4.0,
                 children: _allInterests.map((interest) {
                   final isSelected = _selectedInterests.contains(interest);
                   return FilterChip(
@@ -265,8 +258,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         }
                       });
                     },
-                    selectedColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    selectedColor: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.3).round()),
                     checkmarkColor: Theme.of(context).colorScheme.primary,
                   );
                 }).toList(),
@@ -275,17 +267,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
               Center(
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveProfile, // Disable button when loading
+                  onPressed: _isLoading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.secondary,
                     foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white) // Show loading indicator
+                      ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
                           'Complete Profile',
                           style: Theme.of(context).textTheme.labelLarge,
