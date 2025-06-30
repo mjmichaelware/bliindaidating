@@ -9,18 +9,22 @@ dependencies:
   flutter:
     sdk: flutter
 
-  go_router: ^14.0.0 
+  go_router: ^14.0.0
   cupertino_icons: ^1.0.8
-  firebase_core: ^3.14.0
-  firebase_auth: ^5.6.0
-  cloud_firestore: ^5.6.9
-  firebase_storage: ^12.4.7
-  firebase_analytics: ^11.5.0
-  firebase_crashlytics: ^4.3.7
-  google_sign_in: ^7.0.0
-  firebase_app_check: ^0.3.2+7
-  firebase_remote_config: ^5.4.5
-  firebase_messaging: ^15.2.7
+  
+  # --- Firebase Dependencies (Coordinated Versions for Compatibility) ---
+  firebase_core: ^2.24.2 # Anchored version for compatibility
+  firebase_auth: ^4.15.2
+  cloud_firestore: ^4.13.4
+  firebase_storage: ^11.5.4
+  firebase_analytics: ^10.8.0
+  firebase_crashlytics: ^3.4.9
+  google_sign_in: ^6.1.0
+  firebase_app_check: ^0.2.1+9
+  firebase_remote_config: ^4.3.14
+  firebase_messaging: ^14.7.10
+  cloud_functions: ^4.6.0 # Correct package for Cloud Functions
+
   font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.11
 
