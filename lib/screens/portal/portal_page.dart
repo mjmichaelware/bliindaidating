@@ -12,7 +12,7 @@ import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains Nebu
 import 'package:bliindaidating/screens/info/about_us_screen.dart';
 import 'package:bliindaidating/screens/info/privacy_screen.dart';
 import 'package:bliindaidating/screens/info/terms_screen.dart';
-import 'package:bliindaidating/screens/main/home_screen.dart'; // Import for navigation to home screen
+// import 'package:bliindaidating/screens/main/home_screen.dart'; // REMOVED: Unused import
 
 
 // Make PortalPage a StatefulWidget to manage text controllers and animations (Firebase auth removed)
@@ -112,7 +112,7 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
     // Simulate a successful login for any non-empty credentials
     if (email.isNotEmpty && password.isNotEmpty) {
       // In a real app, this is where Firebase authentication would happen
-      print('Attempting to sign in with email: $email, password: $password');
+      debugPrint('Attempting to sign in with email: $email, password: $password'); // FIX: Replaced print with debugPrint
       await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
 
       // Assuming successful login for demonstration
@@ -200,7 +200,8 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                 children: <Widget>[
                   // Information section
                   Card(
-                    color: Colors.white.withOpacity(0.1),
+                    // FIX: Replaced withOpacity with withAlpha
+                    color: Colors.white.withAlpha((255 * 0.1).round()),
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     child: Padding(
@@ -260,7 +261,8 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
 
                   // Login/Signup Form Section
                   Card(
-                    color: Colors.white.withOpacity(0.1),
+                    // FIX: Replaced withOpacity with withAlpha
+                    color: Colors.white.withAlpha((255 * 0.1).round()),
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     child: Padding(
@@ -274,16 +276,16 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                               labelText: 'Email',
                               labelStyle: const TextStyle(color: Colors.white70),
                               hintText: 'Enter your email',
-                              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                              hintStyle: Colors.white.withAlpha((255 * 0.5).round()), // FIX: Replaced withOpacity with withAlpha
                               filled: true,
-                              fillColor: Colors.white.withOpacity(0.05),
+                              fillColor: Colors.white.withAlpha((255 * 0.05).round()), // FIX: Replaced withOpacity with withAlpha
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(color: Colors.deepPurpleAccent.withOpacity(0.5)),
+                                borderSide: BorderSide(color: Colors.deepPurpleAccent.withAlpha((255 * 0.5).round())), // FIX: Replaced withOpacity with withAlpha
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -301,16 +303,16 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                               labelText: 'Password',
                               labelStyle: const TextStyle(color: Colors.white70),
                               hintText: 'Enter your password',
-                              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                              hintStyle: Colors.white.withAlpha((255 * 0.5).round()), // FIX: Replaced withOpacity with withAlpha
                               filled: true,
-                              fillColor: Colors.white.withOpacity(0.05),
+                              fillColor: Colors.white.withAlpha((255 * 0.05).round()), // FIX: Replaced withOpacity with withAlpha
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
                                 borderSide: BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(color: Colors.deepPurpleAccent.withOpacity(0.5)),
+                                borderSide: BorderSide(color: Colors.deepPurpleAccent.withAlpha((255 * 0.5).round())), // FIX: Replaced withOpacity with withAlpha
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -369,7 +371,8 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
 
                   // NEW: "Our Approach" Section
                   Card(
-                    color: Colors.white.withOpacity(0.1),
+                    // FIX: Replaced withOpacity with withAlpha
+                    color: Colors.white.withAlpha((255 * 0.1).round()),
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                     child: Padding(
@@ -381,7 +384,8 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                           SvgPicture.asset(
                             'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg',
                             height: isSmallScreen ? 150 : 200, // Responsive height
-                            colorFilter: const ColorFilter.mode(Colors.white70, BlendMode.srcIn), // Light tint for visibility
+                            // FIX: Replaced withOpacity with withAlpha
+                            colorFilter: ColorFilter.mode(Colors.white70.withAlpha((255 * 0.7).round()), BlendMode.srcIn),
                             semanticsLabel: 'Two people lying down and laughing together', // Added for accessibility
                           ),
                           const SizedBox(height: 20),
@@ -460,7 +464,8 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
   // Helper widget to build a testimonial card
   Widget _buildTestimonialCard(BuildContext context, String quote, String author) {
     return Card(
-      color: Colors.deepPurple.shade700.withOpacity(0.4), // Slightly different shade for testimonials
+      // FIX: Replaced withOpacity with withAlpha
+      color: Colors.deepPurple.shade700.withAlpha((255 * 0.4).round()),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
       child: Padding(

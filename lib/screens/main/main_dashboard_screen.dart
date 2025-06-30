@@ -24,11 +24,13 @@ class DashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.shade900.withOpacity(0.75),
+        // FIX: Replaced withOpacity with withAlpha
+        color: Colors.deepPurple.shade900.withAlpha((255 * 0.75).round()),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.shade900.withOpacity(0.6),
+            // FIX: Replaced withOpacity with withAlpha
+            color: Colors.red.shade900.withAlpha((255 * 0.6).round()),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -71,7 +73,8 @@ class DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         margin: const EdgeInsets.only(bottom: 24),
         decoration: BoxDecoration(
-          color: Colors.deepPurple.shade800.withOpacity(0.7),
+          // FIX: Replaced withOpacity with withAlpha
+          color: Colors.deepPurple.shade800.withAlpha((255 * 0.7).round()),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
@@ -96,11 +99,13 @@ class DashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        color: Colors.red.shade900.withOpacity(0.75),
+        // FIX: Replaced withOpacity with withAlpha
+        color: Colors.red.shade900.withAlpha((255 * 0.75).round()),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.shade700.withOpacity(0.6),
+            // FIX: Replaced withOpacity with withAlpha
+            color: Colors.red.shade700.withAlpha((255 * 0.6).round()),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -184,7 +189,7 @@ class DashboardScreen extends StatelessWidget {
                     text: 'Edit Profile',
                     onPressed: () {
                       // Navigate to profile setup/edit screen
-                      // GoRouter.of(context).go('/profileSetup');
+                      // GoRouter.of(context).go('/profileSetup'); // Using GoRouter for consistency
                     },
                     gradientColors: const [
                       Color(0xFF8E24AA),
@@ -192,7 +197,8 @@ class DashboardScreen extends StatelessWidget {
                     ],
                     height: 48,
                     width: double.infinity,
-                    textSize: 18,
+                    // FIX: Replaced textSize with textStyle
+                    textStyle: const TextStyle(fontSize: 18, color: Colors.white), // Added color for text
                   ),
                 ],
               ),

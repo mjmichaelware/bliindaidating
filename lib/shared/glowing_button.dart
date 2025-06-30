@@ -9,7 +9,6 @@ class GlowingButton extends StatelessWidget {
   final IconData? icon;
   final Color color;
   final Gradient? gradient;
-  // Ensure this parameter is present and correctly typed
   final List<Color>? gradientColors;
   final double? width;
   final double? height;
@@ -17,7 +16,7 @@ class GlowingButton extends StatelessWidget {
   final double glowBlurRadius;
   final double borderRadius;
   final List<BoxShadow>? boxShadow;
-  final TextStyle? textStyle;
+  final TextStyle? textStyle; // textStyle parameter for customization
 
   const GlowingButton({
     super.key,
@@ -27,7 +26,6 @@ class GlowingButton extends StatelessWidget {
     this.icon,
     this.color = Colors.blue,
     this.gradient,
-    // Add gradientColors to the constructor parameters list
     this.gradientColors,
     this.width,
     this.height,
@@ -35,7 +33,7 @@ class GlowingButton extends StatelessWidget {
     this.glowBlurRadius = 15,
     this.borderRadius = 25.0,
     this.boxShadow,
-    this.textStyle,
+    this.textStyle, // Added to constructor
   }) : assert(
           child != null || text != null || icon != null,
           'GlowingButton must have either a child, text, or an icon.',
@@ -45,21 +43,24 @@ class GlowingButton extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget content;
 
+    // Use provided textStyle or default. Default to white color and 16pt font size.
+    final TextStyle effectiveTextStyle = textStyle ?? const TextStyle(color: Colors.white, fontSize: 16);
+
     if (child != null) {
       content = child!;
     } else if (text != null && icon != null) {
       content = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: textStyle?.color ?? Colors.white, size: (textStyle?.fontSize ?? 16) * 1.2),
+          Icon(icon, color: effectiveTextStyle.color, size: effectiveTextStyle.fontSize != null ? effectiveTextStyle.fontSize! * 1.2 : 16 * 1.2),
           const SizedBox(width: 8),
-          Text(text!, style: textStyle ?? const TextStyle(color: Colors.white, fontSize: 16)),
+          Text(text!, style: effectiveTextStyle),
         ],
       );
     } else if (text != null) {
-      content = Text(text!, style: textStyle ?? const TextStyle(color: Colors.white, fontSize: 16));
+      content = Text(text!, style: effectiveTextStyle);
     } else if (icon != null) {
-      content = Icon(icon, color: textStyle?.color ?? Colors.white, size: (textStyle?.fontSize ?? 16) * 1.5);
+      content = Icon(icon, color: effectiveTextStyle.color, size: effectiveTextStyle.fontSize != null ? effectiveTextStyle.fontSize! * 1.5 : 16 * 1.5);
     } else {
       content = const SizedBox.shrink();
     }
@@ -75,7 +76,8 @@ class GlowingButton extends StatelessWidget {
     } else {
       effectiveGradient = gradient ??
           LinearGradient(
-            colors: [color.withOpacity(0.8), color],
+            // FIX: Replaced withOpacity with withAlpha for deprecated member use
+            colors: [color.withAlpha((255 * 0.8).round()), color],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           );
@@ -92,7 +94,8 @@ class GlowingButton extends StatelessWidget {
           boxShadow: boxShadow ??
               [
                 BoxShadow(
-                  color: color.withOpacity(0.5),
+                  // FIX: Replaced withOpacity with withAlpha for deprecated member use
+                  color: color.withAlpha((255 * 0.5).round()),
                   blurRadius: glowBlurRadius,
                   spreadRadius: glowSpreadRadius,
                   offset: const Offset(0, 4),

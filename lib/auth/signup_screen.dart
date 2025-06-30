@@ -21,6 +21,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   // Removed _confirmController as per request: "Email and password is all it should be asking for"
   // final _confirmController = TextEditingController(); // REMOVED
 
+  // FIX: Declare _isLoading variable
+  bool _isLoading = false; // ADDED THIS LINE
+
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
   String? _errorMessage;
@@ -49,52 +52,43 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   }
 
   Future<void> _attemptSignUp() async {
-    setState(() => _errorMessage = null);
+    setState(() {
+      _isLoading = true; // Now _isLoading is defined
+      _errorMessage = null;
+    });
 
     final email = _emailController.text.trim();
     final pass = _passwordController.text.trim();
-    // Removed confirm variable
-    // final confirm = _confirmController.text.trim(); // REMOVED
 
-    if (email.isEmpty || pass.isEmpty) { // Updated validation to remove confirm check
-      _showError('Please fill in both email and password.'); // Updated error message
+    if (email.isEmpty || pass.isEmpty) {
+      _showError('Please fill in both email and password.');
+      setState(() { _isLoading = false; }); // Ensure loading state is reset on validation error
       return;
     }
 
-    // Removed password confirmation check as _confirmController is removed
-    // if (pass != confirm) { // REMOVED
-    //   _showError('Secret keys must align. They do not match.'); // REMOVED
-    //   return; // REMOVED
-    // } // REMOVED
-
     try {
-      // Firebase Authentication: Create User
-      // Ensure Firebase.initializeApp() is called before this point in your app's lifecycle.
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: pass,
       );
       
       if (mounted) {
-        // Navigate to the profile setup screen upon successful registration
         GoRouter.of(context).go('/profile_setup');
       }
     } on FirebaseAuthException catch (e) {
-      // Handle Firebase specific errors with updated messages
       _showError(switch (e.code) {
-        'weak-password' => 'Your password is too weak. Please choose a stronger one.', // Updated message
-        'email-already-in-use' => 'An account with this email already exists. Try logging in instead.', // Updated message
-        'invalid-email' => 'The email address format is invalid.', // Updated message
-        _ => 'An unexpected error occurred during registration. Please try again.', // Generic error
+        'weak-password' => 'Your password is too weak. Please choose a stronger one.',
+        'email-already-in-use' => 'An account with this email already exists. Try logging in instead.',
+        'invalid-email' => 'The email address format is invalid.',
+        _ => 'An unexpected error occurred during registration. Please try again.',
       });
     } catch (e) {
-      // Handle any other unexpected errors
       setState(() {
         _errorMessage = 'An unexpected error occurred: ${e.toString()}';
       });
     } finally {
       setState(() {
-        _isLoading = false;
+        _isLoading = false; // Now _isLoading is defined
       });
     }
   }
@@ -175,25 +169,17 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                       ),
                       const SizedBox(height: 24),
                       _inputField(
-                        label: 'Email Address', // Changed label
+                        label: 'Email Address',
                         icon: Icons.email_outlined,
                         controller: _emailController,
                       ),
                       const SizedBox(height: 20),
                       _inputField(
-                        label: 'Password', // Changed label
+                        label: 'Password',
                         icon: Icons.lock_outline,
                         controller: _passwordController,
                         obscure: true,
                       ),
-                      // Removed the Confirm Password input field
-                      // const SizedBox(height: 20), // REMOVED
-                      // _inputField( // REMOVED
-                      //   label: 'Confirm Your Secret Key', // REMOVED
-                      //   icon: Icons.key_outlined, // REMOVED
-                      //   controller: _confirmController, // REMOVED
-                      //   obscure: true, // REMOVED
-                      // ), // REMOVED
                       const SizedBox(height: 24),
                       if (_errorMessage != null)
                         Padding(
@@ -211,7 +197,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                       GlowingButton(
                         text: 'Manifest My Destiny',
                         icon: Icons.control_point_duplicate,
-                        onPressed: _attemptSignUp,
+                        onPressed: _isLoading ? null : _attemptSignUp, // Disable button when loading
                         gradientColors: [Colors.purple.shade700, Colors.red.shade600],
                       ),
                       const SizedBox(height: 16),

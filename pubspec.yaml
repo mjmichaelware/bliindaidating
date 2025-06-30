@@ -3,7 +3,7 @@ description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
 environment:
-  sdk: '^3.8.0'
+  sdk: '>=3.0.0 <4.0.0' # Flexible SDK constraint for Flutter 3.10.6
 
 dependencies:
   flutter:
@@ -12,9 +12,9 @@ dependencies:
   go_router: ^14.0.0
   cupertino_icons: ^1.0.8
   
-  # --- Firebase Dependencies (Coordinated Versions for Compatibility) ---
-  # These versions are chosen to be mutually compatible and resolve conflicts.
-  firebase_core: ^2.24.2 # Anchored version for compatibility across other Firebase packages
+  # --- Firebase Dependencies (Current, building versions) ---
+  # These versions are the ones from your pubspec that allowed the build to pass the 'Undefined name main' error.
+  firebase_core: ^2.24.2
   firebase_auth: ^4.15.2
   cloud_firestore: ^4.13.4
   firebase_storage: ^11.5.4
@@ -28,6 +28,7 @@ dependencies:
 
   font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.11
+  google_fonts: ^6.1.0 # ADDED: For GoogleFonts usage in feature_card_widget.dart
 
 dev_dependencies:
   flutter_test:
