@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'about_me_screen.dart';
+import 'availability_screen.dart';
+import 'interests_screen.dart';
 
 class ProfileTabsScreen extends StatelessWidget {
   const ProfileTabsScreen({super.key});

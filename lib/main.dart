@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bliindaidating/utils/supabase_config.dart'; // ✅ Import Supabase config
+import 'package:bliindaidating/utils/supabase_config.dart';
 
-// Import your screens
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/portal/portal_page.dart';
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
+
 import 'package:bliindaidating/profile/profile_setup_screen.dart';
 import 'package:bliindaidating/profile/profile_tabs_screen.dart';
 import 'package:bliindaidating/profile/about_me_screen.dart';
 import 'package:bliindaidating/profile/availability_screen.dart';
 import 'package:bliindaidating/profile/interests_screen.dart';
+
 import 'package:bliindaidating/friends/local_events_screen.dart';
-import 'package:bliindaidating/matching/penalty_display.dart';
+import 'package:bliindaidating/matching/penalty_display_screen.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Initialize Supabase via config helper
   await SupabaseConfig.init();
 
   runApp(const BlindAIDatingApp());
