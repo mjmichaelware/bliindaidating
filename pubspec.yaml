@@ -3,7 +3,7 @@ description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
 environment:
-  sdk: '>=3.0.0 <4.0.0' # Flexible SDK constraint for Flutter 3.10.6
+  sdk: '^3.8.0' # Keep your SDK constraint as is
 
 dependencies:
   flutter:
@@ -12,23 +12,23 @@ dependencies:
   go_router: ^14.0.0
   cupertino_icons: ^1.0.8
   
-  # --- Firebase Dependencies (Current, building versions) ---
-  # These versions are the ones from your pubspec that allowed the build to pass the 'Undefined name main' error.
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.15.2
-  cloud_firestore: ^4.13.4
-  firebase_storage: ^11.5.4
-  firebase_analytics: ^10.8.0
-  firebase_crashlytics: ^3.4.9
-  google_sign_in: ^6.1.0
-  firebase_app_check: ^0.2.1+9
-  firebase_remote_config: ^4.3.14
-  firebase_messaging: ^14.7.10
-  cloud_functions: ^4.6.0 # Correct package for Cloud Functions
+  # --- Firebase Dependencies (ALL UPDATED TO ABSOLUTE LATEST STABLE FOR COMPATIBILITY) ---
+  # These versions are the most recent stable releases as of June 30, 2025.
+  # Upgrading all simultaneously is the most reliable way to resolve deep dependency conflicts.
+  firebase_core: ^3.14.0
+  firebase_auth: ^5.6.0
+  cloud_firestore: ^5.6.9
+  firebase_storage: ^12.4.7
+  firebase_analytics: ^11.5.0
+  firebase_crashlytics: ^4.3.7
+  google_sign_in: ^7.0.0
+  firebase_app_check: ^0.3.2+7
+  firebase_remote_config: ^5.4.5
+  firebase_messaging: ^15.2.7
+  cloud_functions: ^5.5.2 # This is the absolute latest for cloud_functions
 
   font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.11
-  google_fonts: ^6.1.0 # ADDED: For GoogleFonts usage in feature_card_widget.dart
 
 dev_dependencies:
   flutter_test:

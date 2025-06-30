@@ -63,17 +63,31 @@
     <div class="loading-spinner"></div>
     <div class="loading-text">Loading your destiny...</div>
   </div>
+  <script src="flutter_bootstrap.js" async></script>
+
+  <!-- CRITICAL FIX: Use the latest Flutter web initialization API: _flutter.loader.load() -->
   <script>
+    // This script ensures that the Flutter engine correctly loads your Dart main() function.
+    // It uses the recommended 'load' API for newer Flutter versions.
     window.addEventListener('load', function () {
+      _flutter.loader.load().then(function (engineInitializer) {
+        return engineInitializer.initializeEngine();
+      }).then(function (appRunner) {
+        return appRunner.runApp();
+      });
+
+      // Optional: Fade out loading container after Flutter app starts
       const loadingContainer = document.getElementById('loading_container');
       if (loadingContainer) {
-        loadingContainer.classList.add('loading-fade-out');
-        loadingContainer.addEventListener('transitionend', function() {
-          loadingContainer.remove();
-        });
+        // Give Flutter a moment to start rendering before fading out the loader
+        setTimeout(() => {
+          loadingContainer.classList.add('loading-fade-out');
+          loadingContainer.addEventListener('transitionend', function() {
+            loadingContainer.remove();
+          });
+        }, 500); // Adjust delay as needed
       }
     });
   </script>
-  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
