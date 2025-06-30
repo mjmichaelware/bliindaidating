@@ -13,7 +13,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # --- Supabase Dependency ---
-  supabase_flutter: ^2.5.0 # Using a recent stable version of Supabase Flutter SDK
+  supabase_flutter: ^2.9.1 # Using a recent stable version of Supabase Flutter SDK
 
   font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.11
