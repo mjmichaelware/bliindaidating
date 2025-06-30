@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Supabase import
-import 'package:flutter/foundation.dart'; // For debugPrint
-import 'package:flutter_svg/flutter_svg.dart'; // For SvgPicture.asset
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart'; // Keep for debugPrint if not provided by material.dart
+import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:bliindaidating/shared/glowing_button.dart'; // Assuming this is correct
-import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart'; // Assuming this is correct
+import 'package:bliindaidating/shared/glowing_button.dart';
+import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   late final AnimationController _shakeController;
   late final Animation<double> _shakeAnimation;
   String? _errorMessage;
-  bool _isLoading = false; // Added for loading state
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -32,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-
     _shakeAnimation = Tween<double>(begin: 0, end: 10).animate(
       CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn),
     )..addListener(() => setState(() {}));
@@ -48,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Future<void> _attemptLogin() async {
     setState(() {
-      _isLoading = true; // Set loading state
+      _isLoading = true;
       _errorMessage = null;
     });
 
@@ -56,13 +55,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showError('Please enter both email and password.'); // Updated message
-      setState(() { _isLoading = false; }); // Reset loading state
+      _showError('Please enter both email and password.');
+      setState(() { _isLoading = false; });
       return;
     }
 
     try {
-      // --- Supabase Authentication: Sign In ---
       final AuthResponse response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
@@ -71,25 +69,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (response.user != null) {
         debugPrint('User logged in successfully with Supabase: ${response.user!.email}');
         if (mounted) {
-          context.go('/home'); // Navigate to the home screen on successful login
+          context.go('/home');
         }
       } else {
-        // This case might happen if no user is returned but no explicit error
         _showError('Login failed. Please check your credentials.');
       }
     } on AuthException catch (e) {
-      // Handle Supabase Auth specific errors
       debugPrint('Supabase Auth error during login: ${e.message}');
       _showError('Login failed: ${e.message}');
     } catch (e) {
-      // Handle any other unexpected errors
       debugPrint('Unexpected error during login: $e');
       setState(() {
         _errorMessage = 'An unexpected error occurred: ${e.toString()}';
       });
     } finally {
       setState(() {
-        _isLoading = false; // Reset loading state
+        _isLoading = false;
       });
     }
   }
@@ -169,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   child: Column(
                     children: [
                       SvgPicture.asset(
-                        'assets/svg/DrawKit Vector Illustration Love & Dating (1).svg', // Example SVG
+                        'assets/svg/DrawKit Vector Illustration Love & Dating (1).svg',
                         height: isSmall ? 120 : 150,
                         semanticsLabel: 'Login illustration',
                       ),
@@ -184,13 +179,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 24),
                       _inputField(
-                        label: 'Email Address', // Updated label
+                        label: 'Email Address',
                         icon: Icons.email_outlined,
                         controller: _emailController,
                       ),
                       const SizedBox(height: 20),
                       _inputField(
-                        label: 'Password', // Updated label
+                        label: 'Password',
                         icon: Icons.lock_outline,
                         controller: _passwordController,
                         obscure: true,
@@ -213,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         text: 'Login to My Cosmos',
                         icon: Icons.login,
                         onPressed: _isLoading
-                            ? () {} // Provide an empty function when loading
+                            ? () {}
                             : _attemptLogin,
                         gradientColors: [Colors.blue.shade700, Colors.cyan.shade600],
                       ),
@@ -224,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         },
                         child: Text(
                           'New to the galaxy? Sign Up',
-                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.85).round())), // withAlpha
+                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.85).round())),
                         ),
                       ),
                       TextButton(
@@ -233,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         },
                         child: Text(
                           'Forgot Password?',
-                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.7).round())), // withAlpha
+                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.7).round())),
                         ),
                       ),
                     ],

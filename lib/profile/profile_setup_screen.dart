@@ -1,12 +1,13 @@
 // lib/profile/profile_setup_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Supabase import
-import 'package:bliindaidating/services/auth_service.dart'; // Keep, for current user logic
-import 'package:bliindaidating/models/user_profile.dart'; // Keep, for profile data structure
-import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Your main app screen
+import 'package:supabase_flutter/supabase_flutter.dart'; // Supabase import
+// REMOVED: import 'package:bliindaidating/services/auth_service.dart'; // Unused import
+import 'package:bliindaidating/models/user_profile.dart'; // For profile data structure
+// REMOVED: import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Unused import
 import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart'; // Added for debugPrint
+// REMOVED: import 'package:flutter/foundation.dart'; // unnecessary_import (debugPrint is now implicitly available)
+
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -24,7 +25,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   String? _lookingFor;
   final List<String> _selectedInterests = [];
   bool _isLoading = false;
-  String? _statusMessage;
+  // REMOVED: String? _statusMessage; // unused_field, replaced with SnackBar directly
 
   final List<String> _genders = [
     'Male',
@@ -56,26 +57,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       setState(() {
         _isLoading = true;
-        _statusMessage = null;
+        // _statusMessage = null; // Removed
       });
 
       // Get the current user's ID from Supabase Auth
       final User? supabaseUser = Supabase.instance.client.auth.currentUser;
       if (supabaseUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: User not logged in to Supabase! Please log in again.')),
-        );
-        setState(() { _isLoading = false; });
-        if (mounted) {
-          GoRouter.of(context).go('/login'); // Redirect to login if no Supabase user
+        if (mounted) { // Check mounted before using BuildContext across async gap
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error: User not logged in to Supabase! Please log in again.')),
+          );
+          setState(() { _isLoading = false; });
+          context.go('/login'); // Redirect to login if no Supabase user
         }
         return;
       }
 
       // Create a UserProfile object with the collected data
       final UserProfile updatedProfile = UserProfile(
-        uid: supabaseUser.id, // Use Supabase user ID
-        email: supabaseUser.email ?? 'no-email@supabase.com', // Use Supabase user email
+        uid: supabaseUser.id,
+        email: supabaseUser.email ?? 'no-email@supabase.com',
         displayName: _displayNameController.text.trim(),
         bio: _bioController.text.trim(),
         gender: _gender,
@@ -90,32 +91,31 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         // --- Supabase Database: Save Profile ---
         // You need to have a table named 'profiles' (or 'users') in your Supabase project
         // with columns matching your UserProfile model.
-        // Example: id (UUID), email (text), display_name (text), bio (text), gender (text),
-        // interests (jsonb or text[]), looking_for (text), created_at (timestampz),
-        // profile_complete (boolean), last_updated (timestampz).
-        // Ensure Row Level Security (RLS) is configured in Supabase for this table.
         await Supabase.instance.client
             .from('profiles') // Assuming your table is named 'profiles'
-            .upsert(updatedProfile.toMap()); // Use upsert to insert or update based on primary key (uid)
+            .upsert(updatedProfile.toMap());
 
         debugPrint('User profile ${updatedProfile.uid} updated successfully in Supabase.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully!')),
-        );
-
-        if (mounted) {
-          GoRouter.of(context).go('/home'); // Navigate to the main dashboard
+        if (mounted) { // Check mounted before using BuildContext across async gap
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile saved successfully!')),
+          );
+          context.go('/home'); // Navigate to the main dashboard
         }
       } on PostgrestException catch (e) {
         debugPrint('Supabase database error saving profile: ${e.message}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save profile: ${e.message}')),
-        );
+        if (mounted) { // Check mounted before using BuildContext across async gap
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save profile: ${e.message}')),
+          );
+        }
       } catch (e) {
         debugPrint('Unexpected error saving profile: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
-        );
+        if (mounted) { // Check mounted before using BuildContext across async gap
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
+          );
+        }
       } finally {
         setState(() {
           _isLoading = false;
@@ -179,7 +179,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Gender Selection
               DropdownButtonFormField<String>(
                 value: _gender,
                 decoration: const InputDecoration(
@@ -207,7 +206,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Looking For Option
               DropdownButtonFormField<String>(
                 value: _lookingFor,
                 decoration: const InputDecoration(
@@ -235,7 +233,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Interests Selection (Chip-based)
               Text(
                 'Select Your Interests:',
                 style: Theme.of(context).textTheme.titleLarge,

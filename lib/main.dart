@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Supabase import
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Import your screens.
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/portal/portal_page.dart';
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
-import 'package:bliindaidating/screens/main/home_screen.dart';
+// REMOVED: import 'package:bliindaidating/screens/main/home_screen.dart'; // REMOVED: No longer exists
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Import DashboardScreen
 import 'package:bliindaidating/profile/profile_setup_screen.dart';
 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase Client
-  // IMPORTANT: Replace 'YOUR_SUPABASE_URL' and 'YOUR_SUPABASE_ANON_KEY'
-  // with your actual Supabase project details from your Supabase Dashboard -> Settings -> API.
   await Supabase.initialize(
     url: 'YOUR_SUPABASE_URL', // e.g., 'https://abcde12345.supabase.co'
     anonKey: 'YOUR_SUPABASE_ANON_KEY', // e.g., 'eyJhbGciOiJIUzI1NiI...'
-    // authFlowType: AuthFlowType.pkce, // REMOVED: This parameter is not available in resolved supabase_flutter version
+    // authFlowType: AuthFlowType.pkce, // Removed as per previous fix for supabase_flutter version
   );
 
   runApp(const BlindAIDatingApp());
@@ -51,8 +49,12 @@ class BlindAIDatingApp extends StatelessWidget {
           builder: (context, state) => const SignUpScreen(),
         ),
         GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomeScreen(),
+          path: '/home', // This route now points to DashboardScreen
+          builder: (context, state) => const DashboardScreen(
+            totalDatesAttended: 0, // Placeholder values
+            currentMatches: 0,
+            penaltyCount: 0,
+          ),
         ),
         GoRoute(
           path: '/profile_setup',

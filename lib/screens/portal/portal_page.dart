@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter/foundation.dart'; // Added for debugPrint
+// REMOVED: import 'package:flutter/foundation.dart'; // unnecessary_import
 
 import 'package:bliindaidating/landing_page/landing_page.dart';
 
@@ -91,7 +91,6 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
       return;
     }
 
-    // Simulate a successful login for any non-empty credentials
     if (email.isNotEmpty && password.isNotEmpty) {
       debugPrint('Simulating sign in with email: $email, password: $password');
       await Future.delayed(const Duration(milliseconds: 500));
