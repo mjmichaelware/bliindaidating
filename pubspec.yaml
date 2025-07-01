@@ -4,7 +4,7 @@ description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
 environment:
-  sdk: '>=3.2.0 <4.0.0' # Keep this flexible for Dart 3.8.1 from Flutter 3.32.5
+  sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -14,13 +14,13 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # --- Supabase Dependency ---
-  supabase_flutter: ^2.9.1 # Using a recent stable version of Supabase Flutter SDK
-  flutter_dotenv: ^5.2.1 # For loading .env file in local development
-  image_picker: ^1.0.8 # ADDED: For picking user images (avatars)
+  supabase_flutter: ^2.9.1 # <--- ENSURE THIS IS ^2.9.1 (or ^2.0.0)
+  flutter_dotenv: ^5.2.1
+  image_picker: ^1.0.8
 
   font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.11
-  # google_fonts: ^6.1.0 # THIS LINE IS COMMENTED OUT/REMOVED as per your 'only Inter font' rule and local bundling
+  # google_fonts: # REMOVED
 
 dev_dependencies:
   flutter_test:
@@ -31,13 +31,13 @@ flutter:
   uses-material-design: true
 
   assets:
-    - .env # Crucial for flutter_dotenv to find your .env file
-    - assets/svg/ # Ensure your SVG assets are in this folder
-    - assets/fonts/ # Ensure your Inter font files are in this folder
+    - .env
+    - assets/svg/
+    - assets/fonts/
 
   fonts:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
-        - asset: assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf # CORRECTED: Removed the extra '.wght' from the path
+        - asset: assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf
           style: italic

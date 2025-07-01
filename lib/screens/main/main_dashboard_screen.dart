@@ -2,9 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Added for Supabase access
-import 'dart:async'; // Added for StreamSubscription and debugPrint (if not from Foundation)
-// Explicit import for debugPrint
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
@@ -15,7 +14,6 @@ import 'package:bliindaidating/widgets/dashboard_stat_card.dart';
 import 'package:bliindaidating/widgets/dashboard_info_card.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // Added for UserProfile model
 import 'package:bliindaidating/services/profile_service.dart'; // Added for ProfileService
-
 
 class MainDashboardScreen extends StatefulWidget {
   final int totalDatesAttended;
@@ -50,6 +48,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   String? _avatarUrl; // Will hold the signed URL for the avatar
   bool _isLoadingProfile = true; // State to manage profile loading
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription; // Realtime subscription
+
+  final ProfileService _profileService = ProfileService(); // Instantiate ProfileService
 
   @override
   void initState() {
@@ -104,15 +104,17 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     }
 
     try {
-      // Fetch initial profile
-      final UserProfile? fetchedProfile = await ProfileService().getProfile(currentUser.id);
+      // FIX: Changed getProfile to getUserProfile
+      final UserProfile? fetchedProfile = await _profileService.getUserProfile(currentUser.id);
       if (fetchedProfile != null) {
         setState(() {
           _userProfile = fetchedProfile;
           _isLoadingProfile = false;
         });
-        if (fetchedProfile.avatar_url != null) { // Access snake_case avatar_url
-          final String? signedUrl = await ProfileService().getAnalysisPhotoSignedUrl(fetchedProfile.avatar_url!);
+        // FIX: Changed avatar_url to profilePictureUrl
+        if (fetchedProfile.profilePictureUrl != null) {
+          // FIX: Changed ProfileService().getAnalysisPhotoSignedUrl to _profileService.getAnalysisPhotoSignedUrl
+          final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(fetchedProfile.profilePictureUrl!);
           setState(() {
             _avatarUrl = signedUrl;
           });
@@ -131,14 +133,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           .eq('id', currentUser.id) // Listen only to current user's profile changes
           .listen((List<Map<String, dynamic>> data) async {
         if (data.isNotEmpty) {
-          final UserProfile updatedProfile = UserProfile.fromMap(data.first);
+          // FIX: Changed UserProfile.fromMap to UserProfile.fromJson
+          final UserProfile updatedProfile = UserProfile.fromJson(data.first);
           setState(() {
             _userProfile = updatedProfile;
           });
-          debugPrint('Realtime update for profile: ${updatedProfile.display_name}'); // Access snake_case display_name
-          if (updatedProfile.avatar_url != null && updatedProfile.avatar_url != _userProfile?.avatar_url) {
-             // Only re-fetch signed URL if avatar_url actually changed
-            final String? signedUrl = await ProfileService().getAnalysisPhotoSignedUrl(updatedProfile.avatar_url!);
+          // FIX: Changed display_name to fullName
+          debugPrint('Realtime update for profile: ${updatedProfile.fullName}');
+          // FIX: Changed avatar_url to profilePictureUrl and ProfileService().getAnalysisPhotoSignedUrl to _profileService.getAnalysisPhotoSignedUrl
+          if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _userProfile?.profilePictureUrl) {
+            final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(updatedProfile.profilePictureUrl!);
             setState(() {
               _avatarUrl = signedUrl;
             });
@@ -155,7 +159,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       }
     }
   }
-
 
   @override
   void dispose() {
@@ -263,7 +266,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   Widget _dailyPersonalityQuestion() {
     return DashboardInfoCard(
       title: 'Daily Personality Question',
-      description: 'What’s your ideal way to spend a weekend?', // Fixed character
+      description: 'What’s your ideal way to spend a weekend?',
       icon: FontAwesomeIcons.youtube,
       iconColor: const Color(0xFF8E24AA),
       trailingWidget: GlowingButton(
@@ -406,13 +409,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       icon: Icons.insights_rounded,
       iconColor: Colors.pink.shade300,
       customContent: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _statIconLabel(Icons.visibility_rounded, 'Views', views),
-              _statIconLabel(Icons.favorite_rounded, 'Favorites', favorites),
-              _statIconLabel(Icons.favorite_border_rounded, 'New Matches', newMatches),
-            ],
-          ),
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _statIconLabel(Icons.visibility_rounded, 'Views', views),
+          _statIconLabel(Icons.favorite_rounded, 'Favorites', favorites),
+          _statIconLabel(Icons.favorite_border_rounded, 'New Matches', newMatches),
+        ],
+      ),
       trailingWidget: null,
     );
   }
@@ -445,15 +448,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         icon: Icons.lock_rounded,
         iconColor: Colors.white70,
         trailingWidget: Switch(
-              value: privacyModeOn,
-              activeColor: Colors.pink.shade400,
-              onChanged: (val) {
-                setStateSB(() {
-                  privacyModeOn = val;
-                  // TODO: Persist privacy mode state & trigger haptics
-                });
-              },
-            ),
+          value: privacyModeOn,
+          activeColor: Colors.pink.shade400,
+          onChanged: (val) {
+            setStateSB(() {
+              privacyModeOn = val;
+              // TODO: Persist privacy mode state & trigger haptics
+            });
+          },
+        ),
       );
     });
   }
@@ -496,7 +499,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           (idea) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              '• $idea', // FIXED: Character
+              '• $idea',
               style: const TextStyle(color: Colors.white70, fontSize: 18),
             ),
           ),
@@ -508,14 +511,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: DashboardMenuDrawer( // Pass profile data to drawer
+      endDrawer: DashboardMenuDrawer(
         userProfile: _userProfile,
         avatarUrl: _avatarUrl,
       ),
       body: Stack(
         children: [
           const Positioned.fill(child: AnimatedOrbBackground()),
-
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -530,7 +532,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               ),
             ),
           ),
-
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
@@ -544,67 +545,51 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _isLoadingProfile // Show loading if profile is still loading
+                      _isLoadingProfile
                           ? Center(
                               child: CircularProgressIndicator(
                                   color: Theme.of(context).colorScheme.secondary),
                             )
                           : DashboardHeader(
-                              title: _userProfile?.display_name ?? 'Profile Dashboard', // Access snake_case display_name
+                              title: _userProfile?.fullName ?? 'Profile Dashboard', // Corrected to fullName
                               glowColor: Colors.redAccent,
                               shadowOffset: const Offset(0, 5),
                             ),
                       const SizedBox(height: 24),
-
                       _animatedPenaltySection(),
-
                       _animatedStatCard(
                         label: 'Dates Attended',
                         value: widget.totalDatesAttended,
                         icon: Icons.event_available_rounded,
                         iconColor: Colors.greenAccent.shade400,
                       ),
-
                       _animatedStatCard(
                         label: 'Current Matches',
                         value: widget.currentMatches,
                         icon: Icons.favorite_rounded,
                         iconColor: Colors.pink.shade400,
                       ),
-
                       const SizedBox(height: 24),
-
                       _suggestedProfiles(),
-
                       const SizedBox(height: 24),
                       _dailyPersonalityQuestion(),
                       const SizedBox(height: 24),
-
                       _compatibilityScore(),
                       const SizedBox(height: 24),
-
                       _datingIntentions(),
                       const SizedBox(height: 24),
-
                       _nearbyEvents(),
                       const SizedBox(height: 24),
-
                       _premiumBenefits(),
                       const SizedBox(height: 24),
-
                       _weeklyInsights(),
                       const SizedBox(height: 24),
-
                       _privacyToggle(),
                       const SizedBox(height: 24),
-
                       _profileBoostButton(),
                       const SizedBox(height: 24),
-
                       _dateIdeas(),
-
                       const SizedBox(height: 40),
-
                       GlowingButton(
                         icon: Icons.edit_rounded,
                         text: 'Edit Profile',
@@ -620,7 +605,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                         textStyle:
                             const TextStyle(fontSize: 20, color: Colors.white),
                       ),
-
                       const SizedBox(height: 40),
                     ],
                   ),

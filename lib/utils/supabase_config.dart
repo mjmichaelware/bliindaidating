@@ -29,7 +29,7 @@ class SupabaseConfig {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
-      // REMOVED: authFlowType: AuthFlowType.pkce, // This parameter is no longer valid in supabase_flutter 2.9.1
+      // FIX: REMOVED authFlowType: AuthFlowType.pkce, as it's not valid in 2.x.x
       debug: kDebugMode,
     );
   }

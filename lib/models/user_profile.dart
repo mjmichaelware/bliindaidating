@@ -1,125 +1,63 @@
 // lib/models/user_profile.dart
-import 'package:supabase_flutter/supabase_flutter.dart'; // For User type if passed directly
-
 class UserProfile {
-  final String uid; // Supabase user ID (auth.uid())
-  final String email;
-  String display_name; // Renamed to snake_case
-  String bio;
-  String? gender;
-  List<String> interests;
-  String looking_for; // Renamed to snake_case
-  bool profile_complete; // Renamed to snake_case
-  DateTime created_at; // Renamed to snake_case
-  DateTime? last_updated; // Renamed to snake_case
-  String? avatar_url; // Renamed to snake_case
+  final String id; // Corresponds to 'id' in DB (UUID from auth.users)
+  final String? fullName; // Corresponds to 'full_name' in DB
+  final DateTime? dateOfBirth; // Corresponds to 'date_of_birth' in DB
+  final String? gender; // Corresponds to 'gender' in DB
+  final String? bio; // Corresponds to 'bio' in DB
+  final String? profilePictureUrl; // Corresponds to 'profile_picture_url' in DB
+  final DateTime createdAt; // Corresponds to 'created_at' in DB
 
   UserProfile({
-    required this.uid,
-    required this.email,
-    required this.display_name, // Renamed to snake_case
-    required this.bio,
+    required this.id,
+    this.fullName,
+    this.dateOfBirth,
     this.gender,
-    this.interests = const [],
-    this.looking_for = '', // Renamed to snake_case
-    this.profile_complete = false, // Renamed to snake_case
-    required this.created_at, // Renamed to snake_case
-    this.last_updated, // Renamed to snake_case
-    this.avatar_url, // Renamed to snake_case
+    this.bio,
+    this.profilePictureUrl,
+    required this.createdAt,
   });
 
-  // Factory constructor to create UserProfile from a Supabase Auth User object
-  // Useful for initial profile creation or when fetching user metadata directly from auth.currentUser
-  factory UserProfile.fromSupabaseUser(User user) {
-    // FIXED: Robustly handle createdAt and updatedAt from User object.
-    // Explicitly check type and cast to DateTime, or fall back to parsing/now().
-    final DateTime parsedCreatedAt = (user.createdAt is DateTime)
-        ? (user.createdAt as DateTime)
-        : DateTime.now(); // Fallback if user.createdAt is null or not DateTime
-
-    DateTime? parsedLastUpdated;
-    if (user.updatedAt is DateTime) {
-      parsedLastUpdated = user.updatedAt as DateTime;
-    } else if (user.userMetadata?['last_updated'] is String) {
-      // Fallback to userMetadata for string, if needed
-      parsedLastUpdated = DateTime.tryParse(user.userMetadata!['last_updated'] as String);
-    }
-    // If it's null and not a string in metadata, it remains null.
-
-
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      uid: user.id,
-      email: user.email ?? 'unknown@example.com',
-      display_name: user.userMetadata?['display_name'] ?? '',
-      bio: user.userMetadata?['bio'] ?? '',
-      gender: user.userMetadata?['gender'],
-      interests: List<String>.from(user.userMetadata?['interests'] ?? []),
-      looking_for: user.userMetadata?['looking_for'] ?? '',
-      profile_complete: user.userMetadata?['profile_complete'] ?? false,
-      created_at: parsedCreatedAt,
-      last_updated: parsedLastUpdated,
-      avatar_url: user.userMetadata?['avatar_url'],
+      id: json['id'] as String,
+      fullName: json['full_name'] as String?,
+      dateOfBirth: json['date_of_birth'] != null ? DateTime.parse(json['date_of_birth'] as String) : null,
+      gender: json['gender'] as String?,
+      bio: json['bio'] as String?,
+      profilePictureUrl: json['profile_picture_url'] as String?,
+      createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
 
-  // Convert UserProfile to a Map for saving/upserting to Supabase 'profiles' table
-  // Uses snake_case for column names to match PostgreSQL conventions (and now Dart properties)
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
-      'id': uid, // Maps to 'id' column in 'profiles' table (FK to auth.users.id)
-      'email': email,
-      'display_name': display_name, // Renamed to snake_case
-      'bio': bio,
+      'id': id,
+      'full_name': fullName,
+      'date_of_birth': dateOfBirth?.toIso8601String(),
       'gender': gender,
-      'interests': interests,
-      'looking_for': looking_for, // Renamed to snake_case
-      'profile_complete': profile_complete, // Renamed to snake_case
-      'created_at': created_at.toIso8601String(), // Renamed to snake_case
-      'last_updated': last_updated?.toIso8601String(), // Renamed to snake_case
-      'avatar_url': avatar_url, // Renamed to snake_case
+      'bio': bio,
+      'profile_picture_url': profilePictureUrl,
+      'created_at': createdAt.toIso8601String(),
     };
   }
 
-  // Factory constructor to create UserProfile from a Map (e.g., loaded from Supabase 'profiles' table)
-  // Expects snake_case keys from the database (and now matches Dart properties)
-  factory UserProfile.fromMap(Map<String, dynamic> map) {
-    return UserProfile(
-      uid: map['id'] as String,
-      email: map['email'] as String,
-      display_name: map['display_name'] as String,
-      bio: map['bio'] as String,
-      gender: map['gender'] as String?,
-      interests: List<String>.from(map['interests'] as List? ?? []),
-      looking_for: map['looking_for'] as String,
-      profile_complete: map['profile_complete'] as bool,
-      created_at: DateTime.parse(map['created_at'] as String),
-      last_updated: map['last_updated'] != null ? DateTime.parse(map['last_updated'] as String) : null,
-      avatar_url: map['avatar_url'] as String?,
-    );
-  }
-
-  // Method to update current instance with new data (useful for creating copies with partial updates)
+  // Helper for updating properties immutably
   UserProfile copyWith({
-    String? display_name, // Renamed to snake_case
-    String? bio,
+    String? fullName,
+    DateTime? dateOfBirth,
     String? gender,
-    List<String>? interests,
-    String? looking_for, // Renamed to snake_case
-    bool? profile_complete, // Renamed to snake_case
-    String? avatar_url, // Renamed to snake_case
+    String? bio,
+    String? profilePictureUrl,
   }) {
     return UserProfile(
-      uid: uid,
-      email: email,
-      display_name: display_name ?? this.display_name, // Renamed to snake_case
-      bio: bio ?? this.bio,
+      id: id,
+      fullName: fullName ?? this.fullName,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
-      interests: interests ?? this.interests,
-      looking_for: looking_for ?? this.looking_for, // Renamed to snake_case
-      profile_complete: profile_complete ?? this.profile_complete, // Renamed to snake_case
-      created_at: created_at, // Renamed to snake_case
-      last_updated: DateTime.now(), // Always update last_updated on copyWith
-      avatar_url: avatar_url ?? this.avatar_url, // Renamed to snake_case
+      bio: bio ?? this.bio,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      createdAt: createdAt,
     );
   }
 }
