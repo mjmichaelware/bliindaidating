@@ -46,9 +46,9 @@ class UserProfile {
   factory UserProfile.fromSupabaseUser(User user) {
     return UserProfile(
       id: user.id,
-      // You might want to populate fullName from user.email or user.userMetadata
       fullName: user.email?.split('@').first, // Example: Use email prefix as default name
-      createdAt: user.createdAt ?? DateTime.now(), // Use user.createdAt or current time
+      // Corrected: Use user.created_at which is DateTime?
+      createdAt: user.created_at ?? DateTime.now(), // Use user.created_at or current time
       isProfileComplete: false, // Assume not complete until user fills out form
       interests: const [],
       bio: null,

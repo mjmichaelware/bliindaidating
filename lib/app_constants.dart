@@ -35,7 +35,7 @@ class AppConstants {
 
   // --- Theme Constants (Added for consistency) ---
   static const Color primaryColor = Color(0xFF6200EE); // Deep Purple
-  static const Color accentColor = Color(0xFF03DAC6); // Teal
+  static const Color accentColor = Color(0xFF03DAC6); // Teal - Often used as secondary in Material Design
   static const Color backgroundColor = Colors.black; // As per your current theme
   static const Color surfaceColor = Color(0xFF121212); // Dark surface for cards, etc.
   static const Color errorColor = Color(0xFFCF6679); // Error red
@@ -44,6 +44,10 @@ class AppConstants {
   static const Color textHighEmphasis = Colors.white; // For important text
   static const Color textMediumEmphasis = Colors.white70;
   static const Color textLowEmphasis = Colors.white38;
+
+  // Added missing colors as per errors
+  static const Color secondaryColor = Color(0xFF03DAC6); // Using accentColor value for consistency
+  static const Color iconColor = Colors.white70; // A general color for icons
 
   static const MaterialColor primarySwatchColor = MaterialColor(
     0xFF6200EE, // primaryColor value

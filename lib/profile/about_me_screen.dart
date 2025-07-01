@@ -4,8 +4,9 @@ import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-// REMOVED: import 'dart:io'; // Permanently removed; not needed with new image loading approach
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io'; // Re-introduced conditionally for FileImage on non-web platforms
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint; // For kIsWeb and debugPrint
+
 
 class AboutMeScreen extends StatefulWidget {
   const AboutMeScreen({super.key});
@@ -22,13 +23,13 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   final ProfileService _profileService = ProfileService(); // Using singleton
   final ImagePicker _picker = ImagePicker();
 
-  UserProfile? _userProfile; // Renamed
+  UserProfile? _userProfile;
   String? _gender;
-  String? _lookingFor; // Renamed
-  final List<String> _selectedInterests = []; // Renamed
-  XFile? _pickedImage; // Renamed
-  String? _displayedAvatarUrl; // Renamed
-  bool _isLoading = true; // Renamed
+  String? _lookingFor;
+  final List<String> _selectedInterests = [];
+  XFile? _pickedImage;
+  String? _displayedAvatarUrl;
+  bool _isLoading = true;
 
   final List<String> _genders = [
     'Male', 'Female', 'Non-binary', 'Prefer not to say'
@@ -68,32 +69,28 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
     }
 
     try {
-      // Changed getProfile to getUserProfile as per ProfileService
       final UserProfile? profile = await _profileService.getUserProfile(currentUser.id);
 
       if (profile != null) {
         _userProfile = profile;
-        // Updated to use camelCase properties from UserProfile
-        _displayNameController.text = profile.fullName ?? ''; // Use fullName, provide default empty string
-        _bioController.text = profile.bio ?? ''; // Use bio, handle nullability
+        _displayNameController.text = profile.fullName ?? '';
+        _bioController.text = profile.bio ?? '';
         _gender = profile.gender;
-        _lookingFor = profile.lookingFor; // Renamed
+        _lookingFor = profile.lookingFor;
         _selectedInterests.clear();
-        _selectedInterests.addAll(profile.interests); // Renamed
+        _selectedInterests.addAll(profile.interests);
 
-        // Updated to use profilePictureUrl (camelCase)
         if (profile.profilePictureUrl != null) {
           final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(profile.profilePictureUrl!);
           setState(() {
-            _displayedAvatarUrl = signedUrl; // Renamed
+            _displayedAvatarUrl = signedUrl;
           });
         }
       } else {
         debugPrint('Profile not found for user: ${currentUser.id}. Creating default profile.');
-        // Create a default profile object if none found, to avoid null access issues
         _userProfile = UserProfile.fromSupabaseUser(currentUser);
         _displayNameController.text = currentUser.email?.split('@').first ?? '';
-        _displayedAvatarUrl = null; // No avatar URL if profile is newly created
+        _displayedAvatarUrl = null;
       }
     } catch (e) {
       debugPrint('Error loading user profile: $e');
@@ -114,7 +111,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
         setState(() {
-          _pickedImage = image; // Renamed
+          _pickedImage = image;
           _displayedAvatarUrl = null; // Clear network image if new local image is picked
         });
         debugPrint('Image picked for update: ${image.path}');
@@ -140,7 +137,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
     });
 
     final User? currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null || _userProfile == null) { // Renamed
+    if (currentUser == null || _userProfile == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: User not logged in or profile not loaded.')),
@@ -150,11 +147,10 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       }
     }
 
-    String? newAvatarPath = _userProfile?.profilePictureUrl; // Updated to camelCase
+    String? newAvatarPath = _userProfile?.profilePictureUrl;
 
-    if (_pickedImage != null) { // Renamed
+    if (_pickedImage != null) {
       try {
-        // Pass XFile directly to service, it handles platform specific file reading
         newAvatarPath = await _profileService.uploadAnalysisPhoto(currentUser!.id, _pickedImage!);
         if (newAvatarPath == null) {
           throw Exception('Failed to upload new photo.');
@@ -171,43 +167,38 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       }
     }
 
-    // Create updated profile using copyWith with camelCase parameters
     final UserProfile updatedProfile = _userProfile!.copyWith(
-      fullName: _displayNameController.text.trim(), // Renamed
+      fullName: _displayNameController.text.trim(),
       bio: _bioController.text.trim(),
       gender: _gender,
-      interests: _selectedInterests, // Renamed
-      lookingFor: _lookingFor, // Renamed
-      isProfileComplete: true, // Assuming profile is complete after editing
-      profilePictureUrl: newAvatarPath, // Renamed
+      interests: _selectedInterests,
+      lookingFor: _lookingFor,
+      isProfileComplete: true,
+      profilePictureUrl: newAvatarPath,
     );
 
     try {
-      // Call createOrUpdateProfile with named arguments matching its signature
       await _profileService.createOrUpdateProfile(
         userId: currentUser!.id,
-        fullName: updatedProfile.fullName!, // Assuming these are not null after validation
-        dateOfBirth: updatedProfile.dateOfBirth!, // Assuming these are not null after validation
-        gender: updatedProfile.gender!, // Assuming these are not null after validation
-        bio: updatedProfile.bio!, // Assuming these are not null after validation
+        fullName: updatedProfile.fullName!,
+        dateOfBirth: updatedProfile.dateOfBirth!,
+        gender: updatedProfile.gender!,
+        bio: updatedProfile.bio!,
         profilePictureUrl: updatedProfile.profilePictureUrl,
         isProfileComplete: updatedProfile.isProfileComplete,
         interests: updatedProfile.interests,
         lookingFor: updatedProfile.lookingFor,
       );
 
-      // Save interests and intentions separately if needed, otherwise removed if covered by createOrUpdateProfile
-      // Given your original setup, these seem to be separate database updates.
       await _profileService.saveUserInterests(currentUser.id, _selectedInterests);
-      await _profileService.saveUserIntentions(currentUser.id, [_lookingFor!]); // Assuming _lookingFor is not null
+      await _profileService.saveUserIntentions(currentUser.id, [_lookingFor!]);
 
-      // Corrected to use id (camelCase) from UserProfile
       debugPrint('Profile for ${updatedProfile.id} updated successfully.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile changes saved!')),
         );
-        _loadUserProfile(); // Re-load profile to update UI with latest data and new signed URL
+        _loadUserProfile();
       }
     } catch (e) {
       debugPrint('Error saving profile changes: $e');
@@ -234,11 +225,11 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('No profile data available.', style: TextStyle(color: Colors.white, fontFamily: 'Inter')), // Ensure Inter font
+            const Text('No profile data available.', style: TextStyle(color: Colors.white, fontFamily: 'Inter')),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => _loadUserProfile(),
-              child: const Text('Try Reloading Profile', style: TextStyle(fontFamily: 'Inter')), // Ensure Inter font
+              child: const Text('Try Reloading Profile', style: TextStyle(fontFamily: 'Inter')),
             ),
           ],
         ),
@@ -254,7 +245,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
           children: [
             Text(
               'Edit Your Details',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white, fontFamily: 'Inter'),
             ),
             const SizedBox(height: 20),
 
@@ -268,13 +259,12 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                       ? (kIsWeb
                           // On web, XFile.path is a blob URL that NetworkImage can load.
                           ? NetworkImage(_pickedImage!.path) as ImageProvider<Object>
-                          // On non-web, read bytes from XFile and use MemoryImage.
-                          : MemoryImage(_pickedImage!.readAsBytesSync()) as ImageProvider<Object>
-                         )
+                          // On non-web, use FileImage with dart:io.File as it's the standard way
+                          : FileImage(File(_pickedImage!.path)) as ImageProvider<Object>)
                       : (_displayedAvatarUrl != null // Use _displayedAvatarUrl for already uploaded image
                           ? NetworkImage(_displayedAvatarUrl!) as ImageProvider<Object>
                           : null),
-                  child: _pickedImage == null && _displayedAvatarUrl == null // Check both picked and displayed for camera icon
+                  child: _pickedImage == null && _displayedAvatarUrl == null
                       ? Icon(
                           Icons.camera_alt,
                           size: 40,
@@ -376,7 +366,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
 
             Text(
               'Select Your Interests:',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontFamily: 'Inter'), // Ensure Inter font
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontFamily: 'Inter'),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -385,7 +375,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
               children: _allInterests.map((interest) {
                 final isSelected = _selectedInterests.contains(interest);
                 return FilterChip(
-                  label: Text(interest, style: const TextStyle(fontFamily: 'Inter')), // Ensure Inter font
+                  label: Text(interest, style: const TextStyle(fontFamily: 'Inter')),
                   selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
@@ -416,7 +406,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
                         'Save Changes',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(fontFamily: 'Inter'), // Ensure Inter font
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(fontFamily: 'Inter'),
                       ),
               ),
             ),

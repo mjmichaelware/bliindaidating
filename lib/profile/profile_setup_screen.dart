@@ -6,8 +6,8 @@ import 'package:bliindaidating/models/user_profile.dart'; // UserProfile updated
 import 'package:bliindaidating/services/profile_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-// REMOVED: import 'dart:io'; // Permanently removed; not needed with new image loading approach
-import 'package:flutter/foundation.dart' show kIsWeb; // For kIsWeb
+import 'dart:io'; // Re-introduced conditionally for FileImage on non-web platforms
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint; // For kIsWeb and debugPrint
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -28,7 +28,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   String? _lookingFor;
   final List<String> _selectedInterests = [];
   XFile? _pickedImage; // Stores the picked XFile
-  // No longer need _imagePreviewPath if we directly use _pickedImage bytes for display
+  String? _imagePreviewPath; // Path for displaying image preview (blob URL for web, file path for mobile)
   bool _isLoading = false;
 
   final List<String> _genders = [
@@ -61,11 +61,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (image != null) {
         setState(() {
           _pickedImage = image;
-          // _imagePreviewPath is no longer strictly needed if we load from _pickedImage bytes
-          // but we will keep it consistent with AboutMeScreen for now, assuming it could be a URL
-          // from a previous upload or a temporary path for display.
-          // For direct display from picked XFile on mobile without dart:io,
-          // we'll load bytes directly in the build method (carefully with FutureBuilder or if bytes are cached).
+          _imagePreviewPath = image.path; // Set path for preview
         });
         debugPrint('Image picked: ${image.path}');
       }
@@ -227,15 +223,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   child: CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.deepPurple.shade800,
-                    backgroundImage: _pickedImage != null
+                    backgroundImage: _imagePreviewPath != null
                         ? (kIsWeb
                             // On web, XFile.path is a blob URL that NetworkImage can load.
-                            ? NetworkImage(_pickedImage!.path) as ImageProvider<Object>
-                            // On non-web, read bytes from XFile and use MemoryImage.
-                            : MemoryImage(_pickedImage!.readAsBytesSync()) as ImageProvider<Object>
-                           )
+                            ? NetworkImage(_imagePreviewPath!) as ImageProvider<Object>
+                            // On non-web, use FileImage with dart:io.File as it's the standard way
+                            : FileImage(File(_imagePreviewPath!)) as ImageProvider<Object>)
                         : null,
-                    child: _pickedImage == null
+                    child: _imagePreviewPath == null
                         ? Icon(
                             Icons.camera_alt,
                             size: 40,

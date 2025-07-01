@@ -43,7 +43,7 @@ class DashboardMenuDrawer extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 36,
-                  backgroundColor: AppConstants.secondaryColor,
+                  backgroundColor: AppConstants.secondaryColor, // Now correctly defined
                   backgroundImage: displayAvatar,
                   child: displayAvatar == null
                       ? Icon(
@@ -76,7 +76,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.home_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.home_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'Home',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -90,7 +90,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.edit_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.edit_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'Edit Profile',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -104,7 +104,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.favorite_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.favorite_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'My Matches',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -118,7 +118,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.event_note_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.event_note_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'Local Events',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -132,7 +132,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.settings_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.settings_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'Settings',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -146,7 +146,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.info_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.info_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'About Us',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -160,7 +160,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.policy_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.policy_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'Privacy Policy',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -174,7 +174,7 @@ class DashboardMenuDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.description_rounded, color: AppConstants.iconColor),
+            leading: const Icon(Icons.description_rounded, color: AppConstants.iconColor), // Now correctly defined
             title: Text(
               'Terms of Service',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(

@@ -1,9 +1,9 @@
 // lib/services/profile_service.dart
 import 'dart:typed_data'; // For Uint8List for web uploads
-import 'package:flutter/foundation.dart' show kIsWeb; // To check if running on web
-import 'package:image_picker/image_picker.dart'; // This import is correct: XFile is part of the image_picker package listed in pubspec.yaml
-import 'package:supabase_flutter/supabase_flutter.dart'; // Supabase client
-import 'package:bliindaidating/models/user_profile.dart'; // Import the updated UserProfile model
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint; // Added debugPrint import
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bliindaidating/models/user_profile.dart';
 
 /// A service class for managing user profiles in Supabase.
 /// This includes fetching, creating/updating profiles, and handling photo uploads.
@@ -96,10 +96,6 @@ class ProfileService {
         return response; // response contains the path if successful
       } else {
         // For mobile, use File
-        // Note: The 'File' constructor from dart:io needs the actual file path.
-        // XFile.path works for both, but the actual upload method differs for web/mobile.
-        // We ensure dart:io is NOT imported in web builds via the kIsWeb check and
-        // that the ProfileSetupScreen also handles this correctly.
         final response = await _supabase.storage.from(_bucketName).upload(
               path,
               imageFile.path,
