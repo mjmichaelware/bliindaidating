@@ -47,8 +47,8 @@ class UserProfile {
     return UserProfile(
       id: user.id,
       fullName: user.email?.split('@').first, // Example: Use email prefix as default name
-      // CORRECTED: Reverted to user.createdAt as per the User class API in gotrue.
-      createdAt: user.createdAt ?? DateTime.now(), // Use user.createdAt or current time
+      // CORRECTED: Explicitly cast user.createdAt to DateTime? to resolve the type error.
+      createdAt: user.createdAt as DateTime? ?? DateTime.now(), // Use user.createdAt or current time
       isProfileComplete: false, // Assume not complete until user fills out form
       interests: const [],
       bio: null,
