@@ -4,16 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import 'package:provider/provider.dart'; // Added: Import Provider for ThemeController
 
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
 import 'package:bliindaidating/widgets/dashboard_header.dart';
-import 'package:bliindaidating/widgets/dashboard_menu_drawer.dart';
 import 'package:bliindaidating/widgets/dashboard_penalty_section.dart';
 import 'package:bliindaidating/widgets/dashboard_stat_card.dart';
 import 'package:bliindaidating/widgets/dashboard_info_card.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // Added for UserProfile model
 import 'package:bliindaidating/services/profile_service.dart'; // Added for ProfileService
+import 'package:bliindaidating/app_constants.dart'; // Added: Import AppConstants for theme values
+import 'package:bliindaidating/controllers/theme_controller.dart'; // Added: Import ThemeController
+
+// Removed: import 'package:bliindaidating/dashboard_menu_drawer.dart'; // This import must be removed or commented out
+
 
 class MainDashboardScreen extends StatefulWidget {
   final int totalDatesAttended;
