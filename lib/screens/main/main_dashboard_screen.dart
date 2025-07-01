@@ -516,11 +516,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
+    // Removed: endDrawer: DashboardMenuDrawer(...)
     return Scaffold(
-      endDrawer: DashboardMenuDrawer(
-        userProfile: _userProfile,
-        avatarUrl: _avatarUrl,
-      ),
       body: Stack(
         children: [
           const Positioned.fill(child: AnimatedOrbBackground()),
@@ -623,3 +620,4 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     );
   }
 }
+
