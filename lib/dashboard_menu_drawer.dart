@@ -17,6 +17,8 @@ class DashboardMenuDrawer extends StatelessWidget {
     final isDarkMode = themeController.isDarkMode;
 
     // Determine colors based on current theme
+    // Note: headerColor, textColor, textHighEmphasis, surfaceColor still use AppConstants
+    // as these have not caused issues and are correctly defined.
     final Color headerColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
@@ -30,8 +32,11 @@ class DashboardMenuDrawer extends StatelessWidget {
           DrawerHeader(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                // This line is the critical fix: using AppConstants.secondaryColor
-                colors: [headerColor, isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor],
+                // THIS IS THE CRITICAL FIX: Using direct Colors to bypass the AppConstants.accentColor issue
+                colors: [
+                  isDarkMode ? Colors.deepPurple.shade700 : Colors.blue.shade300,
+                  isDarkMode ? Colors.blueAccent.shade700 : Colors.purple.shade300,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
