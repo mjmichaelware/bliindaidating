@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Keep for general icons if needed, though SVGs are used for crystals
 import 'package:flutter_svg/flutter_svg.dart'; // Import for SVG assets
 import 'package:provider/provider.dart'; // Import for ThemeController
 
@@ -167,7 +167,7 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                   ),
                   glowColorTween: ColorTween(
                     begin: isDarkMode ? AppConstants.secondaryColorShade700 : AppConstants.lightSecondaryColorShade700,
-                    end: isDarkMode ? AppConstants.complementaryColor2.shade700 : AppConstants.lightPrimaryColor.shade700, // Using a complementary color
+                    end: isDarkMode ? AppConstants.complementaryColor2Shade700 : AppConstants.lightPrimaryColorShade700, // Using corrected shade
                   ),
                   blurRadius: isSmallScreen ? 20 : 40,
                   animationDuration: const Duration(seconds: 5),

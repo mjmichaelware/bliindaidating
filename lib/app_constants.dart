@@ -29,13 +29,17 @@ class AppConstants {
   static const String svgHonesty = 'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg';
   static const String svgDatePlanning = 'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg';
   static const String svgPrivacyShield = 'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg';
-  // Add other SVG assets if they are to be used in InsightCrystal
+  // All listed SVG assets for InsightCrystal
   static const String svgLoveAndDating1 = 'assets/svg/DrawKit Vector Illustration Love & Dating (1).svg';
   static const String svgLoveAndDating2 = 'assets/svg/DrawKit Vector Illustration Love & Dating (2).svg';
+  static const String svgLoveAndDating3 = 'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg'; // Added missing
   static const String svgLoveAndDating4 = 'assets/svg/DrawKit Vector Illustration Love & Dating (4).svg';
+  static const String svgLoveAndDating5 = 'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg'; // Added missing
+  static const String svgLoveAndDating6 = 'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg'; // Added missing
   static const String svgLoveAndDating7 = 'assets/svg/DrawKit Vector Illustration Love & Dating (7).svg';
   static const String svgLoveAndDating8 = 'assets/svg/DrawKit Vector Illustration Love & Dating (8).svg';
   static const String svgLoveAndDating9 = 'assets/svg/DrawKit Vector Illustration Love & Dating (9).svg';
+  static const String svgLoveAndDating10 = 'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg'; // Added missing
   static const String svgLoveAndDating11 = 'assets/svg/DrawKit Vector Illustration Love & Dating (11).svg';
   static const String svgLoveAndDating12 = 'assets/svg/DrawKit Vector Illustration Love & Dating (12).svg';
 
@@ -50,7 +54,6 @@ class AppConstants {
   static const Color secondaryColor = Color(0xFF2196F3); // Blue/Cyan from main.dart
 
   // Explicit shades for primary and secondary colors (dark theme)
-  // These are derived from Material Design color palettes for consistency
   static const Color primaryColorShade900 = Color(0xFF880E4F); // Deepest shade of primary
   static const Color primaryColorShade700 = Color(0xFFC2185B); // Darker shade of primary
   static const Color primaryColorShade400 = Color(0xFFEC407A); // Lighter shade of primary
@@ -66,6 +69,9 @@ class AppConstants {
   static const Color complementaryColor2 = Color(0xFF4CAF50); // Green for balance
   static const Color complementaryColor3 = Color(0xFFFFC107); // Amber for warmth
   static const Color complementaryColor4 = Color(0xFF9C27B0); // Another shade of purple
+
+  // Explicit shade for complementaryColor2
+  static const Color complementaryColor2Shade700 = Color(0xFF2E7D32); // Darker shade of complementaryColor2
 
   // Background and surface colors for dark theme
   static const Color backgroundColor = Colors.black; // As per your current theme
@@ -95,10 +101,9 @@ class AppConstants {
   static const Color lightBorderColor = Colors.black12;
 
   // Explicit shades for primary and secondary colors (light theme)
-  // These are examples, adjust to fit your light theme palette
   static const Color lightPrimaryColor = Color(0xFFFFCDD2); // Lighter pink for light theme
   static const Color lightPrimaryColorShade900 = Color(0xFFB71C1C); // Darker red for light theme
-  static const Color lightPrimaryColorShade700 = Color(0xFFD32F2F);
+  static const Color lightPrimaryColorShade700 = Color(0xFFD32F2F); // Added missing
   static const Color lightPrimaryColorShade400 = Color(0xFFEF5350);
 
   static const Color lightSecondaryColor = Color(0xFFBBDEFB); // Lighter blue for light theme
