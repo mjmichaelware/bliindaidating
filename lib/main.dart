@@ -7,7 +7,7 @@ import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/portal/portal_page.dart';
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
-import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Corrected class name used here
 
 import 'package:bliindaidating/profile/profile_setup_screen.dart';
 import 'package:bliindaidating/profile/profile_tabs_screen.dart';
@@ -53,11 +53,7 @@ class BlindAIDatingApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/home',
-          builder: (context, state) => const DashboardScreen(
-            totalDatesAttended: 0,
-            currentMatches: 0,
-            penaltyCount: 0,
-          ),
+          builder: (context, state) => const MainDashboardScreen(), // <--- FIX APPLIED HERE
         ),
         GoRoute(
           path: '/profile_setup',

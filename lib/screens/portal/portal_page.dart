@@ -1,16 +1,13 @@
-// lib/screens/portal/portal_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math' as math;
-import 'package:flutter_svg/flutter_svg.dart';
-// REMOVED: import 'package:flutter/foundation.dart'; // unnecessary_import
+import 'dart:math' as math; // <-- FIX APPLIED HERE
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:bliind_ai_dating/landing_page/landing_page.dart'; // Import the painters and other widgets defined within it
 
-import 'package:bliindaidating/landing_page/landing_page.dart';
-
-import 'package:bliindaidating/screens/info/about_us_screen.dart';
-import 'package:bliindaidating/screens/info/privacy_screen.dart';
-import 'package:bliindaidating/screens/info/terms_screen.dart';
+// Import info screens as they are navigated to from this page
+import 'package:bliind_ai_dating/screens/info/about_us_screen.dart'; // <-- FIX APPLIED HERE
+import 'package:bliindaidating/screens/info/privacy_screen.dart';   // <-- FIX APPLIED HERE
+import 'package:bliindaidating/screens/info/terms_screen.dart';     // <-- FIX APPLIED HERE
 
 
 class PortalPage extends StatefulWidget {
@@ -21,11 +18,6 @@ class PortalPage extends StatefulWidget {
 }
 
 class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-  String? _errorMessage;
-
   late AnimationController _backgroundNebulaController;
   late Animation<double> _backgroundNebulaAnimation;
   late AnimationController _orbGlowController;
@@ -36,6 +28,39 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
   final List<Offset> _nebulaParticles = [];
   final List<Offset> _deepSpaceParticles = [];
   final math.Random _random = math.Random();
+
+  final List<Map<String, dynamic>> _aiInsights = [
+    {
+      'title': 'DEEPER COMPATIBILITY',
+      'description': 'Our AI analyzes personality, values, and communication styles, going beyond surface-level traits to find your true match.',
+      'icon': FontAwesomeIcons.robot,
+      'color': Colors.tealAccent.shade400,
+    },
+    {
+      'title': 'REDUCED SHALLOWNESS',
+      'description': 'No endless swiping. Our algorithm presents carefully curated profiles, encouraging genuine interest based on substance.',
+      'icon': FontAwesomeIcons.filter,
+      'color': Colors.amberAccent.shade400,
+    },
+    {
+      'title': 'GUIDED CONVERSATIONS',
+      'description': 'AI-powered prompts encourage meaningful dialogue, helping you connect on a deeper level before meeting in person.',
+      'icon': FontAwesomeIcons.comments,
+      'color': Colors.lightBlueAccent.shade400,
+    },
+    {
+      'title': 'PERSONALIZED JOURNEY',
+      'description': 'The AI learns from your interactions and feedback, continuously refining its recommendations to better understand your unique preferences.',
+      'icon': FontAwesomeIcons.chartLine,
+      'color': Colors.pinkAccent.shade400,
+    },
+    {
+      'title': 'TIME EFFICIENCY',
+      'description': 'Spend less time sifting through incompatible profiles. Our AI streamlines the discovery process to bring you quality connections.',
+      'icon': FontAwesomeIcons.hourglassHalf,
+      'color': Colors.greenAccent.shade400,
+    },
+  ];
 
   @override
   void initState() {
@@ -61,69 +86,20 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
     _backgroundNebulaController.dispose();
     _orbGlowController.dispose();
     _textSparkleController.dispose();
     super.dispose();
   }
 
-  void _navigateTo(BuildContext context, Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
-  }
-
-  Future<void> _signIn() async {
-    final String email = _emailController.text.trim();
-    final String password = _passwordController.text.trim();
-
-    setState(() {
-      _errorMessage = null;
-    });
-
-    if (email.isEmpty || password.isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter both email and password.';
-      });
-      return;
-    }
-
-    if (email.isNotEmpty && password.isNotEmpty) {
-      debugPrint('Simulating sign in with email: $email, password: $password');
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      if (mounted) {
-        context.go('/home');
-      }
-    } else {
-      setState(() {
-        _errorMessage = 'Login failed. Please check your credentials.';
-      });
-    }
-  }
-
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final bool isSmallScreen = size.width < 600;
+    final bool isMediumScreen = size.width >= 600 && size.width < 1000;
 
     return Scaffold(
-      appBar: AppBar(
-        title: SvgPicture.asset(
-          'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg',
-          height: 40,
-          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-          semanticsLabel: 'Blind AI Dating Logo',
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           Positioned.fill(
@@ -161,293 +137,183 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
               ),
             ),
           ),
+          SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 20 : (isMediumScreen ? 60 : 100),
+              vertical: isSmallScreen ? 40 : (isMediumScreen ? 60 : 80),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AnimatedGlowText(
+                  text: 'The Portal to Deeper Connection',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: isSmallScreen ? 30 : (isMediumScreen ? 50 : 60),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.5,
+                  ),
+                  glowColorTween: ColorTween(
+                    begin: Colors.blueAccent.shade700,
+                    end: Colors.greenAccent.shade700,
+                  ),
+                  blurRadius: isSmallScreen ? 20 : 40,
+                  animationDuration: const Duration(seconds: 5),
+                  animationCurve: Curves.easeInOutQuad,
+                ),
+                SizedBox(height: isSmallScreen ? 30 : 60),
+                Text(
+                  'Your journey to a truly compatible match begins here. Discover how our advanced AI transforms dating.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: isSmallScreen ? 16 : 20,
+                    color: Colors.white.withOpacity(0.8),
+                    height: 1.5,
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 40 : 80),
 
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Card(
-                    color: Colors.white.withAlpha((255 * 0.1).round()),
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Welcome to Blind AI Dating',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Discover meaningful connections based on shared interests and values, powered by AI.',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white70),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: () => _navigateTo(context, const AboutUsScreen()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple.shade400,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            ),
-                            child: const Text('About Us', style: TextStyle(color: Colors.white)),
-                          ),
-                          const SizedBox(height: 10),
-                          ElevatedButton(
-                            onPressed: () => _navigateTo(context, const PrivacyScreen()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple.shade400,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            ),
-                            child: const Text('Privacy Policy', style: TextStyle(color: Colors.white)),
-                          ),
-                          const SizedBox(height: 10),
-                          ElevatedButton(
-                            onPressed: () => _navigateTo(context, const TermsScreen()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple.shade400,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            ),
-                            child: const Text('Terms of Service', style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
+                // AI Insights Section
+                Align(
+                  alignment: Alignment.center,
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: isSmallScreen ? 20 : 40,
+                    runSpacing: isSmallScreen ? 20 : 40,
+                    children: _aiInsights.asMap().entries.map<Widget>((entry) { // <-- FIX APPLIED HERE
+                      final index = entry.key;
+                      final data = entry.value;
+                      return InsightCrystal(
+                        title: data['title'] as String,
+                        description: data['description'] as String,
+                        icon: data['icon'] as IconData,
+                        baseColor: data['color'] as Color,
+                        isSmallScreen: isSmallScreen,
+                        staggerDelay: index.toDouble(),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 60 : 100),
+
+                // Login/Signup Buttons
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.05),
+                        blurRadius: 30,
+                        spreadRadius: 5,
                       ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Ready to Manifest Your Destiny?',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: isSmallScreen ? 22 : 30,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? 20 : 30),
+                      SizedBox(
+                        width: isSmallScreen ? double.infinity : 300,
+                        child: ElevatedButton(
+                          onPressed: () => context.go('/login'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurpleAccent,
+                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 15 : 20),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          ),
+                          child: Text(
+                            'Login',
+                            style: TextStyle(fontSize: isSmallScreen ? 18 : 22, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? 10 : 15),
+                      SizedBox(
+                        width: isSmallScreen ? double.infinity : 300,
+                        child: OutlinedButton(
+                          onPressed: () => context.go('/signup'), // Corrected route to signup
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
+                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 15 : 20),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          ),
+                          child: Text(
+                            'Register',
+                            style: TextStyle(fontSize: isSmallScreen ? 18 : 22, color: Colors.deepPurpleAccent),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? 40 : 80),
+
+                // Footer Links
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: FadeTransition(
+                    opacity: _textSparkleAnimation, // Reuse existing animation
+                    child: Column(
+                      children: [
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: isSmallScreen ? 16 : 24,
+                          runSpacing: isSmallScreen ? 8 : 12,
+                          children: [
+                            FooterNavLink(
+                              label: 'About Us',
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen())),
+                              isSmallScreen: isSmallScreen,
+                              animation: _textSparkleAnimation,
+                            ),
+                            FooterNavLink(
+                              label: 'Privacy Policy',
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyScreen())),
+                              isSmallScreen: isSmallScreen,
+                              animation: _textSparkleAnimation,
+                            ),
+                            FooterNavLink(
+                              label: 'Terms of Service',
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())),
+                              isSmallScreen: isSmallScreen,
+                              animation: _textSparkleAnimation,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: isSmallScreen ? 10 : 20),
+                        Text(
+                          '© 2025 Blind AI Dating.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: isSmallScreen ? 10 : 12,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-
-                  // Login/Signup Form Section
-                  Card(
-                    color: Colors.white.withAlpha((255 * 0.1).round()),
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              labelText: 'Email',
-                              labelStyle: const TextStyle(color: Colors.white70),
-                              hintText: 'Enter your email',
-                              hintStyle: TextStyle(color: Colors.white.withAlpha((255 * 0.5).round())),
-                              filled: true,
-                              fillColor: Colors.white.withAlpha((255 * 0.05).round()),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(color: Colors.deepPurpleAccent.withAlpha((255 * 0.5).round())),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Colors.purpleAccent, width: 2),
-                              ),
-                            ),
-                            style: const TextStyle(color: Colors.white),
-                            cursorColor: Colors.purpleAccent,
-                          ),
-                          const SizedBox(height: 20),
-                          TextField(
-                            controller: _passwordController,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              labelStyle: const TextStyle(color: Colors.white70),
-                              hintText: 'Enter your password',
-                              hintStyle: TextStyle(color: Colors.white.withAlpha((255 * 0.5).round())),
-                              filled: true,
-                              fillColor: Colors.white.withAlpha((255 * 0.05).round()),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: BorderSide(color: Colors.deepPurpleAccent.withAlpha((255 * 0.5).round())),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Colors.purpleAccent, width: 2),
-                              ),
-                            ),
-                            style: const TextStyle(color: Colors.white),
-                            cursorColor: Colors.purpleAccent,
-                          ),
-                          if (_errorMessage != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 15.0),
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          const SizedBox(height: 30),
-
-                          // Login Button
-                          ElevatedButton(
-                            onPressed: _signIn,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purpleAccent,
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              elevation: 5,
-                            ),
-                            child: Text(
-                              'Log In',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: () {
-                              context.go('/signup');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              elevation: 5,
-                            ),
-                            child: Text(
-                              'Create Account',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // NEW: "Our Approach" Section
-                  Card(
-                    color: Colors.white.withAlpha((255 * 0.1).round()),
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg',
-                            height: isSmallScreen ? 150 : 200,
-                            colorFilter: ColorFilter.mode(Colors.white70.withAlpha((255 * 0.7).round()), BlendMode.srcIn),
-                            semanticsLabel: 'Two people lying down and laughing together',
-                          ),
-                          const SizedBox(height: 20),
-
-                          Text(
-                            'Our Approach: Go On Your Last First Date',
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'We’re love scientists, engineering meaningful connections.',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.deepPurpleAccent,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-
-                          Text(
-                            'Blind AI Dating is built on the belief that true connections blossom from shared values and genuine understanding, not fleeting glances. Our advanced AI carefully matches you based on deep compatibility, encouraging conversations that lead to promising real-life dates, rather than endless swiping. We focus on getting you off the app and into a relationship that lasts.',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white70),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 30),
-
-                          Text(
-                            'What Our Users Will Say:',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-
-                          _buildTestimonialCard(
-                            context,
-                            '"I never thought I\'d find someone who truly understood me. Blind AI Dating connected us on a level no other app could. It really was my last first date!"',
-                            '— Alex R., Found True Connection',
-                          ),
-                          const SizedBox(height: 15),
-                          _buildTestimonialCard(
-                            context,
-                            '"The conversations felt so natural and deep from the start. Thanks to Blind AI Dating, we\'re building a future together."',
-                            '— Jamie L., Engaged!',
-                          ),
-                          const SizedBox(height: 15),
-                          _buildTestimonialCard(
-                            context,
-                            '"Finally, an app that prioritizes substance over surface. The AI insights were spot on, leading me to someone I genuinely adore."',
-                            '— Chris V., Authentic Match',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTestimonialCard(BuildContext context, String quote, String author) {
-    return Card(
-      color: Colors.deepPurple.shade700.withAlpha((255 * 0.4).round()),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              quote,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                    fontStyle: FontStyle.italic,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              author,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w600,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
