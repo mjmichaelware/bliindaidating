@@ -1,7 +1,8 @@
+// lib/profile/profile_tabs_screen.dart
 import 'package:flutter/material.dart';
-import 'about_me_screen.dart';
-import 'availability_screen.dart';
-import 'interests_screen.dart';
+import 'package:bliindaidating/profile/about_me_screen.dart'; // Ensure correct path
+import 'package:bliindaidating/profile/availability_screen.dart'; // Ensure correct path
+import 'package:bliindaidating/profile/interests_screen.dart'; // Ensure correct path
 
 class ProfileTabsScreen extends StatelessWidget {
   const ProfileTabsScreen({super.key});
@@ -18,7 +19,7 @@ class ProfileTabsScreen extends StatelessWidget {
           title: const Text(
             'Edit Profile',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: 'Inter', // Assuming Inter font is declared
               fontWeight: FontWeight.bold,
               fontSize: 20,
               color: Colors.white,

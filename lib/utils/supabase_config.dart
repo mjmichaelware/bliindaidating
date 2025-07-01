@@ -9,4 +9,7 @@ class SupabaseConfig {
       debug: true,
     );
   }
+
+  // Add a static getter for the SupabaseClient instance
+  static SupabaseClient get client => Supabase.instance.client;
 }

@@ -1,12 +1,13 @@
 // lib/profile/profile_setup_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Supabase import
-// REMOVED: import 'package:bliindaidating/services/auth_service.dart'; // Unused import
-import 'package:bliindaidating/models/user_profile.dart'; // For profile data structure
-// REMOVED: import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Unused import
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is updated with snake_case properties
+import 'package:bliindaidating/services/profile_service.dart';
 import 'package:go_router/go_router.dart';
-// REMOVED: import 'package:flutter/foundation.dart'; // unnecessary_import (debugPrint is now implicitly available)
+import 'package:image_picker/image_picker.dart';
+import 'dart:io'; // For File type, used with FileImage on mobile
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -17,15 +18,18 @@ class ProfileSetupScreen extends StatefulWidget {
 }
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _displayNameController = TextEditingController();
-  final TextEditingController _bioController = TextEditingController();
+  final _form_key = GlobalKey<FormState>(); // Renamed to snake_case
+  final TextEditingController _display_name_controller = TextEditingController(); // Renamed to snake_case
+  final TextEditingController _bio_controller = TextEditingController(); // Renamed to snake_case
+  final ProfileService _profile_service = ProfileService(); // Renamed to snake_case
+  final ImagePicker _picker = ImagePicker();
 
   String? _gender;
-  String? _lookingFor;
-  final List<String> _selectedInterests = [];
-  bool _isLoading = false;
-  // REMOVED: String? _statusMessage; // unused_field, replaced with SnackBar directly
+  String? _looking_for; // Renamed to snake_case
+  final List<String> _selected_interests = []; // Renamed to snake_case
+  XFile? _picked_image; // Renamed to snake_case
+  String? _image_preview_path; // Renamed to snake_case
+  bool _is_loading = false; // Renamed to snake_case
 
   final List<String> _genders = [
     'Male',
@@ -33,12 +37,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     'Non-binary',
     'Prefer not to say'
   ];
-  final List<String> _lookingForOptions = [
+  final List<String> _looking_for_options = [ // Renamed to snake_case
     'Short-term dating',
     'Long-term relationship',
     'Friendship'
   ];
-  final List<String> _allInterests = [
+  final List<String> _all_interests = [ // Renamed to snake_case
     'Reading', 'Hiking', 'Cooking', 'Gaming', 'Music', 'Movies', 'Travel',
     'Photography', 'Sports', 'Art', 'Writing', 'Dancing', 'Volunteering',
     'Fitness', 'Tech', 'Tasting', 'Animals', 'Fashion'
@@ -46,81 +50,111 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   void dispose() {
-    _displayNameController.dispose();
-    _bioController.dispose();
+    _display_name_controller.dispose();
+    _bio_controller.dispose();
     super.dispose();
   }
 
-  void _saveProfile() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      setState(() {
-        _isLoading = true;
-        // _statusMessage = null; // Removed
-      });
-
-      // Get the current user's ID from Supabase Auth
-      final User? supabaseUser = Supabase.instance.client.auth.currentUser;
-      if (supabaseUser == null) {
-        if (mounted) { // Check mounted before using BuildContext across async gap
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error: User not logged in to Supabase! Please log in again.')),
-          );
-          setState(() { _isLoading = false; });
-          context.go('/login'); // Redirect to login if no Supabase user
-        }
-        return;
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _picked_image = image;
+          _image_preview_path = image.path;
+        });
+        debugPrint('Image picked: ${image.path}');
       }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
-      // Create a UserProfile object with the collected data
-      final UserProfile updatedProfile = UserProfile(
-        uid: supabaseUser.id,
-        email: supabaseUser.email ?? 'no-email@supabase.com',
-        displayName: _displayNameController.text.trim(),
-        bio: _bioController.text.trim(),
-        gender: _gender,
-        interests: _selectedInterests,
-        lookingFor: _lookingFor ?? '',
-        createdAt: DateTime.now(),
-        profileComplete: true,
-        lastUpdated: DateTime.now(),
-      );
+  void _saveProfile() async {
+    if (!_form_key.currentState!.validate()) {
+      return;
+    }
+    _form_key.currentState!.save();
 
+    setState(() {
+      _is_loading = true;
+    });
+
+    final User? supabase_user = Supabase.instance.client.auth.currentUser;
+    if (supabase_user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: User not logged in! Please log in again.')),
+        );
+        setState(() { _is_loading = false; });
+        context.go('/login');
+      }
+      return;
+    }
+
+    String? uploaded_photo_path;
+    if (_picked_image != null) {
       try {
-        // --- Supabase Database: Save Profile ---
-        // You need to have a table named 'profiles' (or 'users') in your Supabase project
-        // with columns matching your UserProfile model.
-        await Supabase.instance.client
-            .from('profiles') // Assuming your table is named 'profiles'
-            .upsert(updatedProfile.toMap());
-
-        debugPrint('User profile ${updatedProfile.uid} updated successfully in Supabase.');
-        if (mounted) { // Check mounted before using BuildContext across async gap
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile saved successfully!')),
-          );
-          context.go('/home'); // Navigate to the main dashboard
-        }
-      } on PostgrestException catch (e) {
-        debugPrint('Supabase database error saving profile: ${e.message}');
-        if (mounted) { // Check mounted before using BuildContext across async gap
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to save profile: ${e.message}')),
-          );
+        uploaded_photo_path = await _profile_service.uploadAnalysisPhoto(supabase_user.id, _picked_image!);
+        if (uploaded_photo_path == null) {
+          throw Exception('Failed to get uploaded photo path.');
         }
       } catch (e) {
-        debugPrint('Unexpected error saving profile: $e');
-        if (mounted) { // Check mounted before using BuildContext across async gap
+        debugPrint('Error uploading photo: $e');
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
+            SnackBar(content: Text('Failed to upload photo: ${e.toString()}')),
           );
+          setState(() { _is_loading = false; });
+          return;
         }
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
       }
+    }
+
+    // FIXED: Robustly handle createdAt from User object for UserProfile constructor
+    final DateTime final_created_at = (supabase_user.createdAt is DateTime)
+        ? (supabase_user.createdAt as DateTime)
+        : DateTime.now(); // Fallback if createdAt is null or not DateTime
+
+
+    UserProfile new_profile = UserProfile(
+      uid: supabase_user.id,
+      email: supabase_user.email ?? '',
+      display_name: _display_name_controller.text.trim(),
+      bio: _bio_controller.text.trim(),
+      gender: _gender,
+      interests: _selected_interests,
+      looking_for: _looking_for ?? '',
+      profile_complete: true,
+      created_at: final_created_at, // Use the robustly determined DateTime
+      avatar_url: uploaded_photo_path,
+    );
+
+    try {
+      await _profile_service.createOrUpdateProfile(new_profile);
+      debugPrint('User profile ${new_profile.uid} updated successfully in Supabase.');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile saved successfully!')),
+        );
+        context.go('/home');
+      }
+    } catch (e) {
+      debugPrint('Error saving profile data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile data: ${e.toString()}')),
+        );
+      }
+    } finally {
+      setState(() {
+        _is_loading = false;
+      });
     }
   }
 
@@ -135,7 +169,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
-          key: _formKey,
+          key: _form_key,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -145,8 +179,29 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 20),
 
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.deepPurple.shade800,
+                    backgroundImage: _image_preview_path != null
+                        ? (kIsWeb ? NetworkImage(_image_preview_path!) : FileImage(File(_image_preview_path!))) as ImageProvider
+                        : null,
+                    child: _image_preview_path == null
+                        ? Icon(
+                            Icons.camera_alt,
+                            size: 40,
+                            color: Colors.white.withOpacity(0.7),
+                          )
+                        : null,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
               TextFormField(
-                controller: _displayNameController,
+                controller: _display_name_controller,
                 decoration: const InputDecoration(
                   labelText: 'Display Name',
                   border: OutlineInputBorder(),
@@ -162,7 +217,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 16),
 
               TextFormField(
-                controller: _bioController,
+                controller: _bio_controller,
                 decoration: const InputDecoration(
                   labelText: 'About Me (Bio)',
                   alignLabelWithHint: true,
@@ -192,9 +247,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: Text(gender),
                   );
                 }).toList(),
-                onChanged: (String? newValue) {
+                onChanged: (String? new_value) {
                   setState(() {
-                    _gender = newValue;
+                    _gender = new_value;
                   });
                 },
                 validator: (value) {
@@ -207,21 +262,21 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-                value: _lookingFor,
+                value: _looking_for,
                 decoration: const InputDecoration(
                   labelText: 'Looking For',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.favorite),
                 ),
-                items: _lookingForOptions.map((String option) {
+                items: _looking_for_options.map((String option) {
                   return DropdownMenuItem<String>(
                     value: option,
                     child: Text(option),
                   );
                 }).toList(),
-                onChanged: (String? newValue) {
+                onChanged: (String? new_value) {
                   setState(() {
-                    _lookingFor = newValue;
+                    _looking_for = new_value;
                   });
                 },
                 validator: (value) {
@@ -241,17 +296,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               Wrap(
                 spacing: 8.0,
                 runSpacing: 4.0,
-                children: _allInterests.map((interest) {
-                  final isSelected = _selectedInterests.contains(interest);
+                children: _all_interests.map((interest) {
+                  final is_selected = _selected_interests.contains(interest);
                   return FilterChip(
                     label: Text(interest),
-                    selected: isSelected,
+                    selected: is_selected,
                     onSelected: (selected) {
                       setState(() {
                         if (selected) {
-                          _selectedInterests.add(interest);
+                          _selected_interests.add(interest);
                         } else {
-                          _selectedInterests.remove(interest);
+                          _selected_interests.remove(interest);
                         }
                       });
                     },
@@ -264,14 +319,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
               Center(
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveProfile,
+                  onPressed: _is_loading ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.secondary,
                     foregroundColor: Theme.of(context).colorScheme.onSecondary,
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: _isLoading
+                  child: _is_loading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : Text(
                           'Complete Profile',
