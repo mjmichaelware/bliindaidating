@@ -14,13 +14,13 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # --- Supabase Dependency ---
-  supabase_flutter: ^2.9.1 # <--- ENSURE THIS IS ^2.9.1 (or ^2.0.0)
+  supabase_flutter: ^2.9.1
   flutter_dotenv: ^5.2.1
   image_picker: ^1.0.8
 
   font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.11
-  # google_fonts: # REMOVED
+  provider: ^6.1.2 # Added for state management (e.g., theme)
 
 dev_dependencies:
   flutter_test:

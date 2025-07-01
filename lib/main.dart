@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async'; // Required for StreamSubscription and ChangeNotifier
+import 'package:provider/provider.dart'; // Import for state management
 
 // Local imports - Ensure these files exist in your project structure
 import 'package:bliindaidating/utils/supabase_config.dart';
 import 'package:bliindaidating/app_constants.dart'; // Import app_constants for theme
+import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 
 // Screens imports - Ensure all these paths are correct and these files exist.
 // If any are missing, you will need to create them.
@@ -43,12 +45,18 @@ class NotFoundScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppConstants.backgroundColor, // Use constant for consistency
+    // Access theme colors dynamically using Provider
+    final theme = Provider.of<ThemeController>(context);
+    return Scaffold(
+      backgroundColor: theme.isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
       body: Center(
         child: Text(
           '404 - Page Not Found',
-          style: TextStyle(color: AppConstants.textColor, fontSize: 24, fontFamily: 'Inter'),
+          style: TextStyle(
+            color: theme.isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+            fontSize: AppConstants.fontSizeLarge,
+            fontFamily: 'Inter',
+          ),
         ),
       ),
     );
@@ -60,7 +68,13 @@ Future<void> main() async {
   try {
     // Initialize Supabase using the centralized SupabaseConfig
     await SupabaseConfig.init();
-    runApp(const BlindAIDatingApp());
+    runApp(
+      // Provide ThemeController to the widget tree
+      ChangeNotifierProvider(
+        create: (context) => ThemeController(),
+        child: const BlindAIDatingApp(),
+      ),
+    );
   } catch (e) {
     debugPrint('Fatal Error: Supabase initialization failed: $e');
     runApp(
@@ -118,7 +132,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           builder: (context, state) => const MainDashboardScreen(
             totalDatesAttended: 0, // TODO: Fetch from Supabase after authentication
             currentMatches: 0,     // TODO: Fetch from Supabase after authentication
-            penaltyCount: 0,       // TODO: Fetch from Supabase after authentication
+            penaltyCount: 0,      // TODO: Fetch from Supabase after authentication
           ),
         ),
         GoRoute(
@@ -222,41 +236,13 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Consume the ThemeController to get the current theme
+    final themeController = Provider.of<ThemeController>(context);
+
     return MaterialApp.router(
       title: AppConstants.appName, // Use app name from constants
-      // Apply theme using AppConstants for consistency and Material 3
-      theme: ThemeData.dark(useMaterial3: true).copyWith(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppConstants.primaryColor),
-        scaffoldBackgroundColor: AppConstants.backgroundColor,
-        textTheme: Theme.of(context).textTheme.apply(
-          fontFamily: 'Inter', // Apply Inter font globally
-          bodyColor: AppConstants.textColor,
-          displayColor: AppConstants.textColor,
-        ),
-        // Define other theme properties using AppConstants for consistency
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppConstants.surfaceColor,
-          foregroundColor: AppConstants.textHighEmphasis,
-          titleTextStyle: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppConstants.textHighEmphasis,
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppConstants.primaryColor,
-            foregroundColor: AppConstants.textHighEmphasis,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: AppConstants.spacingLarge, vertical: AppConstants.spacingMedium),
-            textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
-        // Add more theme components (text input, card, dialog, etc.) as needed
-      ),
+      // Apply theme dynamically from ThemeController
+      theme: themeController.currentTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );

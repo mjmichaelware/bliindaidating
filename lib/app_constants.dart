@@ -9,6 +9,7 @@ class AppConstants {
   static const String landingHeadline1 = 'Tired of loneliness? Craving real connection?';
   static const String landingHeadline2 = 'Your journey to belonging begins here.';
   static const String landingTapPrompt = 'Tap the light to reveal your destiny';
+  static const String landingTagline = 'Find your connection in the stars'; // New tagline
 
   // Access Portal Screen Content
   static const String portalIntroTitle = 'Your Journey to Authentic Connection';
@@ -28,66 +29,91 @@ class AppConstants {
   static const String svgHonesty = 'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg';
   static const String svgDatePlanning = 'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg';
   static const String svgPrivacyShield = 'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg';
+  // Add other SVG assets if they are to be used in InsightCrystal
+  static const String svgLoveAndDating1 = 'assets/svg/DrawKit Vector Illustration Love & Dating (1).svg';
+  static const String svgLoveAndDating2 = 'assets/svg/DrawKit Vector Illustration Love & Dating (2).svg';
+  static const String svgLoveAndDating4 = 'assets/svg/DrawKit Vector Illustration Love & Dating (4).svg';
+  static const String svgLoveAndDating7 = 'assets/svg/DrawKit Vector Illustration Love & Dating (7).svg';
+  static const String svgLoveAndDating8 = 'assets/svg/DrawKit Vector Illustration Love & Dating (8).svg';
+  static const String svgLoveAndDating9 = 'assets/svg/DrawKit Vector Illustration Love & Dating (9).svg';
+  static const String svgLoveAndDating11 = 'assets/svg/DrawKit Vector Illustration Love & Dating (11).svg';
+  static const String svgLoveAndDating12 = 'assets/svg/DrawKit Vector Illustration Love & Dating (12).svg';
+
 
   // General UI text
   static const String loginButtonText = 'Log In';
   static const String signupButtonText = 'Sign Up';
 
-  // --- Theme Constants (Added for consistency) ---
-  static const Color primaryColor = Color(0xFF6200EE); // Deep Purple
-  static const Color accentColor = Color(0xFF03DAC6); // Teal - Often used as secondary in Material Design
-  static const Color backgroundColor = Colors.black; // As per your current theme
-  static const Color surfaceColor = Color(0xFF121212); // Dark surface for cards, etc.
-  static const Color errorColor = Color(0xFFCF6679); // Error red
+  // --- Theme Constants ---
+  // Primary and Secondary colors (keeping your original definitions from your main.dart theme)
+  static const Color primaryColor = Color(0xFFE91E63); // Pink/Red from main.dart
+  static const Color secondaryColor = Color(0xFF2196F3); // Blue/Cyan from main.dart
 
-  static const Color textColor = Colors.white70; // Your current text color
+  // New colors to expand the palette based on the cosmic theme suggestion
+  static const Color tertiaryColor = Color(0xFF8E24AA); // A deep purple
+  static const Color complementaryColor1 = Color(0xFF00BCD4); // Cyan for contrast
+  static const Color complementaryColor2 = Color(0xFF4CAF50); // Green for balance
+  static const Color complementaryColor3 = Color(0xFFFFC107); // Amber for warmth
+  static const Color complementaryColor4 = Color(0xFF9C27B0); // Another shade of purple
+
+  // Background and surface colors for dark theme
+  static const Color backgroundColor = Colors.black; // As per your current theme
+  static const Color surfaceColor = Color(0xFF1A1A1A); // Darker surface for cards/containers
+  static const Color cardColor = Color(0xFF2C2C2C); // Slightly lighter than surface for cards
+  static const Color dialogBackgroundColor = Color(0xFF2A2A2A); // Background for modals/dialogs
+
+  // Text colors for dark theme
+  static const Color textColor = Colors.white; // Changed from white70 for better visibility as per original landing page
   static const Color textHighEmphasis = Colors.white; // For important text
   static const Color textMediumEmphasis = Colors.white70;
-  static const Color textLowEmphasis = Colors.white38;
+  static const Color textLowEmphasis = Colors.white54;
+  static const Color iconColor = Colors.white; // A general color for icons
+  static const Color borderColor = Colors.white; // For borders on elements
+  static const Color errorColor = Color(0xFFCF6679); // Error red
 
-  // Added missing colors as per errors
-  static const Color secondaryColor = Color(0xFF03DAC6); // Using accentColor value for consistency
-  static const Color iconColor = Colors.white70; // A general color for icons
+  // Light Theme Colors (for theme toggle)
+  static const Color lightBackgroundColor = Color(0xFFF0F2F5);
+  static const Color lightSurfaceColor = Color(0xFFFFFFFF);
+  static const Color lightCardColor = Color(0xFFF8F8F8);
+  static const Color lightDialogBackgroundColor = Color(0xFFFFFFFF);
+  static const Color lightTextColor = Colors.black87;
+  static const Color lightTextHighEmphasis = Colors.black;
+  static const Color lightTextMediumEmphasis = Colors.black54;
+  static const Color lightTextLowEmphasis = Colors.black38;
+  static const Color lightIconColor = Colors.black87;
+  static const Color lightBorderColor = Colors.black12;
 
-  static const MaterialColor primarySwatchColor = MaterialColor(
-    0xFF6200EE, // primaryColor value
-    <int, Color>{
-      50: Color(0xFFEDE7F9),
-      100: Color(0xFFD1C4E9),
-      200: Color(0xFFB39DDB),
-      300: Color(0xFF9575CD),
-      400: Color(0xFF7E57C2),
-      500: Color(0xFF6200EE),
-      600: Color(0xFF5E35B1),
-      700: Color(0xFF512DA8),
-      800: Color(0xFF4527A0),
-      900: Color(0xFF311B92),
-    },
-  );
 
-  // Font Family is set globally in main.dart, but specific TextStyles can be defined here
-  static const TextStyle headlineLarge = TextStyle(
-    fontSize: 32.0,
-    fontWeight: FontWeight.bold,
-    color: textHighEmphasis,
-    fontFamily: 'Inter',
-  );
-
-  static const TextStyle bodyMedium = TextStyle(
-    fontSize: 16.0,
-    color: textMediumEmphasis,
-    fontFamily: 'Inter',
-  );
-
-  // Spacing and Padding
+  // Spacing
   static const double spacingExtraSmall = 4.0;
   static const double spacingSmall = 8.0;
   static const double spacingMedium = 16.0;
   static const double spacingLarge = 24.0;
   static const double spacingExtraLarge = 32.0;
+  static const double spacingXXL = 48.0; // Added for larger gaps
+  static const double spacingXXXL = 64.0; // Added for very large gaps
+  static const double spacingXXXXL = 96.0; // Added for extra large gaps
+
 
   // Border Radius
   static const double borderRadiusSmall = 4.0;
   static const double borderRadiusMedium = 8.0;
-  static const double borderRadiusLarge = 12.0;
+  static const double borderRadiusLarge = 16.0;
+  static const double borderRadiusExtraLarge = 25.0; // Existing value for InsightCrystal
+  static const double borderRadiusCircular = 1000.0;
+
+  // Font Sizes (example, adjust as needed based on design)
+  static const double fontSizeSmall = 12.0;
+  static const double fontSizeMedium = 16.0;
+  static const double fontSizeLarge = 20.0;
+  static const double fontSizeExtraLarge = 24.0;
+  static const double fontSizeTitle = 36.0;
+  static const double fontSizeHeadline = 28.0;
+  static const double fontSizeBody = 16.0;
+
+  // Animation Durations (example)
+  static const Duration animationDurationShort = Duration(milliseconds: 200);
+  static const Duration animationDurationMedium = Duration(milliseconds: 500);
+  static const Duration animationDurationLong = Duration(seconds: 1);
+  static const Duration animationDurationExtraLong = Duration(seconds: 2);
 }
