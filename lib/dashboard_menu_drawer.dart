@@ -30,7 +30,7 @@ class DashboardMenuDrawer extends StatelessWidget {
           DrawerHeader(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                // Replaced AppConstants.accentColor with AppConstants.secondaryColor
+                // This line is the critical fix: using AppConstants.secondaryColor
                 colors: [headerColor, isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
