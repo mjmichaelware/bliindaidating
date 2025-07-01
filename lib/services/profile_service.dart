@@ -1,395 +1,166 @@
-// lib/profile/profile_setup_screen.dart
+// lib/services/profile_service.dart
+import 'dart:typed_data'; // For Uint8List for web uploads
+import 'package:flutter/foundation.dart' show kIsWeb; // To check if running on web
+import 'package:image_picker/image_picker.dart'; // This import is correct: XFile is part of the image_picker package listed in pubspec.yaml
+import 'package:supabase_flutter/supabase_flutter.dart'; // Supabase client
+import 'package:bliindaidating/models/user_profile.dart'; // Import the updated UserProfile model
 
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is updated with camelCase properties
-import 'package:bliindaidating/services/profile_service.dart';
-import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io'; // For File type, used with FileImage on mobile
-import 'package:flutter/foundation.dart' show kIsWeb; // For kIsWeb
+/// A service class for managing user profiles in Supabase.
+/// This includes fetching, creating/updating profiles, and handling photo uploads.
+class ProfileService {
+  final SupabaseClient _supabase = Supabase.instance.client;
+  final String _profileTableName = 'profiles'; // Replace with your actual profiles table name
+  final String _bucketName = 'analysis_photos'; // Supabase storage bucket name
 
-class ProfileSetupScreen extends StatefulWidget {
-  const ProfileSetupScreen({super.key}); // FIX: Added const to constructor
+  // Private constructor for singleton pattern
+  ProfileService._privateConstructor();
 
-  @override
-  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
-}
+  // Singleton instance
+  static final ProfileService _instance = ProfileService._privateConstructor();
 
-class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
-  final _formKey = GlobalKey<FormState>(); // Renamed to camelCase
-  final TextEditingController _fullNameController = TextEditingController(); // Renamed to camelCase
-  final TextEditingController _bioController = TextEditingController(); // Renamed to camelCase
-  final ProfileService _profileService = ProfileService(); // Renamed to camelCase
-  final ImagePicker _picker = ImagePicker();
-
-  String? _gender;
-  DateTime? _dateOfBirth; // Added for date of birth
-  String? _lookingFor; // Renamed to camelCase
-  final List<String> _selectedInterests = []; // Renamed to camelCase
-  XFile? _pickedImage; // Renamed to camelCase
-  String? _imagePreviewPath; // Renamed to camelCase
-  bool _isLoading = false; // Renamed to camelCase
-
-  final List<String> _genders = [
-    'Male',
-    'Female',
-    'Non-binary',
-    'Prefer not to say'
-  ];
-  final List<String> _lookingForOptions = [ // Renamed to camelCase
-    'Short-term dating',
-    'Long-term relationship',
-    'Friendship'
-  ];
-  final List<String> _allInterests = [ // Renamed to camelCase
-    'Reading', 'Hiking', 'Cooking', 'Gaming', 'Music', 'Movies', 'Travel',
-    'Photography', 'Sports', 'Art', 'Writing', 'Dancing', 'Volunteering',
-    'Fitness', 'Tech', 'Tasting', 'Animals', 'Fashion'
-  ];
-
-  @override
-  void dispose() {
-    _fullNameController.dispose();
-    _bioController.dispose();
-    super.dispose();
+  // Factory constructor to return the same instance
+  factory ProfileService() {
+    return _instance;
   }
 
-  Future<void> _pickImage() async {
+  /// Fetches a user's profile by their user ID.
+  /// Returns null if the profile does not exist.
+  Future<UserProfile?> getUserProfile(String userId) async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        setState(() {
-          _pickedImage = image;
-          _imagePreviewPath = image.path;
-        });
-        debugPrint('Image picked: ${image.path}');
+      final response = await _supabase
+          .from(_profileTableName)
+          .select()
+          .eq('id', userId)
+          .single(); // Use .single() to expect at most one row
+
+      if (response.isNotEmpty) {
+        return UserProfile.fromJson(response);
       }
-    } catch (e) {
-      debugPrint('Error picking image: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: ${e.toString()}')),
-        );
-      }
+      return null;
+    } catch (e, stackTrace) {
+      debugPrint('Error getting user profile for $userId: $e');
+      debugPrint(stackTrace.toString());
+      return null;
     }
   }
 
-  Future<void> _selectDateOfBirth(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 18)), // Default to 18 years ago
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // Must be at least 18
-    );
-    if (picked != null && picked != _dateOfBirth) {
-      setState(() {
-        _dateOfBirth = picked;
-      });
-    }
-  }
-
-  void _saveProfile() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    _formKey.currentState!.save();
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    final User? supabaseUser = Supabase.instance.client.auth.currentUser;
-    if (supabaseUser == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: User not logged in! Please log in again.')),
-        );
-        setState(() { _isLoading = false; });
-        context.go('/login');
-      }
-      return;
-    }
-
-    String? uploadedPhotoPath;
-    if (_pickedImage != null) {
-      try {
-        uploadedPhotoPath = await _profileService.uploadAnalysisPhoto(supabaseUser.id, File(_pickedImage!.path)); // FIX: Use File() constructor
-        if (uploadedPhotoPath == null) {
-          throw Exception('Failed to get uploaded photo path.');
-        }
-      } catch (e) {
-        debugPrint('Error uploading photo: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to upload photo: ${e.toString()}')),
-          );
-          setState(() { _isLoading = false; });
-          return;
-        }
-      }
-    }
-
-    // FIX: Ensure dateOfBirth and gender are selected before proceeding
-    if (_dateOfBirth == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select your date of birth.')),
-        );
-        setState(() { _isLoading = false; });
-      }
-      return;
-    }
-    if (_gender == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select your gender.')),
-        );
-        setState(() { _isLoading = false; });
-      }
-      return;
-    }
-    if (_lookingFor == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select what you are looking for.')),
-        );
-        setState(() { _isLoading = false; });
-      }
-      return;
-    }
-
-
+  /// Creates a new user profile or updates an existing one.
+  Future<void> createOrUpdateProfile({
+    required String userId,
+    required String fullName,
+    required DateTime dateOfBirth,
+    required String gender,
+    required String bio,
+    String? profilePictureUrl,
+    bool isProfileComplete = true, // Default to true upon initial setup
+    List<String>? interests,
+    String? lookingFor,
+  }) async {
     try {
-      // FIX: Call createOrUpdateProfile with named arguments matching its signature
-      await _profileService.createOrUpdateProfile(
-        userId: supabaseUser.id,
-        fullName: _fullNameController.text.trim(),
-        dateOfBirth: _dateOfBirth!,
-        gender: _gender!,
-        bio: _bioController.text.trim(),
-        profilePictureUrl: uploadedPhotoPath,
-      );
+      final Map<String, dynamic> profileData = {
+        'id': userId,
+        'full_name': fullName,
+        'date_of_birth': dateOfBirth.toIso8601String(),
+        'gender': gender,
+        'bio': bio,
+        'profile_picture_url': profilePictureUrl,
+        'is_profile_complete': isProfileComplete,
+        'interests': interests ?? [], // Store as JSONB array in Supabase
+        'looking_for': lookingFor,
+        'updated_at': DateTime.now().toIso8601String(), // Ensure this column exists in your DB
+      };
 
-      // Save interests and intentions (assuming these are separate steps/tables)
-      await _profileService.saveUserInterests(supabaseUser.id, _selectedInterests);
-      await _profileService.saveUserIntentions(supabaseUser.id, [_lookingFor!]);
-
-      debugPrint('User profile ${supabaseUser.id} updated successfully in Supabase.');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully!')),
-        );
-        context.go('/home'); // Navigate to home after successful setup
-      }
-    } catch (e) {
-      debugPrint('Error saving profile data: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save profile data: ${e.toString()}')),
-        );
-      }
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      await _supabase.from(_profileTableName).upsert(profileData, onConflict: 'id');
+      debugPrint('Profile for $userId upserted successfully.');
+    } catch (e, stackTrace) {
+      debugPrint('Error upserting profile for $userId: $e');
+      debugPrint(stackTrace.toString());
+      rethrow; // Re-throw to allow calling screen to handle
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Complete Your Profile'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tell us about yourself!',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 20),
+  /// Uploads an analysis photo to Supabase storage.
+  /// Handles both web (Uint8List) and mobile (File) inputs.
+  Future<String?> uploadAnalysisPhoto(String userId, XFile imageFile) async {
+    try {
+      final String path = '$userId/profile_pictures/${DateTime.now().millisecondsSinceEpoch}.png';
 
-              Center(
-                child: GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.deepPurple.shade800,
-                    backgroundImage: _imagePreviewPath != null
-                        ? (kIsWeb ? NetworkImage(_imagePreviewPath!) : FileImage(File(_imagePreviewPath!))) as ImageProvider
-                        : null,
-                    child: _imagePreviewPath == null
-                        ? Icon(
-                            Icons.camera_alt,
-                            size: 40,
-                            color: Colors.white.withOpacity(0.7),
-                          )
-                        : null,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+      if (kIsWeb) {
+        // For web, use Uint8List bytes from XFile
+        final Uint8List bytes = await imageFile.readAsBytes();
+        final response = await _supabase.storage.from(_bucketName).uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(contentType: 'image/png'),
+            );
+        return response; // response contains the path if successful
+      } else {
+        // For mobile, use File
+        // Note: The 'File' constructor from dart:io needs the actual file path.
+        // XFile.path works for both, but the actual upload method differs for web/mobile.
+        // We ensure dart:io is NOT imported in web builds via the kIsWeb check and
+        // that the ProfileSetupScreen also handles this correctly.
+        final response = await _supabase.storage.from(_bucketName).upload(
+              path,
+              imageFile.path,
+              fileOptions: const FileOptions(contentType: 'image/png'),
+            );
+        return response; // response contains the path if successful
+      }
+    } on StorageException catch (e) {
+      debugPrint('Supabase Storage Error uploading photo: ${e.message}');
+      rethrow;
+    } catch (e, stackTrace) {
+      debugPrint('General Error uploading photo: $e');
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
+  }
 
-              TextFormField(
-                controller: _fullNameController, // FIX: Renamed controller
-                decoration: const InputDecoration(
-                  labelText: 'Full Name', // FIX: Changed to Full Name
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your full name'; // FIX: Changed message
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+  /// Retrieves a signed URL for a given storage path.
+  Future<String?> getAnalysisPhotoSignedUrl(String storagePath) async {
+    try {
+      final String publicUrl = _supabase.storage.from(_bucketName).getPublicUrl(storagePath);
+      // For publicly readable buckets, getPublicUrl is sufficient.
+      // If your bucket is private, you would use createSignedUrl:
+      // final String signedUrl = await _supabase.storage.from(_bucketName).createSignedUrl(storagePath, 60 * 60 * 24 * 7); // 7 days
+      return publicUrl;
+    } catch (e, stackTrace) {
+      debugPrint('Error getting signed URL for $storagePath: $e');
+      debugPrint(stackTrace.toString());
+      return null;
+    }
+  }
 
-              TextFormField(
-                controller: _bioController, // FIX: Renamed controller
-                decoration: const InputDecoration(
-                  labelText: 'About Me (Bio)',
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 4,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please write a short bio';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+  /// Saves a user's interests. Assumes 'interests' is an array column in your profiles table.
+  Future<void> saveUserInterests(String userId, List<String> interests) async {
+    try {
+      await _supabase.from(_profileTableName).update({
+        'interests': interests,
+      }).eq('id', userId);
+      debugPrint('User interests for $userId saved successfully.');
+    } catch (e, stackTrace) {
+      debugPrint('Error saving user interests for $userId: $e');
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
+  }
 
-              // Date of Birth Picker
-              ListTile(
-                title: Text(
-                  _dateOfBirth == null
-                      ? 'Select Date of Birth'
-                      : 'Date of Birth: ${_dateOfBirth!.toLocal().toString().split(' ')[0]}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () => _selectDateOfBirth(context),
-              ),
-              const SizedBox(height: 16),
+  /// Saves a user's intentions. Assumes 'looking_for' is a column in your profiles table.
+  Future<void> saveUserIntentions(String userId, List<String> intentions) async {
+    try {
+      // Assuming 'looking_for' is a single string. If it's multiple, adjust schema and data type.
+      // For now, take the first intention or null if list is empty.
+      final String? lookingFor = intentions.isNotEmpty ? intentions.first : null;
 
-
-              DropdownButtonFormField<String>(
-                value: _gender,
-                decoration: const InputDecoration(
-                  labelText: 'Gender',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.transgender),
-                ),
-                items: _genders.map((String gender) {
-                  return DropdownMenuItem<String>(
-                    value: gender,
-                    child: Text(gender),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _gender = newValue;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select your gender';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              DropdownButtonFormField<String>(
-                value: _lookingFor, // FIX: Renamed variable
-                decoration: const InputDecoration(
-                  labelText: 'Looking For',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.favorite),
-                ),
-                items: _lookingForOptions.map((String option) { // FIX: Renamed list
-                  return DropdownMenuItem<String>(
-                    value: option,
-                    child: Text(option),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _lookingFor = newValue;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select what you\'re looking for';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'Select Your Interests:',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 4.0,
-                children: _allInterests.map((interest) { // FIX: Renamed list
-                  final isSelected = _selectedInterests.contains(interest); // FIX: Renamed list
-                  return FilterChip(
-                    label: Text(interest),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedInterests.add(interest); // FIX: Renamed list
-                        } else {
-                          _selectedInterests.remove(interest); // FIX: Renamed list
-                        }
-                      });
-                    },
-                    selectedColor: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.3).round()),
-                    checkmarkColor: Theme.of(context).colorScheme.primary,
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-
-              Center(
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveProfile, // FIX: Renamed variable
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: _isLoading // FIX: Renamed variable
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                          'Complete Profile',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+      await _supabase.from(_profileTableName).update({
+        'looking_for': lookingFor,
+      }).eq('id', userId);
+      debugPrint('User intentions for $userId saved successfully.');
+    } catch (e, stackTrace) {
+      debugPrint('Error saving user intentions for $userId: $e');
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
   }
 }

@@ -49,7 +49,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   bool _isLoadingProfile = true; // State to manage profile loading
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription; // Realtime subscription
 
-  final ProfileService _profileService = ProfileService(); // Instantiate ProfileService
+  // Instantiate ProfileService using its singleton factory constructor
+  final ProfileService _profileService = ProfileService();
 
   @override
   void initState() {
@@ -104,16 +105,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     }
 
     try {
-      // FIX: Changed getProfile to getUserProfile
       final UserProfile? fetchedProfile = await _profileService.getUserProfile(currentUser.id);
       if (fetchedProfile != null) {
         setState(() {
           _userProfile = fetchedProfile;
           _isLoadingProfile = false;
         });
-        // FIX: Changed avatar_url to profilePictureUrl
+        // Corrected to profilePictureUrl (camelCase)
         if (fetchedProfile.profilePictureUrl != null) {
-          // FIX: Changed ProfileService().getAnalysisPhotoSignedUrl to _profileService.getAnalysisPhotoSignedUrl
+          // Using the _profileService instance
           final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(fetchedProfile.profilePictureUrl!);
           setState(() {
             _avatarUrl = signedUrl;
@@ -133,14 +133,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           .eq('id', currentUser.id) // Listen only to current user's profile changes
           .listen((List<Map<String, dynamic>> data) async {
         if (data.isNotEmpty) {
-          // FIX: Changed UserProfile.fromMap to UserProfile.fromJson
+          // Changed to UserProfile.fromJson
           final UserProfile updatedProfile = UserProfile.fromJson(data.first);
           setState(() {
             _userProfile = updatedProfile;
           });
-          // FIX: Changed display_name to fullName
+          // Corrected to fullName (camelCase)
           debugPrint('Realtime update for profile: ${updatedProfile.fullName}');
-          // FIX: Changed avatar_url to profilePictureUrl and ProfileService().getAnalysisPhotoSignedUrl to _profileService.getAnalysisPhotoSignedUrl
+          // Corrected to profilePictureUrl (camelCase) and using _profileService
           if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _userProfile?.profilePictureUrl) {
             final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(updatedProfile.profilePictureUrl!);
             setState(() {
@@ -201,7 +201,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         const Text(
           'Suggested Profiles',
           style: TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -244,6 +244,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter', // Ensure Inter font
                           shadows: [
                             Shadow(
                               color: Colors.pinkAccent,
@@ -278,7 +279,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         gradientColors: const [Color(0xFF8E24AA), Color(0xFFD32F2F)],
         height: 48,
         width: 160,
-        textStyle: const TextStyle(fontSize: 16, color: Colors.white),
+        textStyle: const TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
       ),
     );
   }
@@ -300,14 +301,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                 style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 40),
+                    fontSize: 40, fontFamily: 'Inter'), // Ensure Inter font
               ),
             ],
           ),
           const SizedBox(height: 12),
           const Text(
             'You both love deep conversations and outdoor adventures.',
-            style: TextStyle(color: Colors.white70, fontSize: 18),
+            style: TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'), // Ensure Inter font
           ),
         ],
       ),
@@ -332,7 +333,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         gradientColors: const [Color(0xFF8E24AA), Color(0xFFD32F2F)],
         height: 44,
         width: 100,
-        textStyle: const TextStyle(fontSize: 16, color: Colors.white),
+        textStyle: const TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
       ),
     );
   }
@@ -350,7 +351,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         const Text(
           'Nearby Events',
           style: TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
         ),
         const SizedBox(height: 16),
         ...dummyEvents.map(
@@ -370,7 +371,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             ),
             child: Text(
               event,
-              style: const TextStyle(color: Colors.white70, fontSize: 18),
+              style: const TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'), // Ensure Inter font
             ),
           ),
         ),
@@ -393,7 +394,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         gradientColors: const [Color(0xFFD32F2F), Color(0xFF8E24AA)],
         height: 52,
         width: double.infinity,
-        textStyle: const TextStyle(fontSize: 18, color: Colors.white),
+        textStyle: const TextStyle(fontSize: 18, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
       ),
     );
   }
@@ -428,11 +429,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         Text(
           '$value',
           style: const TextStyle(
-              color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
         ),
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 16),
+          style: const TextStyle(color: Colors.white70, fontSize: 16, fontFamily: 'Inter'), // Ensure Inter font
         ),
       ],
     );
@@ -473,7 +474,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         gradientColors: const [Color(0xFFD32F2F), Color(0xFF8E24AA)],
         height: 52,
         width: double.infinity,
-        textStyle: const TextStyle(fontSize: 20, color: Colors.white),
+        textStyle: const TextStyle(fontSize: 20, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
       ),
     );
   }
@@ -492,7 +493,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         const Text(
           'Date Ideas',
           style: TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
         ),
         const SizedBox(height: 16),
         ...ideas.map(
@@ -500,7 +501,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               '• $idea',
-              style: const TextStyle(color: Colors.white70, fontSize: 18),
+              style: const TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'), // Ensure Inter font
             ),
           ),
         )
@@ -551,7 +552,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                   color: Theme.of(context).colorScheme.secondary),
                             )
                           : DashboardHeader(
-                              title: _userProfile?.fullName ?? 'Profile Dashboard', // Corrected to fullName
+                              title: _userProfile?.fullName ?? 'Profile Dashboard', // Corrected to fullName (camelCase)
                               glowColor: Colors.redAccent,
                               shadowOffset: const Offset(0, 5),
                             ),
@@ -603,7 +604,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                         height: 52,
                         width: double.infinity,
                         textStyle:
-                            const TextStyle(fontSize: 20, color: Colors.white),
+                            const TextStyle(fontSize: 20, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
                       ),
                       const SizedBox(height: 40),
                     ],
