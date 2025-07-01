@@ -44,12 +44,19 @@ class UserProfile {
   // New factory constructor to create a basic UserProfile from a Supabase User object.
   // This is useful for initial profile creation or fallback.
   factory UserProfile.fromSupabaseUser(User user) {
+    // FIX for TypeError: More robust handling of user.createdAt
+    DateTime? parsedCreatedAt;
+    if (user.createdAt is String) {
+      parsedCreatedAt = DateTime.tryParse(user.createdAt as String);
+    } else if (user.createdAt is DateTime) {
+      parsedCreatedAt = user.createdAt as DateTime;
+    }
+
     return UserProfile(
       id: user.id,
-      fullName: user.email?.split('@').first, // Example: Use email prefix as default name
-      // CORRECTED: Explicitly cast user.createdAt to DateTime? to resolve the type error.
-      createdAt: user.createdAt as DateTime? ?? DateTime.now(), // Use user.createdAt or current time
-      isProfileComplete: false, // Assume not complete until user fills out form
+      fullName: user.email?.split('@').first,
+      createdAt: parsedCreatedAt ?? DateTime.now(),
+      isProfileComplete: false,
       interests: const [],
       bio: null,
       dateOfBirth: null,
