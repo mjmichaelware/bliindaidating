@@ -2,9 +2,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase for logout
+import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile model
 
 class DashboardMenuDrawer extends StatelessWidget {
-  const DashboardMenuDrawer({super.key});
+  // Added optional userProfile and avatarUrl parameters
+  final UserProfile? userProfile;
+  final String? avatarUrl;
+
+  const DashboardMenuDrawer({
+    super.key,
+    this.userProfile, // Accepted userProfile
+    this.avatarUrl,   // Accepted avatarUrl
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,17 +33,21 @@ class DashboardMenuDrawer extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.deepPurple.shade800,
               ),
-              child: const Column(
+              child: Column( // Removed const here because of dynamic content
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundImage: NetworkImage('https://placehold.co/60x60/cccccc/000000?text=User'),
+                    // Display user's avatar if available, else a placeholder
+                    backgroundImage: (avatarUrl != null
+                        ? NetworkImage(avatarUrl!)
+                        : const AssetImage('assets/images/default_avatar.png')) as ImageProvider, // Assuming a default_avatar.png exists or use a generic icon
+                    backgroundColor: Colors.grey, // Fallback background
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Text(
-                    'Welcome, User Name!',
-                    style: TextStyle(
+                    userProfile?.display_name ?? 'Welcome, User!', // Display user's name
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -96,7 +109,6 @@ class DashboardMenuDrawer extends StatelessWidget {
               icon: Icons.logout_rounded,
               text: 'Logout',
               onTap: () async {
-                // Implement actual logout logic here using Supabase
                 try {
                   await Supabase.instance.client.auth.signOut();
                   debugPrint('User successfully logged out.');
@@ -130,8 +142,6 @@ class DashboardMenuDrawer extends StatelessWidget {
         style: const TextStyle(color: Colors.white, fontSize: 16),
       ),
       onTap: () {
-        // Removed Navigator.pop(context) from here to ensure it's handled in onTap callback
-        // for consistency with the async logout operation.
         onTap();
       },
     );

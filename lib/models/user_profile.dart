@@ -33,16 +33,16 @@ class UserProfile {
   factory UserProfile.fromSupabaseUser(User user) {
     // FIXED: Robustly handle createdAt and updatedAt from User object.
     // Explicitly check type and cast to DateTime, or fall back to parsing/now().
-    final DateTime parsed_created_at = (user.createdAt is DateTime)
+    final DateTime parsedCreatedAt = (user.createdAt is DateTime)
         ? (user.createdAt as DateTime)
         : DateTime.now(); // Fallback if user.createdAt is null or not DateTime
 
-    DateTime? parsed_last_updated;
+    DateTime? parsedLastUpdated;
     if (user.updatedAt is DateTime) {
-      parsed_last_updated = user.updatedAt as DateTime;
+      parsedLastUpdated = user.updatedAt as DateTime;
     } else if (user.userMetadata?['last_updated'] is String) {
       // Fallback to userMetadata for string, if needed
-      parsed_last_updated = DateTime.tryParse(user.userMetadata!['last_updated'] as String);
+      parsedLastUpdated = DateTime.tryParse(user.userMetadata!['last_updated'] as String);
     }
     // If it's null and not a string in metadata, it remains null.
 
@@ -56,8 +56,8 @@ class UserProfile {
       interests: List<String>.from(user.userMetadata?['interests'] ?? []),
       looking_for: user.userMetadata?['looking_for'] ?? '',
       profile_complete: user.userMetadata?['profile_complete'] ?? false,
-      created_at: parsed_created_at,
-      last_updated: parsed_last_updated,
+      created_at: parsedCreatedAt,
+      last_updated: parsedLastUpdated,
       avatar_url: user.userMetadata?['avatar_url'],
     );
   }

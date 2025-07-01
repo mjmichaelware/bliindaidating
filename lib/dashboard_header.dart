@@ -6,11 +6,11 @@ class DashboardHeader extends StatelessWidget {
   final Offset shadowOffset;
 
   const DashboardHeader({
-    Key? key,
+    super.key,
     required this.title, // ADDED as required
     this.glowColor = Colors.white, // Default color for glow
     this.shadowOffset = const Offset(0, 4),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

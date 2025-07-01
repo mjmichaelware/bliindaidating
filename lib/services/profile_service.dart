@@ -13,12 +13,12 @@ class ProfileService {
 
   /// Fetches a user's profile from the 'profiles' table.
   /// Returns null if profile not found or user is not authenticated.
-  Future<UserProfile?> getProfile(String user_id) async {
+  Future<UserProfile?> getProfile(String userId) async {
     try {
-      final Map<String, dynamic>? response = await _client
+      final Map<String, dynamic> response = await _client
           .from('profiles')
           .select()
-          .eq('id', user_id)
+          .eq('id', userId)
           .limit(1)
           .single(); // Expecting a single row or null
 
@@ -59,21 +59,21 @@ class ProfileService {
 
   /// Uploads an analysis photo to Supabase Storage and returns its path.
   /// The bucket 'analysis-photos' MUST be private.
-  Future<String?> uploadAnalysisPhoto(String user_id, XFile image_file) async {
-    final String file_extension = image_file.name.split('.').last;
-    final String path = '$user_id/${DateTime.now().millisecondsSinceEpoch}.$file_extension';
+  Future<String?> uploadAnalysisPhoto(String userId, XFile imageFile) async {
+    final String fileExtension = imageFile.name.split('.').last;
+    final String path = '$userId/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
     try {
-      final String uploaded_path = await _client.storage
+      final String uploadedPath = await _client.storage
           .from('analysis-photos')
-          .upload(path, await image_file.readAsBytes(),
+          .upload(path, await imageFile.readAsBytes(),
               fileOptions: const FileOptions(
                 cacheControl: '3600',
                 upsert: true,
               ));
 
-      debugPrint('Analysis photo uploaded to path: $uploaded_path');
-      return uploaded_path;
+      debugPrint('Analysis photo uploaded to path: $uploadedPath');
+      return uploadedPath;
     } on StorageException catch (e) {
       debugPrint('Supabase Storage Error (uploadAnalysisPhoto): ${e.message}');
       throw Exception('Failed to upload analysis photo: ${e.message}');
@@ -86,12 +86,12 @@ class ProfileService {
   /// Generates a temporary signed URL for an authenticated user to view their OWN private analysis photo.
   Future<String?> getAnalysisPhotoSignedUrl(String path) async {
     try {
-      final String signed_url = await _client.storage
+      final String signedUrl = await _client.storage
           .from('analysis-photos')
           .createSignedUrl(path, 60);
 
       debugPrint('Generated signed URL for $path');
-      return signed_url;
+      return signedUrl;
     } on StorageException catch (e) {
       debugPrint('Supabase Storage Error (getAnalysisPhotoSignedUrl): ${e.message}');
       throw Exception('Failed to get signed URL: ${e.message}');
@@ -102,11 +102,11 @@ class ProfileService {
   }
 
   /// Deletes an analysis photo from Supabase Storage.
-  Future<void> deleteAnalysisPhoto(String path_in_bucket) async {
+  Future<void> deleteAnalysisPhoto(String pathInBucket) async {
     try {
-      await _client.storage.from('analysis-photos').remove([path_in_bucket]);
+      await _client.storage.from('analysis-photos').remove([pathInBucket]);
 
-      debugPrint('Analysis photo deleted successfully: $path_in_bucket');
+      debugPrint('Analysis photo deleted successfully: $pathInBucket');
     } on StorageException catch (e) {
       debugPrint('Supabase Storage Error (deleteAnalysisPhoto): ${e.message}');
       throw Exception(e.message);

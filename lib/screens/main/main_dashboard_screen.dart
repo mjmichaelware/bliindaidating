@@ -2,17 +2,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Added for Supabase access
+import 'dart:async'; // Added for StreamSubscription and debugPrint (if not from Foundation)
+// Explicit import for debugPrint
 
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
-
 import 'package:bliindaidating/widgets/dashboard_header.dart';
 import 'package:bliindaidating/widgets/dashboard_menu_drawer.dart';
 import 'package:bliindaidating/widgets/dashboard_penalty_section.dart';
 import 'package:bliindaidating/widgets/dashboard_stat_card.dart';
 import 'package:bliindaidating/widgets/dashboard_info_card.dart';
-
-// Removed: import 'package:bliindaidating/app_router.dart'; // This import is no longer needed
+import 'package:bliindaidating/models/user_profile.dart'; // Added for UserProfile model
+import 'package:bliindaidating/services/profile_service.dart'; // Added for ProfileService
 
 
 class MainDashboardScreen extends StatefulWidget {
@@ -42,6 +44,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   late final ScrollController _scrollController;
 
   late int _penaltyCount;
+
+  // Added for user profile data and Realtime
+  UserProfile? _userProfile; // Will hold the fetched user profile
+  String? _avatarUrl; // Will hold the signed URL for the avatar
+  bool _isLoadingProfile = true; // State to manage profile loading
+  StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription; // Realtime subscription
 
   @override
   void initState() {
@@ -73,6 +81,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     _fadeScaleController.forward();
 
     _scrollController = ScrollController();
+
+    _loadUserProfileAndSubscribe(); // Call method to load profile and set up subscription
   }
 
   @override
@@ -85,11 +95,74 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     }
   }
 
+  Future<void> _loadUserProfileAndSubscribe() async {
+    final User? currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
+      setState(() { _isLoadingProfile = false; });
+      debugPrint('No current user for dashboard profile load.');
+      return;
+    }
+
+    try {
+      // Fetch initial profile
+      final UserProfile? fetchedProfile = await ProfileService().getProfile(currentUser.id);
+      if (fetchedProfile != null) {
+        setState(() {
+          _userProfile = fetchedProfile;
+          _isLoadingProfile = false;
+        });
+        if (fetchedProfile.avatar_url != null) { // Access snake_case avatar_url
+          final String? signedUrl = await ProfileService().getAnalysisPhotoSignedUrl(fetchedProfile.avatar_url!);
+          setState(() {
+            _avatarUrl = signedUrl;
+          });
+        }
+      } else {
+        setState(() { _isLoadingProfile = false; });
+        debugPrint('User profile not found for ID: ${currentUser.id}');
+        // Optionally create a default profile or redirect to setup if profile is required
+        // context.go('/profile_setup');
+      }
+
+      // Setup Realtime Subscription
+      _profileSubscription = Supabase.instance.client
+          .from('profiles')
+          .stream(primaryKey: ['id']) // Ensure 'id' is your primary key
+          .eq('id', currentUser.id) // Listen only to current user's profile changes
+          .listen((List<Map<String, dynamic>> data) async {
+        if (data.isNotEmpty) {
+          final UserProfile updatedProfile = UserProfile.fromMap(data.first);
+          setState(() {
+            _userProfile = updatedProfile;
+          });
+          debugPrint('Realtime update for profile: ${updatedProfile.display_name}'); // Access snake_case display_name
+          if (updatedProfile.avatar_url != null && updatedProfile.avatar_url != _userProfile?.avatar_url) {
+             // Only re-fetch signed URL if avatar_url actually changed
+            final String? signedUrl = await ProfileService().getAnalysisPhotoSignedUrl(updatedProfile.avatar_url!);
+            setState(() {
+              _avatarUrl = signedUrl;
+            });
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint('Error loading profile or setting up Realtime: $e');
+      setState(() { _isLoadingProfile = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+
   @override
   void dispose() {
     _pulseController.dispose();
     _fadeScaleController.dispose();
     _scrollController.dispose();
+    _profileSubscription?.cancel(); // Cancel Realtime subscription to prevent memory leaks
     super.dispose();
   }
 
@@ -190,7 +263,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   Widget _dailyPersonalityQuestion() {
     return DashboardInfoCard(
       title: 'Daily Personality Question',
-      description: 'What’s your ideal way to spend a weekend?',
+      description: 'What’s your ideal way to spend a weekend?', // Fixed character
       icon: FontAwesomeIcons.youtube,
       iconColor: const Color(0xFF8E24AA),
       trailingWidget: GlowingButton(
@@ -423,7 +496,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           (idea) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              '• $idea',
+              '• $idea', // FIXED: Character
               style: const TextStyle(color: Colors.white70, fontSize: 18),
             ),
           ),
@@ -435,7 +508,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: const DashboardMenuDrawer(),
+      endDrawer: DashboardMenuDrawer( // Pass profile data to drawer
+        userProfile: _userProfile,
+        avatarUrl: _avatarUrl,
+      ),
       body: Stack(
         children: [
           const Positioned.fill(child: AnimatedOrbBackground()),
@@ -468,11 +544,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      DashboardHeader(
-                        title: 'Profile Dashboard',
-                        glowColor: Colors.redAccent,
-                        shadowOffset: const Offset(0, 5),
-                      ),
+                      _isLoadingProfile // Show loading if profile is still loading
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                  color: Theme.of(context).colorScheme.secondary),
+                            )
+                          : DashboardHeader(
+                              title: _userProfile?.display_name ?? 'Profile Dashboard', // Access snake_case display_name
+                              glowColor: Colors.redAccent,
+                              shadowOffset: const Offset(0, 5),
+                            ),
                       const SizedBox(height: 24),
 
                       _animatedPenaltySection(),

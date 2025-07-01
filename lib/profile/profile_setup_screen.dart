@@ -85,8 +85,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       _is_loading = true;
     });
 
-    final User? supabase_user = Supabase.instance.client.auth.currentUser;
-    if (supabase_user == null) {
+    final User? supabaseUser = Supabase.instance.client.auth.currentUser;
+    if (supabaseUser == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: User not logged in! Please log in again.')),
@@ -97,11 +97,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       return;
     }
 
-    String? uploaded_photo_path;
+    String? uploadedPhotoPath;
     if (_picked_image != null) {
       try {
-        uploaded_photo_path = await _profile_service.uploadAnalysisPhoto(supabase_user.id, _picked_image!);
-        if (uploaded_photo_path == null) {
+        uploadedPhotoPath = await _profile_service.uploadAnalysisPhoto(supabaseUser.id, _picked_image!);
+        if (uploadedPhotoPath == null) {
           throw Exception('Failed to get uploaded photo path.');
         }
       } catch (e) {
@@ -117,27 +117,27 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
 
     // FIXED: Robustly handle createdAt from User object for UserProfile constructor
-    final DateTime final_created_at = (supabase_user.createdAt is DateTime)
-        ? (supabase_user.createdAt as DateTime)
+    final DateTime finalCreatedAt = (supabaseUser.createdAt is DateTime)
+        ? (supabaseUser.createdAt as DateTime)
         : DateTime.now(); // Fallback if createdAt is null or not DateTime
 
 
-    UserProfile new_profile = UserProfile(
-      uid: supabase_user.id,
-      email: supabase_user.email ?? '',
+    UserProfile newProfile = UserProfile(
+      uid: supabaseUser.id,
+      email: supabaseUser.email ?? '',
       display_name: _display_name_controller.text.trim(),
       bio: _bio_controller.text.trim(),
       gender: _gender,
       interests: _selected_interests,
       looking_for: _looking_for ?? '',
       profile_complete: true,
-      created_at: final_created_at, // Use the robustly determined DateTime
-      avatar_url: uploaded_photo_path,
+      created_at: finalCreatedAt, // Use the robustly determined DateTime
+      avatar_url: uploadedPhotoPath,
     );
 
     try {
-      await _profile_service.createOrUpdateProfile(new_profile);
-      debugPrint('User profile ${new_profile.uid} updated successfully in Supabase.');
+      await _profile_service.createOrUpdateProfile(newProfile);
+      debugPrint('User profile ${newProfile.uid} updated successfully in Supabase.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
@@ -247,9 +247,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: Text(gender),
                   );
                 }).toList(),
-                onChanged: (String? new_value) {
+                onChanged: (String? newValue) {
                   setState(() {
-                    _gender = new_value;
+                    _gender = newValue;
                   });
                 },
                 validator: (value) {
@@ -274,9 +274,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: Text(option),
                   );
                 }).toList(),
-                onChanged: (String? new_value) {
+                onChanged: (String? newValue) {
                   setState(() {
-                    _looking_for = new_value;
+                    _looking_for = newValue;
                   });
                 },
                 validator: (value) {
@@ -297,10 +297,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 spacing: 8.0,
                 runSpacing: 4.0,
                 children: _all_interests.map((interest) {
-                  final is_selected = _selected_interests.contains(interest);
+                  final isSelected = _selected_interests.contains(interest);
                   return FilterChip(
                     label: Text(interest),
-                    selected: is_selected,
+                    selected: isSelected,
                     onSelected: (selected) {
                       setState(() {
                         if (selected) {

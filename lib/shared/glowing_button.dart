@@ -12,7 +12,7 @@ class GlowingButton extends StatelessWidget {
   final bool disabled; // Added this parameter
 
   const GlowingButton({
-    Key? key,
+    super.key,
     required this.icon,
     required this.text,
     this.onPressed, // No longer required, can be null
@@ -25,7 +25,7 @@ class GlowingButton extends StatelessWidget {
       fontWeight: FontWeight.bold,
     ),
     this.disabled = false, // Default to false
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

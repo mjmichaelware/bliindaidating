@@ -60,15 +60,15 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       _is_loading = true;
     });
 
-    final User? current_user = Supabase.instance.client.auth.currentUser;
-    if (current_user == null) {
+    final User? currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
       debugPrint('No current user authenticated to load profile.');
       setState(() { _is_loading = false; });
       return;
     }
 
     try {
-      final UserProfile? profile = await _profile_service.getProfile(current_user.id);
+      final UserProfile? profile = await _profile_service.getProfile(currentUser.id);
 
       if (profile != null) {
         _user_profile = profile;
@@ -80,16 +80,16 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
         _selected_interests.addAll(profile.interests);
 
         if (profile.avatar_url != null) {
-          final String? signed_url = await _profile_service.getAnalysisPhotoSignedUrl(profile.avatar_url!);
+          final String? signedUrl = await _profile_service.getAnalysisPhotoSignedUrl(profile.avatar_url!);
           setState(() {
-            _displayed_avatar_url = signed_url;
+            _displayed_avatar_url = signedUrl;
           });
         }
       } else {
-        debugPrint('Profile not found for user: ${current_user.id}');
+        debugPrint('Profile not found for user: ${currentUser.id}');
         // Create a default profile object if none found, to avoid null access issues
-        _user_profile = UserProfile.fromSupabaseUser(current_user);
-        _display_name_controller.text = current_user.email?.split('@').first ?? '';
+        _user_profile = UserProfile.fromSupabaseUser(currentUser);
+        _display_name_controller.text = currentUser.email?.split('@').first ?? '';
       }
     } catch (e) {
       debugPrint('Error loading user profile: $e');
@@ -134,8 +134,8 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       _is_loading = true;
     });
 
-    final User? current_user = Supabase.instance.client.auth.currentUser;
-    if (current_user == null || _user_profile == null) {
+    final User? currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null || _user_profile == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: User not logged in or profile not loaded.')),
@@ -145,12 +145,12 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       }
     }
 
-    String? new_avatar_path = _user_profile?.avatar_url;
+    String? newAvatarPath = _user_profile?.avatar_url;
 
     if (_picked_image != null) {
       try {
-        new_avatar_path = await _profile_service.uploadAnalysisPhoto(current_user!.id, _picked_image!);
-        if (new_avatar_path == null) {
+        newAvatarPath = await _profile_service.uploadAnalysisPhoto(currentUser!.id, _picked_image!);
+        if (newAvatarPath == null) {
           throw Exception('Failed to upload new photo.');
         }
       } catch (e) {
@@ -165,19 +165,19 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       }
     }
 
-    final UserProfile updated_profile = _user_profile!.copyWith(
+    final UserProfile updatedProfile = _user_profile!.copyWith(
       display_name: _display_name_controller.text.trim(),
       bio: _bio_controller.text.trim(),
       gender: _gender,
       interests: _selected_interests,
       looking_for: _looking_for,
       profile_complete: true,
-      avatar_url: new_avatar_path,
+      avatar_url: newAvatarPath,
     );
 
     try {
-      await _profile_service.createOrUpdateProfile(updated_profile);
-      debugPrint('Profile for ${updated_profile.uid} updated successfully.');
+      await _profile_service.createOrUpdateProfile(updatedProfile);
+      debugPrint('Profile for ${updatedProfile.uid} updated successfully.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile changes saved!')),
@@ -301,9 +301,9 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                   child: Text(gender),
                 );
               }).toList(),
-              onChanged: (String? new_value) {
+              onChanged: (String? newValue) {
                 setState(() {
-                  _gender = new_value;
+                  _gender = newValue;
                 });
               },
               validator: (value) {
@@ -328,9 +328,9 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                   child: Text(option),
                 );
               }).toList(),
-              onChanged: (String? new_value) {
+              onChanged: (String? newValue) {
                 setState(() {
-                  _looking_for = new_value;
+                  _looking_for = newValue;
                 });
               },
               validator: (value) {
@@ -351,10 +351,10 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
               spacing: 8.0,
               runSpacing: 4.0,
               children: _all_interests.map((interest) {
-                final is_selected = _selected_interests.contains(interest);
+                final isSelected = _selected_interests.contains(interest);
                 return FilterChip(
                   label: Text(interest),
-                  selected: is_selected,
+                  selected: isSelected,
                   onSelected: (selected) {
                     setState(() {
                       if (selected) {
