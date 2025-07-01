@@ -64,13 +64,17 @@
     <div class="loading-spinner"></div>
     <div class="loading-text">Loading your destiny...</div>
   </div>
+
+  <script type="text/javascript">
+    (function () {
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+      }
+    })();
+  </script>
   
-  <!-- The Flutter app will be rendered here. -->
   <div id="flutter_app"></div>
 
-  <!-- CRITICAL FIX: Revert to basic Flutter web bootstrap. -->
-  <!-- Remove all custom _flutter.loader.load() or loadEntrypoint() calls. -->
-  <!-- Rely on flutter_bootstrap.js to handle the entrypoint automatically. -->
   <script src="flutter_bootstrap.js" async></script>
 
   <script>
@@ -88,4 +92,3 @@
   </script>
 </body>
 </html>
-

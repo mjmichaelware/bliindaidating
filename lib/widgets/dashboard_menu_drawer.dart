@@ -1,7 +1,7 @@
 // lib/widgets/dashboard_menu_drawer.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:bliindaidating/app_router.dart'; // REMOVE THIS IMPORT
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase for logout
 
 class DashboardMenuDrawer extends StatelessWidget {
   const DashboardMenuDrawer({super.key});
@@ -24,7 +24,7 @@ class DashboardMenuDrawer extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.deepPurple.shade800,
               ),
-              child: const Column( // Added const here
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
@@ -46,58 +46,68 @@ class DashboardMenuDrawer extends StatelessWidget {
             _buildDrawerItem(
               icon: Icons.dashboard_rounded,
               text: 'Main Dashboard',
-              onTap: () => context.go('/home'), // CHANGED: Using direct path
+              onTap: () => context.go('/home'),
               context: context,
             ),
             _buildDrawerItem(
               icon: Icons.person_rounded,
               text: 'Edit Profile',
-              onTap: () => context.go('/profile_setup'), // CHANGED: Using direct path
+              onTap: () => context.go('/profile_setup'),
               context: context,
             ),
             _buildDrawerItem(
               icon: Icons.search_rounded,
               text: 'Discover Profiles',
-              onTap: () => context.go('/discovery'), // CHANGED: Using direct path
+              onTap: () => context.go('/discovery'),
               context: context,
             ),
             _buildDrawerItem(
               icon: Icons.favorite_rounded,
               text: 'Your Matches',
-              onTap: () => context.go('/matches'), // CHANGED: Using direct path
+              onTap: () => context.go('/matches'),
               context: context,
             ),
             _buildDrawerItem(
               icon: Icons.settings_rounded,
               text: 'Settings',
-              onTap: () => context.go('/settings'), // CHANGED: Using direct path
+              onTap: () => context.go('/settings'),
               context: context,
             ),
             _buildDrawerItem(
               icon: Icons.feedback_rounded,
               text: 'Submit Feedback',
-              onTap: () => context.go('/feedback'), // CHANGED: Using direct path
+              onTap: () => context.go('/feedback'),
               context: context,
             ),
             _buildDrawerItem(
               icon: Icons.flag_rounded,
               text: 'Report User',
-              onTap: () => context.go('/report'), // CHANGED: Using direct path
+              onTap: () => context.go('/report'),
               context: context,
             ),
             _buildDrawerItem(
               icon: Icons.admin_panel_settings_rounded,
               text: 'Admin Panel',
-              onTap: () => context.go('/admin'), // CHANGED: Using direct path
+              onTap: () => context.go('/admin'),
               context: context,
             ),
             const Divider(color: Colors.white54),
             _buildDrawerItem(
               icon: Icons.logout_rounded,
               text: 'Logout',
-              onTap: () {
-                // Implement actual logout logic here
-                context.go('/login'); // CHANGED: Using direct path
+              onTap: () async {
+                // Implement actual logout logic here using Supabase
+                try {
+                  await Supabase.instance.client.auth.signOut();
+                  debugPrint('User successfully logged out.');
+                  if (context.mounted) {
+                    Navigator.pop(context); // Close the drawer
+                    context.go('/login'); // Navigate to login page
+                  }
+                } catch (e) {
+                  debugPrint('Error during logout: $e');
+                  // Optionally show an error message to the user
+                }
               },
               context: context,
             ),
@@ -120,8 +130,9 @@ class DashboardMenuDrawer extends StatelessWidget {
         style: const TextStyle(color: Colors.white, fontSize: 16),
       ),
       onTap: () {
-        Navigator.pop(context); // Close the drawer
-        onTap(); // Execute the navigation
+        // Removed Navigator.pop(context) from here to ensure it's handled in onTap callback
+        // for consistency with the async logout operation.
+        onTap();
       },
     );
   }

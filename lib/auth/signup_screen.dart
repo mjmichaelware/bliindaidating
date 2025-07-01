@@ -68,13 +68,15 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       if (response.user != null) {
         debugPrint('User registered successfully with Supabase: ${response.user!.email}');
         if (mounted) {
+          // If email confirmation is OFF, user is signed in and redirected
           context.go('/profile_setup');
         }
       } else if (response.session == null && response.user == null) {
-        // This case indicates email verification is required
+        // This case indicates email verification is required (email confirmation is ON)
         _showError('Registration successful! Please check your email to verify your account.');
       } else if (response.user == null && response.session != null) {
-        // This case implies user was created but session handling might need review
+        // This case is less common, but implies user created without session login.
+        // It's good to log for debugging or prompt user to log in.
         _showError('Account created, but could not log in automatically. Please log in.');
       }
     } on AuthException catch (e) {
@@ -94,6 +96,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
   void _showError(String message) {
     setState(() => _errorMessage = message);
+    // Ensure the shake animation resets and plays
     _shakeController.forward(from: 0);
   }
 
@@ -196,11 +199,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                       GlowingButton(
                         text: 'Manifest My Destiny',
                         icon: Icons.control_point_duplicate,
-                        onPressed: _isLoading
-                            ? null // Fixed: onPressed should be null when disabled for GlowingButton
-                            : _attemptSignUp,
+                        onPressed: _isLoading ? null : _attemptSignUp,
                         gradientColors: [Colors.purple.shade700, Colors.red.shade600],
-                        disabled: _isLoading, // Fixed: Added disabled parameter for GlowingButton
+                        disabled: _isLoading,
                       ),
                       const SizedBox(height: 16),
                       TextButton(

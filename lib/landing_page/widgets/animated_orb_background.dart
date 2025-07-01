@@ -1,4 +1,5 @@
-import 'dart:math';
+// lib/landing_page/widgets/animated_orb_background.dart
+import 'dart:math'; // Keep dart:math for Random and pi
 import 'package:flutter/material.dart';
 
 class AnimatedOrbBackground extends StatefulWidget {

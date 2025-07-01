@@ -1,10 +1,8 @@
 // lib/auth/login_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// Keep for debugPrint if not provided by material.dart
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Keep for SvgPicture
 
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
@@ -69,11 +67,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (response.user != null) {
         debugPrint('User logged in successfully with Supabase: ${response.user!.email}');
         if (mounted) {
-          context.go('/home');
+          // Router redirect will handle navigation to /home, so no explicit context.go() needed here
+          // This allows the redirect logic in main.dart to take over.
         }
-      } else {
-        _showError('Login failed. Please check your credentials.');
       }
+      // If user is null but no AuthException, it might indicate a silent failure or
+      // a specific Auth configuration (e.g., email not verified)
+      // The redirect in main.dart should catch unauthenticated users.
     } on AuthException catch (e) {
       debugPrint('Supabase Auth error during login: ${e.message}');
       _showError('Login failed: ${e.message}');
@@ -151,11 +151,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   constraints: const BoxConstraints(maxWidth: 480),
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.shade900.withAlpha((255 * 0.8).round()), // withAlpha
+                    color: Colors.deepPurple.shade900.withAlpha((255 * 0.8).round()),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withAlpha((255 * 0.4).round()), // withAlpha
+                        color: Colors.black.withAlpha((255 * 0.4).round()),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       )
@@ -207,10 +207,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       GlowingButton(
                         text: 'Login to My Cosmos',
                         icon: Icons.login,
-                        onPressed: _isLoading
-                            ? () {}
-                            : _attemptLogin,
+                        onPressed: _isLoading ? null : _attemptLogin,
                         gradientColors: [Colors.blue.shade700, Colors.cyan.shade600],
+                        disabled: _isLoading, // Ensure button is disabled while loading
                       ),
                       const SizedBox(height: 16),
                       TextButton(
@@ -224,7 +223,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       TextButton(
                         onPressed: () {
+                          // TODO: Implement forgot password flow (call Supabase resetPasswordForEmail)
                           debugPrint('Forgot password clicked (Supabase handles this via email)');
+                          // context.go('/forgot_password'); // Example navigation to a forgot password screen
                         },
                         child: Text(
                           'Forgot Password?',
