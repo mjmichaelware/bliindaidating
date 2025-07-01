@@ -30,7 +30,8 @@ class DashboardMenuDrawer extends StatelessWidget {
           DrawerHeader(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [headerColor, isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor], // Using AppConstants.secondaryColor
+                // Replaced AppConstants.accentColor with AppConstants.secondaryColor
+                colors: [headerColor, isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
