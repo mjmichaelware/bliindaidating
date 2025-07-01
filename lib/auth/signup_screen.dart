@@ -1,5 +1,4 @@
 // lib/auth/signup_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -72,8 +71,10 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           context.go('/profile_setup');
         }
       } else if (response.session == null && response.user == null) {
+        // This case indicates email verification is required
         _showError('Registration successful! Please check your email to verify your account.');
       } else if (response.user == null && response.session != null) {
+        // This case implies user was created but session handling might need review
         _showError('Account created, but could not log in automatically. Please log in.');
       }
     } on AuthException catch (e) {
@@ -196,9 +197,10 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         text: 'Manifest My Destiny',
                         icon: Icons.control_point_duplicate,
                         onPressed: _isLoading
-                            ? () {} // Provide an empty function when loading
+                            ? null // Fixed: onPressed should be null when disabled for GlowingButton
                             : _attemptSignUp,
                         gradientColors: [Colors.purple.shade700, Colors.red.shade600],
+                        disabled: _isLoading, // Fixed: Added disabled parameter for GlowingButton
                       ),
                       const SizedBox(height: 16),
                       TextButton(

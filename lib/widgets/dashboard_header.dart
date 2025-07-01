@@ -1,49 +1,72 @@
+// lib/widgets/dashboard_header.dart
 import 'package:flutter/material.dart';
 
 class DashboardHeader extends StatelessWidget {
-  final Animation<double> fadeAnimation;
-  final Animation<double> scaleAnimation;
-  final VoidCallback onMenuPressed;
+  final String title;
+  final Color glowColor; // Ensure this is present
+  final Offset shadowOffset; // Ensure this is present
 
   const DashboardHeader({
-    super.key,
-    required this.fadeAnimation,
-    required this.scaleAnimation,
-    required this.onMenuPressed,
-  });
+    Key? key,
+    required this.title,
+    this.glowColor = Colors.white, // Default value if not provided
+    this.shadowOffset = const Offset(0, 4),
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return FadeTransition(
-      opacity: fadeAnimation,
-      child: ScaleTransition(
-        scale: scaleAnimation,
-        child: Row(
+    return Builder(
+      builder: (context) {
+        return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Main Dashboard',
-              style: theme.textTheme.displaySmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-                shadows: const [
-                  Shadow(
-                    color: Colors.redAccent,
-                    blurRadius: 18,
-                    offset: Offset(0, 5),
-                  ),
-                ],
+            Expanded(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOut,
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: glowColor.withOpacity(0.3), // Uses glowColor
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                      offset: shadowOffset, // Uses shadowOffset
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                      offset: Offset(-shadowOffset.dx, -shadowOffset.dy),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: glowColor.withOpacity(0.5),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.menu_rounded, size: 36, color: Colors.white),
-              onPressed: onMenuPressed,
+              icon: Icon(Icons.menu_rounded, size: 30, color: Colors.white.withOpacity(0.8)),
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
             ),
           ],
-        ),
-      ),
+        );
+      }
     );
   }
 }

@@ -1,5 +1,6 @@
+// lib/screens/discovery/discovery_screen.dart
 import 'package:flutter/material.dart';
-import 'package:bliindaidating/shared/glowing_button.dart';
+import 'package:bliindaidating/shared/glowing_button.dart'; // Make sure this path is correct
 
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({super.key});
@@ -76,9 +77,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                   Text(
                     'Select your interests',
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
 
                   const SizedBox(height: 16),
@@ -162,7 +163,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                     height: 48,
                     width: double.infinity,
                     textStyle: const TextStyle(fontSize: 18, color: Colors.white),
-                    disabled: selectedInterests.isEmpty,
+                    disabled: selectedInterests.isEmpty, // This line is correct, fix is in GlowingButton.dart
                   ),
                 ],
               ),

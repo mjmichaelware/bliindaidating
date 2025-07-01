@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math' as math; // <-- FIX APPLIED HERE
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:bliind_ai_dating/landing_page/landing_page.dart'; // Import the painters and other widgets defined within it
+import 'package:bliindaidating/landing_page/landing_page.dart'; // Import the painters and other widgets defined within it
 
 // Import info screens as they are navigated to from this page
-import 'package:bliind_ai_dating/screens/info/about_us_screen.dart'; // <-- FIX APPLIED HERE
+import 'package:bliindaidating/screens/info/about_us_screen.dart'; // <-- FIX APPLIED HERE
 import 'package:bliindaidating/screens/info/privacy_screen.dart';   // <-- FIX APPLIED HERE
 import 'package:bliindaidating/screens/info/terms_screen.dart';     // <-- FIX APPLIED HERE
 

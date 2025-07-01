@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bliind_ai_dating/widgets/animated_count.dart';
+import 'package:bliindaidating/widgets/animated_count.dart';
 
 class DashboardStatCard extends StatelessWidget {
   final String label;

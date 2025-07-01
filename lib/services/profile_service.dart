@@ -1,4 +1,4 @@
-import '../utils/superbase_config.dart';
+import '..lib/utils/superbase_config.dart';
 
 class ProfileService {
   final SupabaseClient _client = SupabaseConfig.client;

@@ -1,106 +1,78 @@
 // lib/shared/glowing_button.dart
-
 import 'package:flutter/material.dart';
 
 class GlowingButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final Widget? child;
-  final String? text;
-  final IconData? icon;
-  final Color color;
-  final Gradient? gradient;
-  final List<Color>? gradientColors;
-  final double? width;
-  final double? height;
-  final double glowSpreadRadius;
-  final double glowBlurRadius;
-  final double borderRadius;
-  final List<BoxShadow>? boxShadow;
-  final TextStyle? textStyle;
+  final IconData icon;
+  final String text;
+  final VoidCallback? onPressed; // Made nullable
+  final List<Color> gradientColors;
+  final double height;
+  final double width;
+  final TextStyle textStyle;
+  final bool disabled; // Added this parameter
 
   const GlowingButton({
-    super.key,
-    required this.onPressed,
-    this.child,
-    this.text,
-    this.icon,
-    this.color = Colors.blue,
-    this.gradient,
-    this.gradientColors,
-    this.width,
-    this.height,
-    this.glowSpreadRadius = 4,
-    this.glowBlurRadius = 15,
-    this.borderRadius = 25.0,
-    this.boxShadow,
-    this.textStyle,
-  }) : assert(
-          child != null || text != null || icon != null,
-          'GlowingButton must have either a child, text, or an icon.',
-        );
+    Key? key,
+    required this.icon,
+    required this.text,
+    this.onPressed, // No longer required, can be null
+    required this.gradientColors,
+    this.height = 50.0,
+    this.width = 200.0,
+    this.textStyle = const TextStyle(
+      color: Colors.white,
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+    ),
+    this.disabled = false, // Default to false
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    Widget content;
-
-    final TextStyle effectiveTextStyle = textStyle ?? const TextStyle(color: Colors.white, fontSize: 16);
-
-    if (child != null) {
-      content = child!;
-    } else if (text != null && icon != null) {
-      content = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: effectiveTextStyle.color, size: effectiveTextStyle.fontSize != null ? effectiveTextStyle.fontSize! * 1.2 : 16 * 1.2),
-          const SizedBox(width: 8),
-          Text(text!, style: effectiveTextStyle),
-        ],
-      );
-    } else if (text != null) {
-      content = Text(text!, style: effectiveTextStyle);
-    } else if (icon != null) {
-      content = Icon(icon, color: effectiveTextStyle.color, size: effectiveTextStyle.fontSize != null ? effectiveTextStyle.fontSize! * 1.5 : 16 * 1.5);
-    } else {
-      content = const SizedBox.shrink();
-    }
-
-    Gradient? effectiveGradient;
-    if (gradientColors != null && gradientColors!.isNotEmpty) {
-      effectiveGradient = LinearGradient(
-        colors: gradientColors!,
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
-    } else {
-      effectiveGradient = gradient ??
-          LinearGradient(
-            colors: [color.withAlpha((255 * 0.8).round()), color],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          );
-    }
-
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          gradient: effectiveGradient,
-          borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: boxShadow ??
-              [
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: disabled // Change colors if disabled
+              ? [Colors.grey.shade700, Colors.grey.shade500]
+              : gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(height / 2),
+        boxShadow: disabled
+            ? [] // No shadow if disabled
+            : [
                 BoxShadow(
-                  color: color.withAlpha((255 * 0.5).round()),
-                  blurRadius: glowBlurRadius,
-                  spreadRadius: glowSpreadRadius,
-                  offset: const Offset(0, 4),
+                  color: gradientColors.last.withOpacity(0.6),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 8),
                 ),
               ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: disabled ? null : onPressed, // IMPORTANT: Set onPressed to null if disabled
+          borderRadius: BorderRadius.circular(height / 2),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: disabled ? Colors.white54 : Colors.white, size: textStyle.fontSize! * 1.2),
+                const SizedBox(width: 8),
+                Text(
+                  text,
+                  style: textStyle.copyWith(
+                    color: disabled ? Colors.white54 : textStyle.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        alignment: Alignment.center,
-        child: content,
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bliind_ai_dating/widgets/animated_penalty_cross.dart';
+import 'package:bliindaidating/widgets/animated_penalty_cross.dart';
 
 class DashboardPenaltySection extends StatelessWidget {
   final int penaltyCount;
