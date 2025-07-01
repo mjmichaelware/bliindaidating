@@ -6,12 +6,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseConfig {
   static Future<void> init() async {
     if (kDebugMode) {
+      // Load .env file only in debug mode.
+      // In release mode, --dart-define flags are expected.
       await dotenv.load(fileName: ".env");
     }
 
     final String supabaseUrl = kReleaseMode
         ? const String.fromEnvironment('SUPABASE_URL')
         : dotenv.env['SUPABASE_URL'] ?? 'http://localhost:54321';
+
+    // IMPORTANT: Using 'SUPABASE_KEY' here to match your provided .env file content.
+    // If your .env file changes to 'SUPABASE_ANON_KEY', this line must be updated.
     final String supabaseAnonKey = kReleaseMode
         ? const String.fromEnvironment('SUPABASE_ANON_KEY')
         : dotenv.env['SUPABASE_KEY'] ?? 'YOUR_LOCAL_DEBUG_ANON_KEY';
@@ -22,14 +27,14 @@ class SupabaseConfig {
       debugPrint('🚨 SupabaseConfig Warning: Supabase URL or Anon Key might be missing or set to debug defaults in RELEASE mode.');
       debugPrint('Please ensure --dart-define flags are used for production builds.');
       debugPrint('Current URL: $supabaseUrl');
-      debugPrint('Current Key: ${supabaseAnonKey.substring(0, 10)}...');
+      // FIX: Conditionally print substring to prevent RangeError if key is empty
+      debugPrint('Current Key: ${supabaseAnonKey.isNotEmpty ? supabaseAnonKey.substring(0, 10) : 'EMPTY'}...');
       throw Exception('Supabase credentials not properly configured for the current build environment.');
     }
 
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
-      // FIX: REMOVED authFlowType: AuthFlowType.pkce, as it's not valid in 2.x.x
       debug: kDebugMode,
     );
   }
