@@ -4,7 +4,7 @@ description: "A new Flutter project."
 publish_to: 'none'
 version: 1.0.0+1
 environment:
-  sdk: '>=3.2.0 <4.0.0'
+  sdk: '>=3.2.0 <4.0.0' # Keep this flexible for Dart 3.8.1 from Flutter 3.32.5
 
 dependencies:
   flutter:
@@ -13,13 +13,14 @@ dependencies:
   go_router: ^14.0.0
   cupertino_icons: ^1.0.8
 
-  supabase_flutter: ^2.9.1
+  # --- Supabase Dependency ---
+  supabase_flutter: ^2.9.1 # Using a recent stable version of Supabase Flutter SDK
   flutter_dotenv: ^5.2.1 # For loading .env file in local development
-  image_picker: ^1.0.8
+  image_picker: ^1.0.8 # ADDED: For picking user images (avatars)
 
   font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.11
-  # google_fonts: ^6.1.0 # REMOVED: Since you are manually bundling Inter font
+  # google_fonts: ^6.1.0 # THIS LINE IS COMMENTED OUT/REMOVED as per your 'only Inter font' rule and local bundling
 
 dev_dependencies:
   flutter_test:
@@ -38,5 +39,5 @@ flutter:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
-        - asset: assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf # Corrected path (removed extra .wght)
+        - asset: assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf # CORRECTED: Removed the extra '.wght' from the path
           style: italic

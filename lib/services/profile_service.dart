@@ -1,117 +1,141 @@
 // lib/services/profile_service.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bliindaidating/utils/supabase_config.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile model
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart'; // Import for debugPrint
-
+import 'package:flutter/material.dart';
+import 'package:bliindaidating/models/user_profile.dart';
 
 class ProfileService {
-  final SupabaseClient _client = SupabaseConfig.client;
+  // Correctly access the Supabase client instance
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  // --- Database Operations ---
-
-  /// Fetches a user's profile from the 'profiles' table.
-  /// Returns null if profile not found or user is not authenticated.
-  Future<UserProfile?> getProfile(String userId) async {
+  Future<void> createUserProfile({
+    required String userId,
+    required String fullName,
+    required DateTime dateOfBirth,
+    required String gender,
+    String? bio,
+    String? profilePictureUrl,
+  }) async {
     try {
-      final Map<String, dynamic> response = await _client
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .limit(1)
-          .single(); // Expecting a single row or null
-
-      if (response != null) {
-        return UserProfile.fromMap(response);
+      final response = await _supabase.from('profiles').insert({
+        'id': userId,
+        'full_name': fullName,
+        'date_of_birth': dateOfBirth.toIso8601String(),
+        'gender': gender,
+        'bio': bio,
+        'profile_picture_url': profilePictureUrl,
+      });
+      // Supabase 2.x.x changed how errors are returned; they are part of the response object
+      if (response.error != null) {
+        debugPrint('ProfileService createUserProfile error: ${response.error!.message}');
+        throw Exception(response.error!.message);
       }
-      return null; // Profile not found
-    } on PostgrestException catch (e) {
-      debugPrint('Supabase Database Error (getProfile): ${e.message}');
-      throw Exception('Failed to fetch profile: ${e.message}');
+      debugPrint('User profile created successfully for $userId');
     } catch (e) {
-      debugPrint('Unexpected Error (getProfile): $e');
+      debugPrint('ProfileService unexpected createUserProfile error: $e');
       rethrow;
     }
   }
 
-  /// Creates or updates a user's profile in the 'profiles' table.
-  /// Uses upsert, so it inserts if ID doesn't exist, updates if it does.
-  Future<void> createOrUpdateProfile(UserProfile profile) async {
+  Future<void> updateUserProfile({
+    required String userId,
+    String? fullName,
+    DateTime? dateOfBirth,
+    String? gender,
+    String? bio,
+    String? profilePictureUrl,
+  }) async {
     try {
-      final Map<String, dynamic> data = profile.toMap();
-      data['id'] = profile.uid; // Explicitly set 'id' in map
+      final Map<String, dynamic> updates = {};
+      if (fullName != null) updates['full_name'] = fullName;
+      if (dateOfBirth != null) updates['date_of_birth'] = dateOfBirth.toIso8601String();
+      if (gender != null) updates['gender'] = gender;
+      if (bio != null) updates['bio'] = bio;
+      if (profilePictureUrl != null) updates['profile_picture_url'] = profilePictureUrl;
 
-      await _client
-          .from('profiles')
-          .upsert(data, onConflict: 'id'); // onConflict takes a String
-      debugPrint('Profile for ${profile.uid} upserted successfully.');
-    } on PostgrestException catch (e) {
-      debugPrint('Supabase Database Error (createOrUpdateProfile): ${e.message}');
-      throw Exception('Failed to save profile: ${e.message}');
+      final response = await _supabase.from('profiles').update(updates).eq('id', userId);
+
+      if (response.error != null) {
+        debugPrint('ProfileService updateUserProfile error: ${response.error!.message}');
+        throw Exception(response.error!.message);
+      }
+      debugPrint('User profile updated successfully for $userId');
     } catch (e) {
-      debugPrint('Unexpected Error (createOrUpdateProfile): $e');
+      debugPrint('ProfileService unexpected updateUserProfile error: $e');
       rethrow;
     }
   }
 
-  // --- Storage Operations (for Analysis Photos) ---
-
-  /// Uploads an analysis photo to Supabase Storage and returns its path.
-  /// The bucket 'analysis-photos' MUST be private.
-  Future<String?> uploadAnalysisPhoto(String userId, XFile imageFile) async {
-    final String fileExtension = imageFile.name.split('.').last;
-    final String path = '$userId/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-
+  Future<UserProfile?> getUserProfile(String userId) async {
     try {
-      final String uploadedPath = await _client.storage
-          .from('analysis-photos')
-          .upload(path, await imageFile.readAsBytes(),
-              fileOptions: const FileOptions(
-                cacheControl: '3600',
-                upsert: true,
-              ));
-
-      debugPrint('Analysis photo uploaded to path: $uploadedPath');
-      return uploadedPath;
-    } on StorageException catch (e) {
-      debugPrint('Supabase Storage Error (uploadAnalysisPhoto): ${e.message}');
-      throw Exception('Failed to upload analysis photo: ${e.message}');
+      // For select().eq().single(), the data is directly in .data if successful, .error if not found or error
+      final response = await _supabase.from('profiles').select().eq('id', userId).single();
+      if (response.error != null) {
+        debugPrint('ProfileService getUserProfile error: ${response.error!.message}');
+        return null;
+      }
+      if (response.data != null) {
+        return UserProfile.fromJson(response.data);
+      }
+      return null;
     } catch (e) {
-      debugPrint('Unexpected Error (uploadAnalysisPhoto): $e');
-      rethrow;
-    }
-  }
-
-  /// Generates a temporary signed URL for an authenticated user to view their OWN private analysis photo.
-  Future<String?> getAnalysisPhotoSignedUrl(String path) async {
-    try {
-      final String signedUrl = await _client.storage
-          .from('analysis-photos')
-          .createSignedUrl(path, 60);
-
-      debugPrint('Generated signed URL for $path');
-      return signedUrl;
-    } on StorageException catch (e) {
-      debugPrint('Supabase Storage Error (getAnalysisPhotoSignedUrl): ${e.message}');
-      throw Exception('Failed to get signed URL: ${e.message}');
-    } catch (e) {
-      debugPrint('Unexpected Error (getAnalysisPhotoSignedUrl): $e');
+      debugPrint('ProfileService unexpected getUserProfile error: $e');
       return null;
     }
   }
 
-  /// Deletes an analysis photo from Supabase Storage.
-  Future<void> deleteAnalysisPhoto(String pathInBucket) async {
-    try {
-      await _client.storage.from('analysis-photos').remove([pathInBucket]);
+  Future<void> saveUserInterests(String userId, List<String> interests) async {
+    await _supabase.from('user_interests').delete().eq('user_id', userId);
 
-      debugPrint('Analysis photo deleted successfully: $pathInBucket');
-    } on StorageException catch (e) {
-      debugPrint('Supabase Storage Error (deleteAnalysisPhoto): ${e.message}');
-      throw Exception(e.message);
-    } catch (e) {
-      debugPrint('Unexpected Error (deleteAnalysisPhoto): $e');
+    final List<Map<String, dynamic>> inserts = interests
+        .map((interest) => {'user_id': userId, 'interest': interest})
+        .toList();
+
+    if (inserts.isNotEmpty) {
+      final response = await _supabase.from('user_interests').insert(inserts);
+      if (response.error != null) {
+        debugPrint('ProfileService saveUserInterests error: ${response.error!.message}');
+        throw Exception(response.error!.message);
+      }
     }
+    debugPrint('User interests saved for $userId');
+  }
+
+  Future<void> saveUserAvailability(String userId, Map<String, List<String>> availability) async {
+    await _supabase.from('user_availability').delete().eq('user_id', userId);
+
+    final List<Map<String, dynamic>> inserts = [];
+    availability.forEach((day, timeSlots) {
+      inserts.add({
+        'user_id': userId,
+        'day_of_week': day,
+        'time_slots': timeSlots,
+      });
+    });
+
+    if (inserts.isNotEmpty) {
+      final response = await _supabase.from('user_availability').insert(inserts);
+      if (response.error != null) {
+        debugPrint('ProfileService saveUserAvailability error: ${response.error!.message}');
+        throw Exception(response.error!.message);
+      }
+    }
+    debugPrint('User availability saved for $userId');
+  }
+
+  Future<void> saveUserIntentions(String userId, List<String> intentions) async {
+    await _supabase.from('user_intentions').delete().eq('user_id', userId);
+
+    final List<Map<String, dynamic>> inserts = intentions
+        .map((intention) => {'user_id': userId, 'intention': intention})
+        .toList();
+
+    if (inserts.isNotEmpty) {
+      final response = await _supabase.from('user_intentions').insert(inserts);
+      if (response.error != null) {
+        debugPrint('ProfileService saveUserIntentions error: ${response.error!.message}');
+        throw Exception(response.error!.message);
+      }
+    }
+    debugPrint('User intentions saved for $userId');
   }
 }
