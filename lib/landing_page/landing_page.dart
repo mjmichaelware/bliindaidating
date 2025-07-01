@@ -197,20 +197,36 @@ class _NexusGatewayState extends State<NexusGateway> with SingleTickerProviderSt
     final size = MediaQuery.of(context).size;
     final bool isSmallScreen = size.width < 768;
 
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
+
+    // Use appropriate colors based on theme
+    final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final Color primaryColorShade900 = isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade900;
+    final Color secondaryColorShade900 = isDarkMode ? AppConstants.secondaryColorShade900 : AppConstants.lightSecondaryColorShade900;
+    final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
+    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+
+
     return MouseRegion(
       onEnter: (_) => _hoverController.forward(),
       onHover: (event) {
         // Trigger sparkle effect on hover movement
-        final RenderBox renderBox = context.findRenderObject() as RenderBox;
-        _lastHoverPosition = renderBox.globalToLocal(event.position);
-        widget.onHoverSparkle(_lastHoverPosition, renderBox.size);
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          _lastHoverPosition = renderBox.globalToLocal(event.position);
+          widget.onHoverSparkle(_lastHoverPosition, renderBox.size);
+        }
       },
       onExit: (_) => _hoverController.reverse(),
       child: GestureDetector(
         onTapDown: (details) {
           // Trigger sparkle effect on tap down
-          final RenderBox renderBox = context.findRenderObject() as RenderBox;
-          widget.onHoverSparkle(renderBox.globalToLocal(details.globalPosition), renderBox.size);
+          final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+          if (renderBox != null) {
+            widget.onHoverSparkle(renderBox.globalToLocal(details.globalPosition), renderBox.size);
+          }
         },
         onTap: widget.onTap,
         child: AnimatedBuilder(
@@ -227,7 +243,7 @@ class _NexusGatewayState extends State<NexusGateway> with SingleTickerProviderSt
             return ScaleTransition(
               scale: Tween<double>(begin: 1.0, end: 0.0).animate(widget.portalActivateAnimation),
               child: GlowingAura( // Wrap with GlowingAura for pulsing effect
-                glowColor: AppConstants.primaryColor.withOpacity(0.7),
+                glowColor: primaryColor.withOpacity(0.7),
                 maxBlurRadius: currentBlur * 0.5,
                 maxSpreadRadius: currentSpread * 0.5,
                 duration: const Duration(seconds: 2),
@@ -238,28 +254,28 @@ class _NexusGatewayState extends State<NexusGateway> with SingleTickerProviderSt
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        Color.lerp(AppConstants.primaryColor.withOpacity(0.8), AppConstants.secondaryColor.withOpacity(0.9), glowFactor)!,
-                        Color.lerp(AppConstants.primaryColor.shade900.withOpacity(0.7), AppConstants.secondaryColor.shade900.withOpacity(0.8), glowFactor)!,
+                        Color.lerp(primaryColor.withOpacity(0.8), secondaryColor.withOpacity(0.9), glowFactor)!,
+                        Color.lerp(primaryColorShade900.withOpacity(0.7), secondaryColorShade900.withOpacity(0.8), glowFactor)!,
                         Colors.transparent,
                       ],
                       stops: const [0.0, 0.6, 1.0],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppConstants.primaryColor.withOpacity(0.9 * glowFactor + 0.5 * hoverFactor),
+                        color: primaryColor.withOpacity(0.9 * glowFactor + 0.5 * hoverFactor),
                         blurRadius: currentBlur,
                         spreadRadius: currentSpread,
                         offset: const Offset(0, 0),
                       ),
                       BoxShadow(
-                        color: AppConstants.secondaryColor.withOpacity(0.7 * glowFactor + 0.4 * hoverFactor),
+                        color: secondaryColor.withOpacity(0.7 * glowFactor + 0.4 * hoverFactor),
                         blurRadius: currentBlur * 0.7,
                         spreadRadius: currentSpread * 0.7,
                         offset: const Offset(0, 0),
                       ),
                     ],
                     border: Border.all(
-                      color: AppConstants.textColor.withOpacity(0.3 + 0.4 * hoverFactor + 0.2 * glowFactor),
+                      color: textColor.withOpacity(0.3 + 0.4 * hoverFactor + 0.2 * glowFactor),
                       width: 3 + 2 * hoverFactor,
                     ),
                   ),
@@ -271,11 +287,11 @@ class _NexusGatewayState extends State<NexusGateway> with SingleTickerProviderSt
                         fontFamily: 'Inter',
                         fontSize: isSmallScreen ? 20 : (size.width < 1200 ? 28 : 36),
                         fontWeight: FontWeight.w900,
-                        color: AppConstants.textHighEmphasis.withOpacity(0.8 + 0.2 * hoverFactor + 0.1 * glowFactor),
+                        color: textHighEmphasis.withOpacity(0.8 + 0.2 * hoverFactor + 0.1 * glowFactor),
                         letterSpacing: isSmallScreen ? 2 : 3,
                         shadows: [
                           Shadow(
-                            color: AppConstants.textHighEmphasis.withOpacity(0.5 * glowFactor + 0.3 * hoverFactor),
+                            color: textHighEmphasis.withOpacity(0.5 * glowFactor + 0.3 * hoverFactor),
                             blurRadius: 10 * glowFactor + 5 * hoverFactor,
                           ),
                         ],
@@ -636,9 +652,13 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
 
   /// Handles triggering sparkle effects on the CTA button.
   void _handleCtaSparkle(Offset localPosition, Size buttonSize) {
-    // Create a sparkle effect at the local position relative to the button
-    final Offset globalCenter = (context.findRenderObject() as RenderBox).localToGlobal(Offset.zero);
-    final Offset sparkleOrigin = globalCenter + localPosition;
+    // Get the global position of the button itself
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    // Calculate the global position where the sparkle should appear
+    // This is the local position within the button, offset by the button's global top-left
+    final Offset sparkleOrigin = renderBox.localToGlobal(localPosition);
 
     final sparkle = SparkleEffect(
       key: ValueKey(DateTime.now().microsecondsSinceEpoch), // Unique key for each sparkle burst
@@ -663,6 +683,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
       }
     });
   }
+
 
   @override
   void dispose() {
@@ -743,8 +764,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                                 letterSpacing: isSmallScreen ? 3.0 : 6.0,
                               ),
                               glowColorTween: ColorTween(
-                                begin: AppConstants.primaryColor.shade700,
-                                end: AppConstants.secondaryColor.shade700,
+                                begin: isDarkMode ? AppConstants.primaryColorShade700 : AppConstants.lightPrimaryColorShade700,
+                                end: isDarkMode ? AppConstants.secondaryColorShade700 : AppConstants.lightSecondaryColorShade700,
                               ),
                               blurRadius: isSmallScreen ? 25 : 50,
                               animationDuration: const Duration(seconds: 5),
@@ -761,8 +782,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                                 letterSpacing: 1.0,
                               ),
                               glowColorTween: ColorTween(
-                                begin: AppConstants.secondaryColor.shade400,
-                                end: AppConstants.primaryColor.shade400,
+                                begin: isDarkMode ? AppConstants.secondaryColorShade400 : AppConstants.lightSecondaryColorShade400,
+                                end: isDarkMode ? AppConstants.primaryColorShade400 : AppConstants.lightPrimaryColorShade400,
                               ),
                               blurRadius: isSmallScreen ? 8 : 15,
                               animationDuration: const Duration(seconds: 4),
@@ -794,8 +815,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                                     height: 1.2,
                                   ),
                                   glowColorTween: ColorTween(
-                                    begin: AppConstants.primaryColor.shade400,
-                                    end: AppConstants.secondaryColor.shade400,
+                                    begin: isDarkMode ? AppConstants.primaryColorShade400 : AppConstants.lightPrimaryColorShade400,
+                                    end: isDarkMode ? AppConstants.secondaryColorShade400 : AppConstants.lightSecondaryColorShade400,
                                   ),
                                   blurRadius: isSmallScreen ? 15 : 30,
                                   animationDuration: const Duration(seconds: 4),
@@ -811,8 +832,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                                     height: 1.5,
                                   ),
                                   glowColorTween: ColorTween(
-                                    begin: AppConstants.secondaryColor.shade400,
-                                    end: AppConstants.primaryColor.shade400,
+                                    begin: isDarkMode ? AppConstants.secondaryColorShade400 : AppConstants.lightSecondaryColorShade400,
+                                    end: isDarkMode ? AppConstants.primaryColorShade400 : AppConstants.lightPrimaryColorShade400,
                                   ),
                                   blurRadius: isSmallScreen ? 10 : 20,
                                   animationDuration: const Duration(seconds: 5),
@@ -905,8 +926,8 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
           return CustomPaint(
             painter: NebulaBackgroundPainter(
               _backgroundNebulaAnimation,
-              isDarkMode ? AppConstants.primaryColor.shade900 : AppConstants.lightPrimaryColor.shade900, // Assuming lightPrimaryColor exists or use a suitable light color
-              isDarkMode ? AppConstants.secondaryColor.shade900 : AppConstants.lightSecondaryColor.shade900, // Assuming lightSecondaryColor exists
+              isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade900,
+              isDarkMode ? AppConstants.secondaryColorShade900 : AppConstants.lightSecondaryColorShade900,
             ),
             child: Container(),
           );

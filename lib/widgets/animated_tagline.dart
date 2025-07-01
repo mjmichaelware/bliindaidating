@@ -9,7 +9,7 @@ import 'package:bliindaidating/app_constants.dart'; // For AppConstants.textColo
 class AnimatedTagline extends StatelessWidget {
   final String text;
   final TextStyle style;
-  final ColorTween glowColorTween;
+  final ColorTween glowColorTween; // Removed 'const' from here as it's passed in
   final double blurRadius;
   final Duration animationDuration;
   final Curve animationCurve;
@@ -24,10 +24,7 @@ class AnimatedTagline extends StatelessWidget {
       color: AppConstants.textColor,
       letterSpacing: 1.0,
     ),
-    this.glowColorTween = const ColorTween(
-      begin: AppConstants.primaryColor,
-      end: AppConstants.secondaryColor,
-    ),
+    required this.glowColorTween, // Made required as it's no longer const initialized here
     this.blurRadius = 10.0,
     this.animationDuration = const Duration(seconds: 3),
     this.animationCurve = Curves.easeInOutSine,
@@ -60,7 +57,7 @@ class AnimatedTagline extends StatelessWidget {
         );
       },
       onEnd: () {
-        // This makes the animation repeat
+        // This trick makes TweenAnimationBuilder repeat
         (context as Element).markNeedsBuild();
       },
     );

@@ -1,14 +1,21 @@
+// lib/screens/portal/portal_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math' as math; // <-- FIX APPLIED HERE
+import 'dart:math' as math;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:bliindaidating/landing_page/landing_page.dart'; // Import the painters and other widgets defined within it
+import 'package:flutter_svg/flutter_svg.dart'; // Import for SVG assets
+import 'package:provider/provider.dart'; // Import for ThemeController
+
+// Import the painters and other widgets defined within landing_page.dart
+// Ensure these imports are correct and the widgets exist in landing_page.dart
+import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains NebulaBackgroundPainter, ParticleFieldPainter, AnimatedGlowText, InsightCrystal, FooterNavLink
+import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for theme values and SVG paths
+import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 
 // Import info screens as they are navigated to from this page
-import 'package:bliindaidating/screens/info/about_us_screen.dart'; // <-- FIX APPLIED HERE
-import 'package:bliindaidating/screens/info/privacy_screen.dart';   // <-- FIX APPLIED HERE
-import 'package:bliindaidating/screens/info/terms_screen.dart';     // <-- FIX APPLIED HERE
-
+import 'package:bliindaidating/screens/info/about_us_screen.dart';
+import 'package:bliindaidating/screens/info/privacy_screen.dart';
+import 'package:bliindaidating/screens/info/terms_screen.dart';
 
 class PortalPage extends StatefulWidget {
   const PortalPage({super.key});
@@ -33,32 +40,32 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
     {
       'title': 'DEEPER COMPATIBILITY',
       'description': 'Our AI analyzes personality, values, and communication styles, going beyond surface-level traits to find your true match.',
-      'icon': FontAwesomeIcons.robot,
-      'color': Colors.tealAccent.shade400,
+      'svgAssetPath': AppConstants.svgLoveAndDating3, // Using SVG asset
+      'color': AppConstants.complementaryColor1, // Using AppConstants
     },
     {
       'title': 'REDUCED SHALLOWNESS',
       'description': 'No endless swiping. Our algorithm presents carefully curated profiles, encouraging genuine interest based on substance.',
-      'icon': FontAwesomeIcons.filter,
-      'color': Colors.amberAccent.shade400,
+      'svgAssetPath': AppConstants.svgLoveAndDating10, // Using SVG asset
+      'color': AppConstants.complementaryColor3, // Using AppConstants
     },
     {
       'title': 'GUIDED CONVERSATIONS',
       'description': 'AI-powered prompts encourage meaningful dialogue, helping you connect on a deeper level before meeting in person.',
-      'icon': FontAwesomeIcons.comments,
-      'color': Colors.lightBlueAccent.shade400,
+      'svgAssetPath': AppConstants.svgLoveAndDating6, // Using SVG asset
+      'color': AppConstants.secondaryColor, // Using AppConstants
     },
     {
       'title': 'PERSONALIZED JOURNEY',
       'description': 'The AI learns from your interactions and feedback, continuously refining its recommendations to better understand your unique preferences.',
-      'icon': FontAwesomeIcons.chartLine,
-      'color': Colors.pinkAccent.shade400,
+      'svgAssetPath': AppConstants.svgLoveAndDating12, // Using SVG asset
+      'color': AppConstants.primaryColor, // Using AppConstants
     },
     {
       'title': 'TIME EFFICIENCY',
       'description': 'Spend less time sifting through incompatible profiles. Our AI streamlines the discovery process to bring you quality connections.',
-      'icon': FontAwesomeIcons.hourglassHalf,
-      'color': Colors.greenAccent.shade400,
+      'svgAssetPath': AppConstants.svgLoveAndDating5, // Using SVG asset
+      'color': AppConstants.complementaryColor2, // Using AppConstants
     },
   ];
 
@@ -98,8 +105,11 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
     final bool isSmallScreen = size.width < 600;
     final bool isMediumScreen = size.width >= 600 && size.width < 1000;
 
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
       body: Stack(
         children: [
           Positioned.fill(
@@ -109,8 +119,8 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                 return CustomPaint(
                   painter: NebulaBackgroundPainter(
                     _backgroundNebulaAnimation,
-                    Colors.deepPurple.shade900,
-                    Colors.indigo.shade900,
+                    isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade900,
+                    isDarkMode ? AppConstants.secondaryColorShade900 : AppConstants.lightSecondaryColorShade900,
                   ),
                   child: Container(),
                 );
@@ -123,7 +133,7 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                 _nebulaParticles,
                 _textSparkleAnimation,
                 isSmallScreen ? 1.0 : 2.0,
-                Colors.cyanAccent,
+                isDarkMode ? AppConstants.secondaryColor.withOpacity(0.8) : AppConstants.secondaryColor.withOpacity(0.5),
               ),
             ),
           ),
@@ -133,63 +143,63 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                 _deepSpaceParticles,
                 _orbGlowAnimation,
                 isSmallScreen ? 0.7 : 1.5,
-                Colors.pinkAccent,
+                isDarkMode ? AppConstants.primaryColor.withOpacity(0.8) : AppConstants.primaryColor.withOpacity(0.5),
               ),
             ),
           ),
           SingleChildScrollView(
             padding: EdgeInsets.symmetric(
-              horizontal: isSmallScreen ? 20 : (isMediumScreen ? 60 : 100),
-              vertical: isSmallScreen ? 40 : (isMediumScreen ? 60 : 80),
+              horizontal: isSmallScreen ? AppConstants.spacingMedium : (isMediumScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),
+              vertical: isSmallScreen ? AppConstants.spacingLarge : (isMediumScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 AnimatedGlowText(
-                  text: 'The Portal to Deeper Connection',
+                  text: AppConstants.portalIntroTitle, // Using AppConstants
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: isSmallScreen ? 30 : (isMediumScreen ? 50 : 60),
+                    fontSize: isSmallScreen ? AppConstants.fontSizeTitle : (isMediumScreen ? 50 : 60),
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
                     letterSpacing: 1.5,
                   ),
                   glowColorTween: ColorTween(
-                    begin: Colors.blueAccent.shade700,
-                    end: Colors.greenAccent.shade700,
+                    begin: isDarkMode ? AppConstants.secondaryColorShade700 : AppConstants.lightSecondaryColorShade700,
+                    end: isDarkMode ? AppConstants.complementaryColor2.shade700 : AppConstants.lightPrimaryColor.shade700, // Using a complementary color
                   ),
                   blurRadius: isSmallScreen ? 20 : 40,
                   animationDuration: const Duration(seconds: 5),
                   animationCurve: Curves.easeInOutQuad,
                 ),
-                SizedBox(height: isSmallScreen ? 30 : 60),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingExtraLarge : AppConstants.spacingXXXL),
                 Text(
-                  'Your journey to a truly compatible match begins here. Discover how our advanced AI transforms dating.',
+                  AppConstants.portalIntroDescription, // Using AppConstants
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: isSmallScreen ? 16 : 20,
-                    color: Colors.white.withOpacity(0.8),
+                    fontSize: isSmallScreen ? AppConstants.fontSizeBody : AppConstants.fontSizeLarge,
+                    color: (isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor).withOpacity(0.8),
                     height: 1.5,
                   ),
                 ),
-                SizedBox(height: isSmallScreen ? 40 : 80),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),
 
                 // AI Insights Section
                 Align(
                   alignment: Alignment.center,
                   child: Wrap(
                     alignment: WrapAlignment.center,
-                    spacing: isSmallScreen ? 20 : 40,
-                    runSpacing: isSmallScreen ? 20 : 40,
-                    children: _aiInsights.asMap().entries.map<Widget>((entry) { // <-- FIX APPLIED HERE
+                    spacing: isSmallScreen ? AppConstants.spacingLarge : AppConstants.spacingXXL,
+                    runSpacing: isSmallScreen ? AppConstants.spacingLarge : AppConstants.spacingXXL,
+                    children: _aiInsights.asMap().entries.map<Widget>((entry) {
                       final index = entry.key;
                       final data = entry.value;
                       return InsightCrystal(
                         title: data['title'] as String,
                         description: data['description'] as String,
-                        icon: data['icon'] as IconData,
+                        svgAssetPath: data['svgAssetPath'] as String, // Corrected to svgAssetPath
                         baseColor: data['color'] as Color,
                         isSmallScreen: isSmallScreen,
                         staggerDelay: index.toDouble(),
@@ -197,18 +207,18 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                     }).toList(),
                   ),
                 ),
-                SizedBox(height: isSmallScreen ? 60 : 100),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),
 
                 // Login/Signup Buttons
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(AppConstants.spacingLarge),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    color: (isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor).withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+                    border: Border.all(color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.2)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.05),
+                        color: (isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor).withOpacity(0.05),
                         blurRadius: 30,
                         spreadRadius: 5,
                       ),
@@ -222,47 +232,55 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Inter',
-                          fontSize: isSmallScreen ? 22 : 30,
+                          fontSize: isSmallScreen ? AppConstants.fontSizeExtraLarge : AppConstants.fontSizeTitle,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis,
                         ),
                       ),
-                      SizedBox(height: isSmallScreen ? 20 : 30),
+                      SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
                       SizedBox(
                         width: isSmallScreen ? double.infinity : 300,
                         child: ElevatedButton(
                           onPressed: () => context.go('/login'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurpleAccent,
-                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 15 : 20),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            backgroundColor: AppConstants.primaryColor, // Use AppConstants
+                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)), // Use AppConstants
                           ),
                           child: Text(
-                            'Login',
-                            style: TextStyle(fontSize: isSmallScreen ? 18 : 22, color: Colors.white),
+                            AppConstants.loginButtonText, // Use AppConstants
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? AppConstants.fontSizeMedium : AppConstants.fontSizeLarge,
+                              color: AppConstants.textHighEmphasis, // Use AppConstants
+                              fontFamily: 'Inter',
+                            ),
                           ),
                         ),
                       ),
-                      SizedBox(height: isSmallScreen ? 10 : 15),
+                      SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium),
                       SizedBox(
                         width: isSmallScreen ? double.infinity : 300,
                         child: OutlinedButton(
-                          onPressed: () => context.go('/signup'), // Corrected route to signup
+                          onPressed: () => context.go('/signup'),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
-                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 15 : 20),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            side: BorderSide(color: AppConstants.secondaryColor, width: 2), // Use AppConstants
+                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)), // Use AppConstants
                           ),
                           child: Text(
-                            'Register',
-                            style: TextStyle(fontSize: isSmallScreen ? 18 : 22, color: Colors.deepPurpleAccent),
+                            AppConstants.signupButtonText, // Use AppConstants
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? AppConstants.fontSizeMedium : AppConstants.fontSizeLarge,
+                              color: AppConstants.secondaryColor, // Use AppConstants
+                              fontFamily: 'Inter',
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: isSmallScreen ? 40 : 80),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),
 
                 // Footer Links
                 Align(
@@ -273,8 +291,8 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                       children: [
                         Wrap(
                           alignment: WrapAlignment.center,
-                          spacing: isSmallScreen ? 16 : 24,
-                          runSpacing: isSmallScreen ? 8 : 12,
+                          spacing: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge,
+                          runSpacing: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium,
                           children: [
                             FooterNavLink(
                               label: 'About Us',
@@ -296,14 +314,14 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        SizedBox(height: isSmallScreen ? 10 : 20),
+                        SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium),
                         Text(
                           '© 2025 Blind AI Dating.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Inter',
-                            fontSize: isSmallScreen ? 10 : 12,
-                            color: Colors.white.withOpacity(0.5),
+                            fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
+                            color: (isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor).withOpacity(0.5),
                           ),
                         ),
                       ],

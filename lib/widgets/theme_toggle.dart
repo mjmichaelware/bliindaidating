@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 import 'package:bliindaidating/app_constants.dart'; // For AppConstants colors
+import 'dart:math' as math; // Import dart:math for math.pi
 
 /// A toggle button for switching between light and dark themes with a cosmic animation.
 ///
@@ -48,6 +49,8 @@ class _ThemeToggleState extends State<ThemeToggle> with SingleTickerProviderStat
     final isDarkMode = themeController.isDarkMode;
 
     // Control animation direction based on theme change
+    // If dark mode is active and controller is not animating forward (to light), reverse (to dark)
+    // If light mode is active and controller is not animating reverse (to dark), forward (to light)
     if (isDarkMode && _controller.status != AnimationStatus.forward) {
       _controller.reverse(); // Animate to moon (dark mode)
     } else if (!isDarkMode && _controller.status != AnimationStatus.reverse) {

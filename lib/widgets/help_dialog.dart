@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:bliindaidating/app_constants.dart'; // For AppConstants for theme colors and spacing
+import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 import 'package:provider/provider.dart'; // For accessing ThemeController
 
 /// A floating help icon that opens a modal dialog explaining the app's purpose.
@@ -22,10 +23,12 @@ class HelpButton extends StatelessWidget {
     final Color dialogBackgroundColor = isDarkMode ? AppConstants.dialogBackgroundColor : AppConstants.lightDialogBackgroundColor;
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
+    final Color borderColor = isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor;
 
     return FloatingActionButton(
       onPressed: () {
-        _showHelpDialog(context, isDarkMode);
+        // Pass theme-dependent colors to the dialog method
+        _showHelpDialog(context, isDarkMode, dialogBackgroundColor, textColor, textHighEmphasis, borderColor);
       },
       backgroundColor: isDarkMode ? AppConstants.primaryColor.withOpacity(0.8) : AppConstants.primaryColor,
       foregroundColor: iconColor,
@@ -43,16 +46,23 @@ class HelpButton extends StatelessWidget {
   ///
   /// The dialog provides a brief explanation of the app's purpose
   /// and is styled to match the current theme.
-  void _showHelpDialog(BuildContext context, bool isDarkMode) {
+  void _showHelpDialog(
+    BuildContext context,
+    bool isDarkMode,
+    Color dialogBackgroundColor,
+    Color textColor,
+    Color textHighEmphasis,
+    Color borderColor,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: isDarkMode ? AppConstants.dialogBackgroundColor : AppConstants.lightDialogBackgroundColor,
+          backgroundColor: dialogBackgroundColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
             side: BorderSide(
-              color: isDarkMode ? AppConstants.borderColor.withOpacity(0.2) : AppConstants.lightBorderColor,
+              color: borderColor.withOpacity(0.2),
               width: 1.0,
             ),
           ),
@@ -109,7 +119,7 @@ class HelpButton extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: AppConstants.fontSizeMedium,
-                  color: isDarkMode ? AppConstants.primaryColor : AppConstants.primaryColor,
+                  color: isDarkMode ? AppConstants.primaryColor : AppConstants.primaryColor, // Button color always primary
                   fontWeight: FontWeight.bold,
                 ),
               ),

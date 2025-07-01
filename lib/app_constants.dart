@@ -49,6 +49,17 @@ class AppConstants {
   static const Color primaryColor = Color(0xFFE91E63); // Pink/Red from main.dart
   static const Color secondaryColor = Color(0xFF2196F3); // Blue/Cyan from main.dart
 
+  // Explicit shades for primary and secondary colors (dark theme)
+  // These are derived from Material Design color palettes for consistency
+  static const Color primaryColorShade900 = Color(0xFF880E4F); // Deepest shade of primary
+  static const Color primaryColorShade700 = Color(0xFFC2185B); // Darker shade of primary
+  static const Color primaryColorShade400 = Color(0xFFEC407A); // Lighter shade of primary
+
+  static const Color secondaryColorShade900 = Color(0xFF0D47A1); // Deepest shade of secondary
+  static const Color secondaryColorShade700 = Color(0xFF1976D2); // Darker shade of secondary
+  static const Color secondaryColorShade400 = Color(0xFF42A5F5); // Lighter shade of secondary
+
+
   // New colors to expand the palette based on the cosmic theme suggestion
   static const Color tertiaryColor = Color(0xFF8E24AA); // A deep purple
   static const Color complementaryColor1 = Color(0xFF00BCD4); // Cyan for contrast
@@ -82,6 +93,18 @@ class AppConstants {
   static const Color lightTextLowEmphasis = Colors.black38;
   static const Color lightIconColor = Colors.black87;
   static const Color lightBorderColor = Colors.black12;
+
+  // Explicit shades for primary and secondary colors (light theme)
+  // These are examples, adjust to fit your light theme palette
+  static const Color lightPrimaryColor = Color(0xFFFFCDD2); // Lighter pink for light theme
+  static const Color lightPrimaryColorShade900 = Color(0xFFB71C1C); // Darker red for light theme
+  static const Color lightPrimaryColorShade700 = Color(0xFFD32F2F);
+  static const Color lightPrimaryColorShade400 = Color(0xFFEF5350);
+
+  static const Color lightSecondaryColor = Color(0xFFBBDEFB); // Lighter blue for light theme
+  static const Color lightSecondaryColorShade900 = Color(0xFF0D47A1); // Darker blue for light theme
+  static const Color lightSecondaryColorShade700 = Color(0xFF1976D2);
+  static const Color lightSecondaryColorShade400 = Color(0xFF42A5F5);
 
 
   // Spacing
