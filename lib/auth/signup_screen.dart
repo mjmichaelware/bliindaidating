@@ -17,7 +17,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController(); // New controller for confirm password
+  final _confirmPasswordController = TextEditingController();
 
   bool _isLoading = false;
   late final AnimationController _shakeController;
@@ -42,7 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose(); // Dispose new controller
+    _confirmPasswordController.dispose();
     _shakeController.dispose();
     debugPrint('SignUpScreen: dispose');
     super.dispose();
@@ -54,9 +54,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       _errorMessage = null;
     });
 
-    final email = _emailController.text.trim(); // Trim email
-    final password = _passwordController.text.trim(); // Trim password
-    final confirmPassword = _confirmPasswordController.text.trim(); // Trim confirm password
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
 
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       _showError('Please fill in all fields (email and both passwords).');
@@ -70,7 +70,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       return;
     }
 
-    // Basic password strength check (can be enhanced later)
     if (password.length < 8) {
       _showError('Password must be at least 8 characters long.');
       setState(() { _isLoading = false; });
@@ -84,29 +83,34 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         password: password,
       );
 
-      if (response.user != null) {
-        debugPrint('SignUpScreen: User registered successfully with Supabase: ${response.user!.email}');
+      if (response.user != null && response.session != null) {
+        // Successful signup and automatically logged in (email confirmation is OFF or user auto-verified)
+        debugPrint('SignUpScreen: User registered and logged in successfully: ${response.user!.email}');
         if (mounted) {
-          // If email confirmation is OFF, user is signed in and redirected
           debugPrint('SignUpScreen: Navigating to /profile_setup');
           context.go('/profile_setup');
         }
-      } else if (response.session == null && response.user == null) {
-        // This case indicates email verification is required (email confirmation is ON)
-        _showError('Registration successful! Please check your email to verify your account before logging in.');
-        // Optionally redirect to a 'check email' screen or login screen
-        // if (mounted) context.go('/login');
-      } else if (response.user == null && response.session != null) {
-        // This case is less common, but implies user created without session login.
-        // It's good to log for debugging or prompt user to log in.
-        _showError('Account created, but could not log in automatically. Please proceed to login.');
-        // if (mounted) context.go('/login');
+      } else if (response.user != null && response.session == null) {
+        // User registered, but email confirmation is required and no session created (most common scenario for email verification)
+        debugPrint('SignUpScreen: User registered, but email confirmation is required.');
+        _showError('Registration successful! Please check your email to verify your account.');
+        if (mounted) {
+          // It's good practice to redirect to login so they know to log in after verifying
+          context.go('/login');
+        }
+      } else {
+        // Fallback for unexpected null user and session, or other Supabase internal states
+        debugPrint('SignUpScreen: Unexpected Supabase signup response: ${response.toJson()}'); // Use toJson if available, or print properties
+        _showError('Account created, but could not log in automatically or requires verification. Please try logging in or check email.');
+        if (mounted) {
+          context.go('/login');
+        }
       }
     } on AuthException catch (e) {
-      debugPrint('SignUpScreen: Supabase Auth error during signup: ${e.message}');
+      debugPrint('Supabase Auth error during signup: ${e.message}');
       _showError('Registration failed: ${e.message}');
     } catch (e) {
-      debugPrint('SignUpScreen: Unexpected error during signup: $e');
+      debugPrint('Unexpected error during signup: $e');
       setState(() {
         _errorMessage = 'An unexpected error occurred: ${e.toString()}';
       });
@@ -119,7 +123,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
   void _showError(String message) {
     setState(() => _errorMessage = message);
-    // Ensure the shake animation resets and plays
     _shakeController.forward(from: 0);
   }
 
@@ -128,20 +131,20 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     required IconData icon,
     required TextEditingController controller,
     bool obscure = false,
-    String? hintText, // Added hintText
-    TextInputType? keyboardType, // Added keyboardType
+    String? hintText,
+    TextInputType? keyboardType,
   }) {
     return TextField(
       controller: controller,
       obscureText: obscure,
-      keyboardType: keyboardType, // Apply keyboardType
+      keyboardType: keyboardType,
       style: const TextStyle(color: Colors.white, fontFamily: 'Inter'),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70),
-        hintText: hintText, // Apply hintText
-        hintStyle: const TextStyle(color: Colors.white54, fontFamily: 'Inter'), // Style for hint
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.white54, fontFamily: 'Inter'),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Colors.white30),
@@ -202,8 +205,8 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         label: 'Email Address',
                         icon: Icons.email_outlined,
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress, // Set keyboard type
-                        hintText: 'your.email@example.com', // Example hint text
+                        keyboardType: TextInputType.emailAddress,
+                        hintText: 'your.email@example.com',
                       ),
                       const SizedBox(height: 20),
                       _inputField(
@@ -211,15 +214,15 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         icon: Icons.lock_outline,
                         controller: _passwordController,
                         obscure: true,
-                        hintText: 'Minimum 8 characters, mix of cases and symbols', // Password strength hint
+                        hintText: 'Minimum 8 characters, mix of cases and symbols',
                       ),
-                      const SizedBox(height: 20), // Spacing for new field
+                      const SizedBox(height: 20),
                       _inputField(
                         label: 'Confirm Password',
-                        icon: Icons.lock_reset_outlined, // Different icon for confirm
+                        icon: Icons.lock_reset_outlined,
                         controller: _confirmPasswordController,
                         obscure: true,
-                        hintText: 'Re-enter your password', // Hint for confirmation
+                        hintText: 'Re-enter your password',
                       ),
                       const SizedBox(height: 24),
                       if (_errorMessage != null)
