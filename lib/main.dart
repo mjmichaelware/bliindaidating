@@ -9,9 +9,10 @@ import 'package:provider/provider.dart'; // Import for state management
 import 'package:bliindaidating/utils/supabase_config.dart';
 import 'package:bliindaidating/app_constants.dart'; // Import app_constants for theme
 import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
+import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile for redirect logic
+import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for redirect logic
 
 // Screens imports - Ensure all these paths are correct and these files exist.
-// If any are missing, you will need to create them.
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/portal/portal_page.dart';
 import 'package:bliindaidating/auth/login_screen.dart';
@@ -102,6 +103,7 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
+  final ProfileService _profileService = ProfileService(); // Instantiate ProfileService
 
   @override
   void initState() {
@@ -201,52 +203,59 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         ),
       ],
       // Redirection logic based on authentication state and profile setup
-      redirect: (context, state) {
-        final bool loggedIn = Supabase.instance.client.auth.currentUser != null;
+      redirect: (context, state) async { // Made async to allow fetching profile
+        final User? currentUser = Supabase.instance.client.auth.currentUser;
+        final bool loggedIn = currentUser != null;
         final String currentPath = state.matchedLocation;
 
-        // Paths related to authentication processes
         final bool isAuthPath = currentPath == '/login' || currentPath == '/signup';
-        // Initial public pages not requiring authentication
         final bool isOnPublicInitialPage = currentPath == '/' || currentPath == '/portal_hub';
-
-        // TODO: Implement actual logic to check if profile setup is required.
-        // This might involve checking a flag in the user's Supabase profile table.
-        // For now, if logged in and navigating away from auth paths, assume profile setup might be needed
-        // but currently it's a placeholder.
-        final bool isProfileSetupRequired = false; // Placeholder: Assume false for now
 
         debugPrint('GoRouter Redirect:');
         debugPrint('  Current Path: $currentPath');
         debugPrint('  Logged In: $loggedIn');
         debugPrint('  Is Auth Path: $isAuthPath');
         debugPrint('  On Public Initial Page: $isOnPublicInitialPage');
-        debugPrint('  Is Profile Setup Required (Placeholder): $isProfileSetupRequired');
 
-        // Allow direct navigation between login/signup if not logged in.
-        // This handles the specific bug case where /signup -> /login might loop or fail.
-        if (!loggedIn && isAuthPath) {
-          debugPrint('  Redirect decision: Not logged in but on auth path. Allowing navigation.');
-          return null; // Allow navigation to /login or /signup if not logged in
-        }
 
-        // If user is not logged in and trying to access a protected page, redirect to login
-        if (!loggedIn && !isAuthPath && !isOnPublicInitialPage) {
+        // If user is not logged in:
+        if (!loggedIn) {
+          // Allow navigation to auth paths or public initial pages
+          if (isAuthPath || isOnPublicInitialPage) {
+            debugPrint('  Redirect decision: Not logged in but on auth/public path. Allowing navigation.');
+            return null;
+          }
+          // If trying to access any other page, redirect to login
           debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /login');
           return '/login';
         }
 
         // If user is logged in:
         if (loggedIn) {
-          // If profile setup is required and user is not on the profile setup screen, redirect to it.
-          if (isProfileSetupRequired && currentPath != '/profile_setup') {
-            debugPrint('  Redirect decision: Logged in, profile setup required. Redirecting to /profile_setup');
+          // Fetch user profile to check completion status
+          UserProfile? userProfile;
+          try {
+            userProfile = await _profileService.fetchUserProfile(currentUser.id);
+          } catch (e) {
+            debugPrint('Error fetching user profile in redirect: $e');
+            // If profile fetch fails, treat as incomplete or redirect to login
+            // Consider logging out or showing an error page here for robust error handling
+            // For now, assume profile fetch failure implies incomplete or issue.
+          }
+
+          final bool isProfileComplete = userProfile?.isProfileComplete ?? false;
+
+          debugPrint('  Is Profile Complete: $isProfileComplete');
+
+          // If profile setup is required (not complete) and user is not on the profile setup screen, redirect to it.
+          if (!isProfileComplete && currentPath != '/profile_setup') {
+            debugPrint('  Redirect decision: Logged in, profile NOT complete. Redirecting to /profile_setup');
             return '/profile_setup';
           }
-          // If profile setup is not required AND user is trying to access login/signup/public pages, redirect to home.
-          // Also redirect if they are on the profile setup page but don't need to be.
-          if (!isProfileSetupRequired && (isAuthPath || isOnPublicInitialPage || currentPath == '/profile_setup')) {
-            debugPrint('  Redirect decision: Logged in, profile not required. Redirecting to /home');
+          // If profile setup is NOT required (complete) AND user is trying to access login/signup/public pages,
+          // or is on the profile setup page but doesn't need to be, redirect to home.
+          if (isProfileComplete && (isAuthPath || isOnPublicInitialPage || currentPath == '/profile_setup')) {
+            debugPrint('  Redirect decision: Logged in, profile IS complete. Redirecting to /home');
             return '/home';
           }
         }

@@ -109,7 +109,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     }
 
     try {
-      // Corrected to fetchUserProfile
       final UserProfile? fetchedProfile = await _profileService.fetchUserProfile(currentUser.id);
       if (fetchedProfile != null) {
         setState(() {
@@ -117,12 +116,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           _isLoadingProfile = false;
         });
         if (fetchedProfile.profilePictureUrl != null) {
-          // Directly use the URL from fetchedProfile, as uploadAnalysisPhoto returns public URL
           setState(() {
             _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
           });
         }
-        // Check if profile is complete based on fetched data
         if (!fetchedProfile.isProfileComplete) {
            debugPrint('MainDashboardScreen: Profile is not marked complete. Redirecting to setup.');
            if (mounted) context.go('/profile_setup');
@@ -131,19 +128,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       } else {
         setState(() { _isLoadingProfile = false; });
         debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
-        // If profile doesn't exist, prompt user to complete profile setup
         if (mounted) {
           context.go('/profile_setup');
         }
       }
 
-      // Setup Realtime Subscription
-      // Ensure your 'profiles' table has a 'user_id' column that matches auth.users.id
-      // and that 'user_id' is indexed and set as primary key (or part of it) in Supabase.
       _profileSubscription = Supabase.instance.client
           .from('profiles')
-          .stream(primaryKey: ['user_id']) // Use 'user_id' as primary key for stream
-          .eq('user_id', currentUser.id) // Listen only to current user's profile changes
+          .stream(primaryKey: ['user_id'])
+          .eq('user_id', currentUser.id)
           .listen((List<Map<String, dynamic>> data) async {
         if (data.isNotEmpty) {
           final UserProfile updatedProfile = UserProfile.fromJson(data.first);
@@ -151,7 +144,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             _userProfile = updatedProfile;
           });
           debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
-          // Update avatar URL if it changed
           if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
             setState(() {
               _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
@@ -330,12 +322,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           ),
         ],
       ),
-      trailingWidget: null,
     );
   }
 
   Widget _datingIntentions() {
-    // Dynamically display intention from user profile if available
     final String intention = _userProfile?.lookingFor ?? 'Not set yet';
 
     return DashboardInfoCard(
@@ -347,7 +337,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         icon: Icons.edit_rounded,
         text: 'Edit',
         onPressed: () {
-          context.go('/edit_profile'); // Go to general profile edit or specific intentions screen
+          context.go('/edit_profile');
         },
         gradientColors: const [Color(0xFF8E24AA), Color(0xFFD32F2F)],
         height: 44,
@@ -408,7 +398,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         icon: Icons.upgrade_rounded,
         text: 'Upgrade Now',
         onPressed: () {
-          // context.go('/premium'); // TODO: Uncomment when premium route exists
+          // context.go('/premium');
         },
         gradientColors: const [Color(0xFFD32F2F), Color(0xFF8E24AA)],
         height: 52,
@@ -419,7 +409,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   }
 
   Widget _weeklyInsights() {
-    // These should ideally come from _userProfile or a stats service
     final views = 45;
     final favorites = 12;
     final newMatches = 3;
@@ -437,7 +426,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           _statIconLabel(Icons.favorite_border_rounded, 'New Matches', newMatches),
         ],
       ),
-      trailingWidget: null,
     );
   }
 
@@ -460,7 +448,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   }
 
   Widget _privacyToggle() {
-    bool privacyModeOn = false; // Ideally from state or service
+    bool privacyModeOn = false;
 
     return StatefulBuilder(builder: (context, setStateSB) {
       return DashboardInfoCard(
@@ -474,7 +462,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           onChanged: (val) {
             setStateSB(() {
               privacyModeOn = val;
-              // TODO: Persist privacy mode state & trigger haptics
             });
           },
         ),
@@ -524,10 +511,80 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               style: const TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'),
             ),
           ),
-        )
+        ),
       ],
     );
   }
+
+  Widget _buildExtendedProfileNudge(BuildContext context, bool isDarkMode) {
+    if (_userProfile != null && (_userProfile?.isProfileComplete ?? false)) {
+    } else {
+      return const SizedBox.shrink();
+    }
+
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 24.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration( // Wrapped RadialGradient in BoxDecoration
+        color: isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: (isDarkMode ? Colors.black : Colors.grey.shade400).withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.star, color: Colors.amber.shade400, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Unlock Better Matches!',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontFamily: 'Inter',
+                    color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Your initial profile is complete, which got you in fast! But for the most accurate and meaningful matches, take a moment to complete your extended profile details.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontFamily: 'Inter',
+              color: isDarkMode ? AppConstants.textColor.withOpacity(0.8) : AppConstants.lightTextColor.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                context.go('/edit_profile');
+                debugPrint('Extended profile nudge clicked.');
+              },
+              child: Text(
+                'Complete Extended Profile',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontFamily: 'Inter',
+                  color: isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -535,23 +592,22 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final isDarkMode = theme.isDarkMode;
 
     return Scaffold(
-      extendBodyBehindAppBar: true, // Allow body to go behind app bar for background
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
-          'Main Dashboard', // Changed title as requested
+          'Main Dashboard',
           style: TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.bold,
             color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
           ),
         ),
-        backgroundColor: Colors.transparent, // Make app bar transparent
+        backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             icon: Icon(Icons.settings, color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
             onPressed: () {
-              // CHANGE: Using context.push() for settings to allow popping back
               context.push('/settings');
             },
           ),
@@ -571,7 +627,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           const Positioned.fill(child: AnimatedOrbBackground()),
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: BoxDecoration( // Wrapped RadialGradient in BoxDecoration
                 gradient: RadialGradient(
                   colors: [
                     Colors.deepPurple.shade900.withOpacity(0.7),
@@ -588,7 +644,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
-                  return false; // Prevent default scroll behavior if needed
+                  return false;
                 },
                 child: SingleChildScrollView(
                   controller: _scrollController,
@@ -629,6 +685,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 const SizedBox(height: AppConstants.spacingLarge),
                               ],
                             ),
+
+                      if (_userProfile != null && (_userProfile?.isProfileComplete ?? false))
+                        _buildExtendedProfileNudge(context, isDarkMode),
+
 
                       _animatedPenaltySection(),
                       const SizedBox(height: AppConstants.spacingLarge),

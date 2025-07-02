@@ -1,7 +1,7 @@
 // lib/screens/settings/widgets/dating_preferences_form.dart
 
 import 'package:flutter/material.dart';
-import 'package:bliindaidating/app_constants.dart'; // For colors/theming (excluding removed ones)
+import 'package:bliindaidating/app_constants.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
@@ -30,7 +30,8 @@ class DatingPreferencesForm extends StatefulWidget {
 }
 
 class _DatingPreferencesFormState extends State<DatingPreferencesForm> {
-  final List<String> _genderOptions = ['Male', 'Female', 'Non-binary', 'Any', 'Transgender Male', 'Transgender Female',
+  final List<String> _genderOptions = [
+    'Male', 'Female', 'Non-binary', 'Any', 'Transgender Male', 'Transgender Female',
     'Genderqueer', 'Genderfluid', 'Agender', 'Bigender', 'Two-Spirit', 'Demigirl', 'Demiboy',
     'Intersex', 'Other', 'Prefer not to say'
   ];
@@ -40,12 +41,13 @@ class _DatingPreferencesFormState extends State<DatingPreferencesForm> {
     final themeController = Provider.of<ThemeController>(context);
     final isDarkMode = themeController.isDarkMode;
     final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
 
-    // Hardcoded colors for AppConstants replacements
-    final Color textColor = isDarkMode ? Colors.white : Colors.black87;
-    final Color secondaryColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
-    final Color cardColor = isDarkMode ? Colors.deepPurple.shade800 : Colors.grey.shade200;
+    final Color primaryTextColor = isDarkMode ? Colors.white : Colors.black87; // Main text color
+    final Color secondaryTextColor = isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54; // Label/hint text color
+    final Color widgetBackgroundColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor; // Background for dropdown menu/input fields
+
+    final Color activeColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
+    final Color inactiveColor = (isDarkMode ? Colors.deepPurple.shade800 : Colors.grey.shade200).withOpacity(0.5);
 
 
     return SingleChildScrollView(
@@ -60,7 +62,7 @@ class _DatingPreferencesFormState extends State<DatingPreferencesForm> {
               style: textTheme.headlineSmall?.copyWith(
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.bold,
-                color: textColor, // Using hardcoded textColor
+                color: primaryTextColor,
               ),
             ),
             const SizedBox(height: 24),
@@ -68,14 +70,24 @@ class _DatingPreferencesFormState extends State<DatingPreferencesForm> {
               value: widget.preferredGender,
               decoration: InputDecoration(
                 labelText: 'Preferred Gender',
+                labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor), // Adjusted label color
                 border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.people),
-                labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                prefixIcon: Icon(Icons.people, color: secondaryTextColor), // Adjusted icon color
+                enabledBorder: OutlineInputBorder( // Ensure border is visible
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: secondaryTextColor.withOpacity(0.5)),
+                ),
+                focusedBorder: OutlineInputBorder( // Ensure focused border is vibrant
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: activeColor, width: 2),
+                ),
               ),
+              dropdownColor: widgetBackgroundColor, // Explicitly set dropdown background
+              style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor), // Explicitly set selected item text color
               items: _genderOptions.map((String gender) {
                 return DropdownMenuItem<String>(
                   value: gender,
-                  child: Text(gender, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
+                  child: Text(gender, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor)), // Explicitly set list item text color
                 );
               }).toList(),
               onChanged: widget.onPreferredGenderChanged,
@@ -91,7 +103,7 @@ class _DatingPreferencesFormState extends State<DatingPreferencesForm> {
               'Age Range: ${widget.ageRange.start.toInt()} - ${widget.ageRange.end.toInt()}',
               style: textTheme.titleMedium?.copyWith(
                 fontFamily: 'Inter',
-                color: textColor, // Using hardcoded textColor
+                color: primaryTextColor,
               ),
             ),
             RangeSlider(
@@ -104,15 +116,15 @@ class _DatingPreferencesFormState extends State<DatingPreferencesForm> {
                 widget.ageRange.end.toInt().toString(),
               ),
               onChanged: widget.onAgeRangeChanged,
-              activeColor: secondaryColor, // Using hardcoded secondaryColor
-              inactiveColor: cardColor.withOpacity(0.5), // Using hardcoded cardColor
+              activeColor: activeColor,
+              inactiveColor: inactiveColor,
             ),
             const SizedBox(height: 24),
             Text(
               'Max Distance: ${widget.maxDistance.toInt()} miles',
               style: textTheme.titleMedium?.copyWith(
                 fontFamily: 'Inter',
-                color: textColor, // Using hardcoded textColor
+                color: primaryTextColor,
               ),
             ),
             Slider(
@@ -122,8 +134,8 @@ class _DatingPreferencesFormState extends State<DatingPreferencesForm> {
               divisions: 49,
               label: widget.maxDistance.toInt().toString(),
               onChanged: widget.onMaxDistanceChanged,
-              activeColor: secondaryColor, // Using hardcoded secondaryColor
-              inactiveColor: cardColor.withOpacity(0.5), // Using hardcoded cardColor
+              activeColor: activeColor,
+              inactiveColor: inactiveColor,
             ),
           ],
         ),
