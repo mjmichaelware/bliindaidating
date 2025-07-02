@@ -9,7 +9,6 @@ import 'package:bliindaidating/app_constants.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
-// Import the new modular settings widgets explicitly
 import 'package:bliindaidating/screens/settings/widgets/dating_preferences_form.dart';
 import 'package:bliindaidating/screens/settings/widgets/profile_visibility_settings.dart';
 import 'package:bliindaidating/screens/settings/widgets/account_settings_form.dart';
@@ -36,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   double _maxDistance = 100; // in miles
 
   // --- Profile Visibility State ---
+  // Initializing all to false for demonstration; these would be loaded from DB
   bool _showFullName = false;
   bool _showDisplayName = true;
   bool _showAge = true;
@@ -46,6 +46,33 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   bool _showInterests = true;
   bool _showLookingFor = true;
   bool _showLocation = true;
+  bool _showEthnicity = false;
+  bool _showLanguagesSpoken = false;
+  bool _showEducationLevel = false;
+  bool _showDesiredOccupation = false;
+  bool _showLoveLanguages = false;
+  bool _showFavoriteMedia = false;
+  bool _showMaritalStatus = false;
+  bool _showChildrenPreference = false;
+  bool _showWillingToRelocate = false;
+  bool _showMonogamyPolyamory = false;
+  bool _showLoveRelationshipGoals = false;
+  bool _showDealbreakersBoundaries = false;
+  bool _showAstrologicalSign = false;
+  bool _showAttachmentStyle = false;
+  bool _showCommunicationStyle = false;
+  bool _showMentalHealthDisclosures = false;
+  bool _showPetOwnership = false;
+  bool _showTravelFrequencyDestinations = false;
+  bool _showPoliticalViews = false;
+  bool _showReligionBeliefs = false;
+  bool _showDiet = false;
+  bool _showSmokingHabits = false;
+  bool _showDrinkingHabits = false;
+  bool _showExerciseFrequency = false;
+  bool _showSleepSchedule = false;
+  bool _showPersonalityTraits = false;
+
 
   // Tab Definitions
   static const List<Tab> _settingsTabs = <Tab>[
@@ -82,20 +109,48 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     try {
       final UserProfile? userProfile = await _profileService.fetchUserProfile(currentUser.id);
       if (userProfile != null) {
+        // TODO: Load actual saved settings from user_profile or a dedicated settings table
         _preferredGender = 'Any';
         _ageRange = const RangeValues(20, 40);
         _maxDistance = 50;
 
-        _showFullName = false;
-        _showDisplayName = true;
-        _showAge = true;
-        _showGender = true;
-        _showBio = true;
-        _showSexualOrientation = true;
-        _showHeight = true;
-        _showInterests = true;
-        _showLookingFor = true;
-        _showLocation = true;
+        // Mock loading visibility settings (assuming they would be stored in UserProfile or a separate settings model)
+        _showFullName = userProfile.fullName != null;
+        _showDisplayName = userProfile.displayName != null;
+        _showAge = userProfile.dateOfBirth != null;
+        _showGender = userProfile.gender != null;
+        _showBio = userProfile.bio != null;
+        _showSexualOrientation = userProfile.sexualOrientation != null;
+        _showHeight = userProfile.height != null;
+        _showInterests = userProfile.interests.isNotEmpty;
+        _showLookingFor = userProfile.lookingFor != null;
+        _showLocation = userProfile.addressZip != null;
+        _showEthnicity = false; // Mock values
+        _showLanguagesSpoken = false;
+        _showEducationLevel = false;
+        _showDesiredOccupation = false;
+        _showLoveLanguages = false;
+        _showFavoriteMedia = false;
+        _showMaritalStatus = false;
+        _showChildrenPreference = false;
+        _showWillingToRelocate = false;
+        _showMonogamyPolyamory = false;
+        _showLoveRelationshipGoals = false;
+        _showDealbreakersBoundaries = false;
+        _showAstrologicalSign = false;
+        _showAttachmentStyle = false;
+        _showCommunicationStyle = false;
+        _showMentalHealthDisclosures = false;
+        _showPetOwnership = false;
+        _showTravelFrequencyDestinations = false;
+        _showPoliticalViews = false;
+        _showReligionBeliefs = false;
+        _showDiet = false;
+        _showSmokingHabits = false;
+        _showDrinkingHabits = false;
+        _showExerciseFrequency = false;
+        _showSleepSchedule = false;
+        _showPersonalityTraits = false;
       }
       debugPrint('SettingsScreen: Preferences loaded (mock/initial)');
     } catch (e) {
@@ -132,9 +187,29 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     try {
       debugPrint('SettingsScreen: Saving preferences...');
       debugPrint('  Dating: Preferred Gender: $_preferredGender, Age: ${_ageRange.start.toInt()}-${_ageRange.end.toInt()}, Distance: ${_maxDistance.toInt()} miles');
-      debugPrint('  Visibility: FullName: $_showFullName, DisplayName: $_showDisplayName, Age: $_showAge, etc.');
+      debugPrint('  Visibility: FullName: $_showFullName, DisplayName: $_showDisplayName, etc.');
+      debugPrint('  All visibility states: $_showFullName, $_showDisplayName, $_showAge, $_showGender, $_showBio, $_showSexualOrientation, $_showHeight, $_showInterests, $_showLookingFor, $_showLocation, $_showEthnicity, $_showLanguagesSpoken, $_showEducationLevel, $_showDesiredOccupation, $_showLoveLanguages, $_showFavoriteMedia, $_showMaritalStatus, $_showChildrenPreference, $_showWillingToRelocate, $_showMonogamyPolyamory, $_showLoveRelationshipGoals, $_showDealbreakersBoundaries, $_showAstrologicalSign, $_showAttachmentStyle, $_showCommunicationStyle, $_showMentalHealthDisclosures, $_showPetOwnership, $_showTravelFrequencyDestinations, $_showPoliticalViews, $_showReligionBeliefs, $_showDiet, $_showSmokingHabits, $_showDrinkingHabits, $_showExerciseFrequency, $_showSleepSchedule, $_showPersonalityTraits');
 
-      await Future.delayed(const Duration(seconds: 1));
+      // TODO: Implement actual saving logic to Supabase
+      // This will involve updating UserProfile with new fields or a dedicated UserSettings table.
+      // Example:
+      // final UserProfile? currentProfile = await _profileService.fetchUserProfile(currentUser.id);
+      // if (currentProfile != null) {
+      //   final UserProfile updatedProfile = currentProfile.copyWith(
+      //     // Add all new preference and visibility fields here
+      //     preferredGender: _preferredGender,
+      //     minAgePreference: _ageRange.start.toInt(),
+      //     maxAgePreference: _ageRange.end.toInt(),
+      //     maxSearchDistanceMiles: _maxDistance,
+      //     showFullName: _showFullName,
+      //     showDisplayName: _showDisplayName,
+      //     // ... and so on for all 30+ visibility settings
+      //   );
+      //   await _profileService.createOrUpdateProfile(profile: updatedProfile);
+      // }
+
+
+      await Future.delayed(const Duration(seconds: 1)); // Simulate network request
       debugPrint('SettingsScreen: Preferences saved successfully (mock)!');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -153,10 +228,12 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
   }
 
+  // --- Callbacks for child widgets to update parent state ---
   void _onPreferredGenderChanged(String? newValue) { setState(() { _preferredGender = newValue; }); }
   void _onAgeRangeChanged(RangeValues newValues) { setState(() { _ageRange = newValues; }); }
   void _onMaxDistanceChanged(double newValue) { setState(() { _maxDistance = newValue; }); }
 
+  // Callbacks for Profile Visibility Toggles
   void _onShowFullNameChanged(bool newValue) { setState(() { _showFullName = newValue; }); }
   void _onShowDisplayNameChanged(bool newValue) { setState(() { _showDisplayName = newValue; }); }
   void _onShowAgeChanged(bool newValue) { setState(() { _showAge = newValue; }); }
@@ -167,6 +244,33 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   void _onShowInterestsChanged(bool newValue) { setState(() { _showInterests = newValue; }); }
   void _onShowLookingForChanged(bool newValue) { setState(() { _showLookingFor = newValue; }); }
   void _onShowLocationChanged(bool newValue) { setState(() { _showLocation = newValue; }); }
+  void _onShowEthnicityChanged(bool newValue) { setState(() { _showEthnicity = newValue; }); }
+  void _onShowLanguagesSpokenChanged(bool newValue) { setState(() { _showLanguagesSpoken = newValue; }); }
+  void _onShowEducationLevelChanged(bool newValue) { setState(() { _showEducationLevel = newValue; }); }
+  void _onShowDesiredOccupationChanged(bool newValue) { setState(() { _showDesiredOccupation = newValue; }); }
+  void _onShowLoveLanguagesChanged(bool newValue) { setState(() { _showLoveLanguages = newValue; }); }
+  void _onShowFavoriteMediaChanged(bool newValue) { setState(() { _showFavoriteMedia = newValue; }); }
+  void _onShowMaritalStatusChanged(bool newValue) { setState(() { _showMaritalStatus = newValue; }); }
+  void _onShowChildrenPreferenceChanged(bool newValue) { setState(() { _showChildrenPreference = newValue; }); }
+  void _onShowWillingToRelocateChanged(bool newValue) { setState(() { _showWillingToRelocate = newValue; }); }
+  void _onShowMonogamyPolyamoryChanged(bool newValue) { setState(() { _showMonogamyPolyamory = newValue; }); }
+  void _onShowLoveRelationshipGoalsChanged(bool newValue) { setState(() { _showLoveRelationshipGoals = newValue; }); }
+  void _onShowDealbreakersBoundariesChanged(bool newValue) { setState(() { _showDealbreakersBoundaries = newValue; }); }
+  void _onShowAstrologicalSignChanged(bool newValue) { setState(() { _showAstrologicalSign = newValue; }); }
+  void _onShowAttachmentStyleChanged(bool newValue) { setState(() { _showAttachmentStyle = newValue; }); }
+  void _onShowCommunicationStyleChanged(bool newValue) { setState(() { _showCommunicationStyle = newValue; }); }
+  void _onShowMentalHealthDisclosuresChanged(bool newValue) { setState(() { _showMentalHealthDisclosures = newValue; }); }
+  void _onShowPetOwnershipChanged(bool newValue) { setState(() { _showPetOwnership = newValue; }); }
+  void _onShowTravelFrequencyDestinationsChanged(bool newValue) { setState(() { _showTravelFrequencyDestinations = newValue; }); }
+  void _onShowPoliticalViewsChanged(bool newValue) { setState(() { _showPoliticalViews = newValue; }); }
+  void _onShowReligionBeliefsChanged(bool newValue) { setState(() { _showReligionBeliefs = newValue; }); }
+  void _onShowDietChanged(bool newValue) { setState(() { _showDiet = newValue; }); }
+  void _onShowSmokingHabitsChanged(bool newValue) { setState(() { _showSmokingHabits = newValue; }); }
+  void _onShowDrinkingHabitsChanged(bool newValue) { setState(() { _showDrinkingHabits = newValue; }); }
+  void _onShowExerciseFrequencyChanged(bool newValue) { setState(() { _showExerciseFrequency = newValue; }); }
+  void _onShowSleepScheduleChanged(bool newValue) { setState(() { _showSleepSchedule = newValue; }); }
+  void _onShowPersonalityTraitsChanged(bool newValue) { setState(() { _showPersonalityTraits = newValue; }); }
+
 
   @override
   void dispose() {
@@ -230,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   onAgeRangeChanged: _onAgeRangeChanged,
                   onMaxDistanceChanged: _onMaxDistanceChanged,
                 ),
-                ProfileVisibilitySettings( // This is the widget causing the duplicate import error
+                ProfileVisibilitySettings(
                   formKey: _formKeys[1],
                   showFullName: _showFullName,
                   showDisplayName: _showDisplayName,
@@ -252,6 +356,59 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   onShowInterestsChanged: _onShowInterestsChanged,
                   onShowLookingForChanged: _onShowLookingForChanged,
                   onShowLocationChanged: _onShowLocationChanged,
+                  // Pass all new visibility parameters
+                  showEthnicity: _showEthnicity,
+                  showLanguagesSpoken: _showLanguagesSpoken,
+                  showEducationLevel: _showEducationLevel,
+                  showDesiredOccupation: _showDesiredOccupation,
+                  showLoveLanguages: _showLoveLanguages,
+                  showFavoriteMedia: _showFavoriteMedia,
+                  showMaritalStatus: _showMaritalStatus,
+                  showChildrenPreference: _showChildrenPreference,
+                  showWillingToRelocate: _showWillingToRelocate,
+                  showMonogamyPolyamory: _showMonogamyPolyamory,
+                  showLoveRelationshipGoals: _showLoveRelationshipGoals,
+                  showDealbreakersBoundaries: _showDealbreakersBoundaries,
+                  showAstrologicalSign: _showAstrologicalSign,
+                  showAttachmentStyle: _showAttachmentStyle,
+                  showCommunicationStyle: _showCommunicationStyle,
+                  showMentalHealthDisclosures: _showMentalHealthDisclosures,
+                  showPetOwnership: _showPetOwnership,
+                  showTravelFrequencyDestinations: _showTravelFrequencyDestinations,
+                  showPoliticalViews: _showPoliticalViews,
+                  showReligionBeliefs: _showReligionBeliefs,
+                  showDiet: _showDiet,
+                  showSmokingHabits: _showSmokingHabits,
+                  showDrinkingHabits: _showDrinkingHabits,
+                  showExerciseFrequency: _showExerciseFrequency,
+                  showSleepSchedule: _showSleepSchedule,
+                  showPersonalityTraits: _showPersonalityTraits,
+                  onShowEthnicityChanged: _onShowEthnicityChanged,
+                  onShowLanguagesSpokenChanged: _onShowLanguagesSpokenChanged,
+                  onShowEducationLevelChanged: _onShowEducationLevelChanged,
+                  onShowDesiredOccupationChanged: _onShowDesiredOccupationChanged,
+                  onShowLoveLanguagesChanged: _onShowLoveLanguagesChanged,
+                  onShowFavoriteMediaChanged: _onShowFavoriteMediaChanged,
+                  onShowMaritalStatusChanged: _onShowMaritalStatusChanged,
+                  onShowChildrenPreferenceChanged: _onShowChildrenPreferenceChanged,
+                  onShowWillingToRelocateChanged: _onShowWillingToRelocateChanged,
+                  onShowMonogamyPolyamoryChanged: _onShowMonogamyPolyamoryChanged,
+                  onShowLoveRelationshipGoalsChanged: _onShowLoveRelationshipGoalsChanged,
+                  onShowDealbreakersBoundariesChanged: _onShowDealbreakersBoundariesChanged,
+                  onShowAstrologicalSignChanged: _onShowAstrologicalSignChanged,
+                  onShowAttachmentStyleChanged: _onShowAttachmentStyleChanged,
+                  onShowCommunicationStyleChanged: _onShowCommunicationStyleChanged,
+                  onShowMentalHealthDisclosuresChanged: _onShowMentalHealthDisclosuresChanged,
+                  onShowPetOwnershipChanged: _onShowPetOwnershipChanged,
+                  onShowTravelFrequencyDestinationsChanged: _onShowTravelFrequencyDestinationsChanged,
+                  onShowPoliticalViewsChanged: _onShowPoliticalViewsChanged,
+                  onShowReligionBeliefsChanged: _onShowReligionBeliefsChanged,
+                  onShowDietChanged: _onShowDietChanged,
+                  onShowSmokingHabitsChanged: _onShowSmokingHabitsChanged,
+                  onShowDrinkingHabitsChanged: _onShowDrinkingHabitsChanged,
+                  onShowExerciseFrequencyChanged: _onShowExerciseFrequencyChanged,
+                  onShowSleepScheduleChanged: _onShowSleepScheduleChanged,
+                  onShowPersonalityTraitsChanged: _onShowPersonalityTraitsChanged,
                 ),
                 AccountSettingsForm(formKey: _formKeys[2]),
                 NotificationSettings(formKey: _formKeys[3]),

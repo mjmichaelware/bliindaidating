@@ -551,7 +551,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           IconButton(
             icon: Icon(Icons.settings, color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
             onPressed: () {
-              context.go('/settings');
+              // CHANGE: Using context.push() for settings to allow popping back
+              context.push('/settings');
             },
           ),
           IconButton(
@@ -595,22 +596,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // No longer need DashboardHeader directly if AppBar handles title
-                      // If DashboardHeader provides other elements (e.g., avatar, welcome text *below* app bar)
-                      // then adjust it to fit. For now, removing the redundant DashboardHeader.
-                      // _isLoadingProfile ? Center(child: CircularProgressIndicator()) : DashboardHeader(
-                      //   userName: _userProfile?.displayName ?? _userProfile?.fullName ?? 'User',
-                      //   profileImageUrl: _profilePictureDisplayUrl, // Use the prepared URL
-                      //   onProfileTap: () => context.go('/edit_profile'),
-                      // ),
-
-                      // Display simple welcome text and avatar if DashboardHeader widget is not used for this.
                       _isLoadingProfile
                           ? Center(
                               child: CircularProgressIndicator(
                                   color: Theme.of(context).colorScheme.secondary),
                             )
-                          : Column( // Use Column to hold welcome text and avatar
+                          : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
@@ -640,7 +631,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                             ),
 
                       _animatedPenaltySection(),
-                      const SizedBox(height: AppConstants.spacingLarge), // Add spacing after penalty section
+                      const SizedBox(height: AppConstants.spacingLarge),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
@@ -683,7 +674,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                         icon: Icons.edit_rounded,
                         text: 'Edit Profile',
                         onPressed: () {
-                          context.go('/edit_profile'); // Updated to /edit_profile as it's the ProfileTabsScreen
+                          context.go('/edit_profile');
                         },
                         gradientColors: const [
                           Color(0xFF8E24AA),
