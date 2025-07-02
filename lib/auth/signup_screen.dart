@@ -18,6 +18,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // Moved _formKey declaration here
 
   bool _isLoading = false;
   late final AnimationController _shakeController;
@@ -48,6 +49,26 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
+  // Client-side password validation
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password cannot be empty.';
+    }
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters long.';
+    }
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter.';
+    }
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'Password must contain at least one lowercase letter.';
+    }
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'Password must contain at least one digit.';
+    }
+    return null; // Password is valid
+  }
+
   Future<void> _attemptSignUp() async {
     setState(() {
       _isLoading = true;
@@ -58,20 +79,21 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      _showError('Please fill in all fields (email and both passwords).');
+    if (email.isEmpty) {
+      _showError('Please enter your email address.');
+      setState(() { _isLoading = false; });
+      return;
+    }
+
+    final passwordValidationError = _validatePassword(password);
+    if (passwordValidationError != null) {
+      _showError(passwordValidationError);
       setState(() { _isLoading = false; });
       return;
     }
 
     if (password != confirmPassword) {
       _showError('Passwords do not match. Please re-enter.');
-      setState(() { _isLoading = false; });
-      return;
-    }
-
-    if (password.length < 8) {
-      _showError('Password must be at least 8 characters long.');
       setState(() { _isLoading = false; });
       return;
     }
@@ -84,24 +106,20 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       );
 
       if (response.user != null && response.session != null) {
-        // Successful signup and automatically logged in (email confirmation is OFF or user auto-verified)
         debugPrint('SignUpScreen: User registered and logged in successfully: ${response.user!.email}');
         if (mounted) {
           debugPrint('SignUpScreen: Navigating to /profile_setup');
           context.go('/profile_setup');
         }
       } else if (response.user != null && response.session == null) {
-        // User registered, but email confirmation is required and no session created (most common scenario for email verification)
-        debugPrint('SignUpScreen: User registered, but email confirmation is required.');
-        _showError('Registration successful! Please check your email to verify your account.');
+        debugPrint('SignUpScreen: User registered, but no session. Email confirmation might be unexpectedly ON. User: ${response.user?.id}');
+        _showError('Registration successful! Please try logging in. If issues persist, check your email for a verification link.');
         if (mounted) {
-          // It's good practice to redirect to login so they know to log in after verifying
           context.go('/login');
         }
       } else {
-        // Fallback for unexpected null user and session, or other Supabase internal states
-        debugPrint('SignUpScreen: Unexpected Supabase signup response: ${response.toJson()}'); // Use toJson if available, or print properties
-        _showError('Account created, but could not log in automatically or requires verification. Please try logging in or check email.');
+        debugPrint('SignUpScreen: Unexpected Supabase signup response. User: ${response.user?.id}, Session: ${response.session?.accessToken != null ? 'Exists' : 'Null'}'); // Corrected to accessToken
+        _showError('Account created, but an unexpected issue occurred. Please try logging in.');
         if (mounted) {
           context.go('/login');
         }
@@ -133,8 +151,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     bool obscure = false,
     String? hintText,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
@@ -153,7 +172,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
         ),
+        errorStyle: const TextStyle(fontFamily: 'Inter'),
       ),
+      validator: validator,
     );
   }
 
@@ -184,79 +205,105 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                       )
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/svg/DrawKit Vector Illustration Love & Dating (2).svg',
-                        height: isSmall ? 120 : 150,
-                        semanticsLabel: 'Sign up illustration',
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Forge Your Cosmic Connection',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                  child: Form(
+                    key: _formKey, // Use the declared _formKey
+                    child: Column(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/svg/DrawKit Vector Illustration Love & Dating (2).svg',
+                          height: isSmall ? 120 : 150,
+                          semanticsLabel: 'Sign up illustration',
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Forge Your Cosmic Connection',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        _inputField(
+                          label: 'Email Address',
+                          icon: Icons.email_outlined,
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          hintText: 'your.email@example.com',
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Email cannot be empty.';
+                            }
+                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                              return 'Enter a valid email address.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        _inputField(
+                          label: 'Password',
+                          icon: Icons.lock_outline,
+                          controller: _passwordController,
+                          obscure: true,
+                          hintText: '8+ chars, incl. A-Z, a-z, 0-9',
+                          validator: _validatePassword,
+                        ),
+                        const SizedBox(height: 20),
+                        _inputField(
+                          label: 'Confirm Password',
+                          icon: Icons.lock_reset_outlined,
+                          controller: _confirmPasswordController,
+                          obscure: true,
+                          hintText: 'Re-enter your password',
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Confirmation password cannot be empty.';
+                            }
+                            if (value != _passwordController.text.trim()) {
+                              return 'Passwords do not match.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        if (_errorMessage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Inter',
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      _inputField(
-                        label: 'Email Address',
-                        icon: Icons.email_outlined,
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        hintText: 'your.email@example.com',
-                      ),
-                      const SizedBox(height: 20),
-                      _inputField(
-                        label: 'Password',
-                        icon: Icons.lock_outline,
-                        controller: _passwordController,
-                        obscure: true,
-                        hintText: 'Minimum 8 characters, mix of cases and symbols',
-                      ),
-                      const SizedBox(height: 20),
-                      _inputField(
-                        label: 'Confirm Password',
-                        icon: Icons.lock_reset_outlined,
-                        controller: _confirmPasswordController,
-                        obscure: true,
-                        hintText: 'Re-enter your password',
-                      ),
-                      const SizedBox(height: 24),
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
+                          ),
+                        GlowingButton(
+                          text: 'Manifest My Destiny',
+                          icon: Icons.control_point_duplicate,
+                          onPressed: _isLoading ? null : () {
+                            if (_formKey.currentState!.validate()) { // Correctly access _formKey
+                              _attemptSignUp();
+                            }
+                          },
+                          gradientColors: [Colors.purple.shade700, Colors.red.shade600],
+                          disabled: _isLoading,
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () {
+                            debugPrint('SignUpScreen: Navigating to /login from TextButton');
+                            context.go('/login');
+                          },
                           child: Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Inter',
-                            ),
-                            textAlign: TextAlign.center,
+                            'Already Forged Your Path? Enter Here',
+                            style: TextStyle(color: Colors.white.withAlpha((255 * 0.85).round())),
                           ),
                         ),
-                      GlowingButton(
-                        text: 'Manifest My Destiny',
-                        icon: Icons.control_point_duplicate,
-                        onPressed: _isLoading ? null : _attemptSignUp,
-                        gradientColors: [Colors.purple.shade700, Colors.red.shade600],
-                        disabled: _isLoading,
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          debugPrint('SignUpScreen: Navigating to /login from TextButton');
-                          context.go('/login');
-                        },
-                        child: Text(
-                          'Already Forged Your Path? Enter Here',
-                          style: TextStyle(color: Colors.white.withAlpha((255 * 0.85).round())),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

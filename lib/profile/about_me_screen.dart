@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
-import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for theming (but not spacing)
+// Removed: import 'package:bliindaidating/app_constants.dart'; // No longer needed for spacing constants
 
 class AboutMeScreen extends StatefulWidget {
   const AboutMeScreen({super.key});
@@ -234,7 +234,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0), // Hardcoded value (was AppConstants.paddingLarge)
+              padding: const EdgeInsets.all(24.0), // Hardcoded value
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -259,14 +259,14 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16.0), // Hardcoded value (was AppConstants.spacingMedium)
+                  const SizedBox(height: 16.0), // Hardcoded value
                   Center(
                     child: Text(
                       'Tap to change profile picture',
                       style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: colorScheme.onSurface.withOpacity(0.7)),
                     ),
                   ),
-                  const SizedBox(height: 24.0), // Hardcoded value (was AppConstants.spacingLarge)
+                  const SizedBox(height: 24.0), // Hardcoded value
                   TextFormField(
                     controller: _fullNameController,
                     decoration: InputDecoration(

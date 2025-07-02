@@ -73,17 +73,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           // Router redirect will handle navigation to /home
         }
       } else {
-        debugPrint('LoginScreen: Supabase signInWithPassword returned null user. Session: ${response.session != null ? 'Exists' : 'Null'}, User: ${response.user != null ? 'Exists' : 'Null'}');
-        // If login failed, check if it's due to unconfirmed email
-        _showError('Login failed. Please check your credentials or verify your email.');
+        debugPrint('LoginScreen: Supabase signInWithPassword returned null user. User: ${response.user?.id}, Session: ${response.session?.accessToken != null ? 'Exists' : 'Null'}'); // Corrected to accessToken
+        _showError('Login failed. Please check your credentials.');
       }
     } on AuthException catch (e) {
       debugPrint('LoginScreen: Supabase Auth error during login: ${e.message}');
       _showError('Login failed: ${e.message}');
-      // Specific error handling for unconfirmed email
-      if (e.message.contains('Email not confirmed') || e.message.contains('Email not verified')) {
-        _showError('Login failed: Your email is not confirmed. Please check your inbox or resend verification.');
-      }
     } catch (e) {
       debugPrint('LoginScreen: Unexpected error during login: $e');
       setState(() {
@@ -93,35 +88,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  Future<void> _resendConfirmationEmail() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      _showError('Please enter your email to resend confirmation link.');
-      return;
-    }
-    setState(() { _isLoading = true; _errorMessage = null; });
-    try {
-      await Supabase.instance.client.auth.resend(
-        type: OtpType.signup,
-        email: email,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification link sent! Check your email.')),
-        );
-      }
-      debugPrint('LoginScreen: Resent confirmation email to $email');
-    } on AuthException catch (e) {
-      debugPrint('LoginScreen: Error resending confirmation email: ${e.message}');
-      _showError('Failed to resend link: ${e.message}');
-    } catch (e) {
-      debugPrint('LoginScreen: Unexpected error resending confirmation: $e');
-      _showError('An unexpected error occurred while resending link: ${e.toString()}');
-    } finally {
-      setState(() { _isLoading = false; });
     }
   }
 
@@ -237,26 +203,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       if (_errorMessage != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 15.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                _errorMessage!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Inter',
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              if (_errorMessage!.contains('email is not confirmed') || _errorMessage!.contains('email not confirmed'))
-                                TextButton(
-                                  onPressed: _isLoading ? null : _resendConfirmationEmail,
-                                  child: Text(
-                                    'Resend Confirmation Email',
-                                    style: TextStyle(color: Colors.white.withAlpha((255 * 0.85).round())),
-                                  ),
-                                ),
-                            ],
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Inter',
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       const SizedBox(height: 30),
@@ -280,7 +234,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: Implement forgot password flow (call Supabase resetPasswordForEmail)
                           debugPrint('LoginScreen: Forgot password clicked');
                         },
                         child: Text(
