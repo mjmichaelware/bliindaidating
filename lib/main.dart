@@ -203,31 +203,56 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
       // Redirection logic based on authentication state and profile setup
       redirect: (context, state) {
         final bool loggedIn = Supabase.instance.client.auth.currentUser != null;
-        final bool loggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
-        final bool onPublicInitialPage = state.matchedLocation == '/' || state.matchedLocation == '/portal_hub';
+        final String currentPath = state.matchedLocation;
+
+        // Paths related to authentication processes
+        final bool isAuthPath = currentPath == '/login' || currentPath == '/signup';
+        // Initial public pages not requiring authentication
+        final bool isOnPublicInitialPage = currentPath == '/' || currentPath == '/portal_hub';
+
         // TODO: Implement actual logic to check if profile setup is required.
         // This might involve checking a flag in the user's Supabase profile table.
+        // For now, if logged in and navigating away from auth paths, assume profile setup might be needed
+        // but currently it's a placeholder.
         final bool isProfileSetupRequired = false; // Placeholder: Assume false for now
 
+        debugPrint('GoRouter Redirect:');
+        debugPrint('  Current Path: $currentPath');
+        debugPrint('  Logged In: $loggedIn');
+        debugPrint('  Is Auth Path: $isAuthPath');
+        debugPrint('  On Public Initial Page: $isOnPublicInitialPage');
+        debugPrint('  Is Profile Setup Required (Placeholder): $isProfileSetupRequired');
+
+        // Allow direct navigation between login/signup if not logged in.
+        // This handles the specific bug case where /signup -> /login might loop or fail.
+        if (!loggedIn && isAuthPath) {
+          debugPrint('  Redirect decision: Not logged in but on auth path. Allowing navigation.');
+          return null; // Allow navigation to /login or /signup if not logged in
+        }
+
         // If user is not logged in and trying to access a protected page, redirect to login
-        if (!loggedIn && !loggingIn && !onPublicInitialPage) {
+        if (!loggedIn && !isAuthPath && !isOnPublicInitialPage) {
+          debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /login');
           return '/login';
         }
 
         // If user is logged in:
         if (loggedIn) {
           // If profile setup is required and user is not on the profile setup screen, redirect to it.
-          if (isProfileSetupRequired && state.matchedLocation != '/profile_setup') {
+          if (isProfileSetupRequired && currentPath != '/profile_setup') {
+            debugPrint('  Redirect decision: Logged in, profile setup required. Redirecting to /profile_setup');
             return '/profile_setup';
           }
           // If profile setup is not required AND user is trying to access login/signup/public pages, redirect to home.
           // Also redirect if they are on the profile setup page but don't need to be.
-          if (!isProfileSetupRequired && (loggingIn || onPublicInitialPage || state.matchedLocation == '/profile_setup')) {
+          if (!isProfileSetupRequired && (isAuthPath || isOnPublicInitialPage || currentPath == '/profile_setup')) {
+            debugPrint('  Redirect decision: Logged in, profile not required. Redirecting to /home');
             return '/home';
           }
         }
 
         // No redirection needed, allow navigation to the requested path
+        debugPrint('  Redirect decision: No specific redirection needed. Allowing current path.');
         return null;
       },
       errorBuilder: (context, state) => const NotFoundScreen(),

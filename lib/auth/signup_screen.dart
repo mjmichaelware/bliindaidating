@@ -17,6 +17,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController(); // New controller for confirm password
 
   bool _isLoading = false;
   late final AnimationController _shakeController;
@@ -26,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
+    debugPrint('SignUpScreen: initState - navigated to /signup');
     _shakeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -40,7 +42,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose(); // Dispose new controller
     _shakeController.dispose();
+    debugPrint('SignUpScreen: dispose');
     super.dispose();
   }
 
@@ -50,40 +54,59 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       _errorMessage = null;
     });
 
-    final email = _emailController.text.trim();
-    final pass = _passwordController.text.trim();
+    final email = _emailController.text.trim(); // Trim email
+    final password = _passwordController.text.trim(); // Trim password
+    final confirmPassword = _confirmPasswordController.text.trim(); // Trim confirm password
 
-    if (email.isEmpty || pass.isEmpty) {
-      _showError('Please fill in both email and password.');
+    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      _showError('Please fill in all fields (email and both passwords).');
       setState(() { _isLoading = false; });
       return;
     }
 
+    if (password != confirmPassword) {
+      _showError('Passwords do not match. Please re-enter.');
+      setState(() { _isLoading = false; });
+      return;
+    }
+
+    // Basic password strength check (can be enhanced later)
+    if (password.length < 8) {
+      _showError('Password must be at least 8 characters long.');
+      setState(() { _isLoading = false; });
+      return;
+    }
+
+    debugPrint('SignUpScreen: Attempting signup for email: $email');
     try {
       final AuthResponse response = await Supabase.instance.client.auth.signUp(
         email: email,
-        password: pass,
+        password: password,
       );
 
       if (response.user != null) {
-        debugPrint('User registered successfully with Supabase: ${response.user!.email}');
+        debugPrint('SignUpScreen: User registered successfully with Supabase: ${response.user!.email}');
         if (mounted) {
           // If email confirmation is OFF, user is signed in and redirected
+          debugPrint('SignUpScreen: Navigating to /profile_setup');
           context.go('/profile_setup');
         }
       } else if (response.session == null && response.user == null) {
         // This case indicates email verification is required (email confirmation is ON)
-        _showError('Registration successful! Please check your email to verify your account.');
+        _showError('Registration successful! Please check your email to verify your account before logging in.');
+        // Optionally redirect to a 'check email' screen or login screen
+        // if (mounted) context.go('/login');
       } else if (response.user == null && response.session != null) {
         // This case is less common, but implies user created without session login.
         // It's good to log for debugging or prompt user to log in.
-        _showError('Account created, but could not log in automatically. Please log in.');
+        _showError('Account created, but could not log in automatically. Please proceed to login.');
+        // if (mounted) context.go('/login');
       }
     } on AuthException catch (e) {
-      debugPrint('Supabase Auth error during signup: ${e.message}');
+      debugPrint('SignUpScreen: Supabase Auth error during signup: ${e.message}');
       _showError('Registration failed: ${e.message}');
     } catch (e) {
-      debugPrint('Unexpected error during signup: $e');
+      debugPrint('SignUpScreen: Unexpected error during signup: $e');
       setState(() {
         _errorMessage = 'An unexpected error occurred: ${e.toString()}';
       });
@@ -105,15 +128,20 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     required IconData icon,
     required TextEditingController controller,
     bool obscure = false,
+    String? hintText, // Added hintText
+    TextInputType? keyboardType, // Added keyboardType
   }) {
     return TextField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: keyboardType, // Apply keyboardType
       style: const TextStyle(color: Colors.white, fontFamily: 'Inter'),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70),
+        hintText: hintText, // Apply hintText
+        hintStyle: const TextStyle(color: Colors.white54, fontFamily: 'Inter'), // Style for hint
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Colors.white30),
@@ -174,6 +202,8 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         label: 'Email Address',
                         icon: Icons.email_outlined,
                         controller: _emailController,
+                        keyboardType: TextInputType.emailAddress, // Set keyboard type
+                        hintText: 'your.email@example.com', // Example hint text
                       ),
                       const SizedBox(height: 20),
                       _inputField(
@@ -181,6 +211,15 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         icon: Icons.lock_outline,
                         controller: _passwordController,
                         obscure: true,
+                        hintText: 'Minimum 8 characters, mix of cases and symbols', // Password strength hint
+                      ),
+                      const SizedBox(height: 20), // Spacing for new field
+                      _inputField(
+                        label: 'Confirm Password',
+                        icon: Icons.lock_reset_outlined, // Different icon for confirm
+                        controller: _confirmPasswordController,
+                        obscure: true,
+                        hintText: 'Re-enter your password', // Hint for confirmation
                       ),
                       const SizedBox(height: 24),
                       if (_errorMessage != null)
@@ -206,6 +245,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () {
+                          debugPrint('SignUpScreen: Navigating to /login from TextButton');
                           context.go('/login');
                         },
                         child: Text(

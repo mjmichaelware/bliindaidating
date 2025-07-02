@@ -4,21 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'package:provider/provider.dart'; // Added: Import Provider for ThemeController
+import 'package:provider/provider.dart';
 
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
-import 'package:bliindaidating/widgets/dashboard_header.dart';
+import 'package:bliindaidating/widgets/dashboard_header.dart'; // Keep if used for more than just title
 import 'package:bliindaidating/widgets/dashboard_penalty_section.dart';
 import 'package:bliindaidating/widgets/dashboard_stat_card.dart';
 import 'package:bliindaidating/widgets/dashboard_info_card.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Added for UserProfile model
-import 'package:bliindaidating/services/profile_service.dart'; // Added for ProfileService
-import 'package:bliindaidating/app_constants.dart'; // Added: Import AppConstants for theme values
-import 'package:bliindaidating/controllers/theme_controller.dart'; // Added: Import ThemeController
+import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/services/profile_service.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
 
-// Removed: import 'package:bliindaidating/dashboard_menu_drawer.dart'; // This import must be removed or commented out
-
+// Ensure this import is NOT present if the file was truly removed/moved
+// import 'package:bliindaidating/dashboard_menu_drawer.dart'; // REMOVED/COMMENTED AS PER PREVIOUS INSTRUCTIONS
 
 class MainDashboardScreen extends StatefulWidget {
   final int totalDatesAttended;
@@ -48,13 +48,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
   late int _penaltyCount;
 
-  // Added for user profile data and Realtime
-  UserProfile? _userProfile; // Will hold the fetched user profile
-  String? _avatarUrl; // Will hold the signed URL for the avatar
-  bool _isLoadingProfile = true; // State to manage profile loading
-  StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription; // Realtime subscription
+  UserProfile? _userProfile;
+  String? _profilePictureDisplayUrl; // Renamed from _avatarUrl for clarity
+  bool _isLoadingProfile = true;
+  StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
 
-  // Instantiate ProfileService using its singleton factory constructor
   final ProfileService _profileService = ProfileService();
 
   @override
@@ -88,7 +86,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
     _scrollController = ScrollController();
 
-    _loadUserProfileAndSubscribe(); // Call method to load profile and set up subscription
+    _loadUserProfileAndSubscribe();
   }
 
   @override
@@ -105,57 +103,72 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final User? currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) {
       setState(() { _isLoadingProfile = false; });
-      debugPrint('No current user for dashboard profile load.');
+      debugPrint('MainDashboardScreen: No current user for profile load. Redirecting to login.');
+      if (mounted) context.go('/login');
       return;
     }
 
     try {
-      final UserProfile? fetchedProfile = await _profileService.getUserProfile(currentUser.id);
+      // Corrected to fetchUserProfile
+      final UserProfile? fetchedProfile = await _profileService.fetchUserProfile(currentUser.id);
       if (fetchedProfile != null) {
         setState(() {
           _userProfile = fetchedProfile;
           _isLoadingProfile = false;
         });
-        // Corrected to profilePictureUrl (camelCase)
         if (fetchedProfile.profilePictureUrl != null) {
-          // Using the _profileService instance
-          final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(fetchedProfile.profilePictureUrl!);
+          // Directly use the URL from fetchedProfile, as uploadAnalysisPhoto returns public URL
           setState(() {
-            _avatarUrl = signedUrl;
+            _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
           });
+        }
+        // Check if profile is complete based on fetched data
+        if (!fetchedProfile.isProfileComplete) {
+           debugPrint('MainDashboardScreen: Profile is not marked complete. Redirecting to setup.');
+           if (mounted) context.go('/profile_setup');
+           return;
         }
       } else {
         setState(() { _isLoadingProfile = false; });
-        debugPrint('User profile not found for ID: ${currentUser.id}');
-        // Optionally create a default profile or redirect to setup if profile is required
-        // context.go('/profile_setup');
+        debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
+        // If profile doesn't exist, prompt user to complete profile setup
+        if (mounted) {
+          context.go('/profile_setup');
+        }
       }
 
       // Setup Realtime Subscription
+      // Ensure your 'profiles' table has a 'user_id' column that matches auth.users.id
+      // and that 'user_id' is indexed and set as primary key (or part of it) in Supabase.
       _profileSubscription = Supabase.instance.client
           .from('profiles')
-          .stream(primaryKey: ['id']) // Ensure 'id' is your primary key
-          .eq('id', currentUser.id) // Listen only to current user's profile changes
+          .stream(primaryKey: ['user_id']) // Use 'user_id' as primary key for stream
+          .eq('user_id', currentUser.id) // Listen only to current user's profile changes
           .listen((List<Map<String, dynamic>> data) async {
         if (data.isNotEmpty) {
-          // Changed to UserProfile.fromJson
           final UserProfile updatedProfile = UserProfile.fromJson(data.first);
           setState(() {
             _userProfile = updatedProfile;
           });
-          // Corrected to fullName (camelCase)
-          debugPrint('Realtime update for profile: ${updatedProfile.fullName}');
-          // Corrected to profilePictureUrl (camelCase) and using _profileService
-          if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _userProfile?.profilePictureUrl) {
-            final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(updatedProfile.profilePictureUrl!);
+          debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
+          // Update avatar URL if it changed
+          if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
             setState(() {
-              _avatarUrl = signedUrl;
+              _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
             });
           }
         }
       });
+    } on PostgrestException catch (e) {
+      debugPrint('MainDashboardScreen: Supabase Postgrest Error loading profile or setting up Realtime: ${e.message}');
+      setState(() { _isLoadingProfile = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load profile: ${e.message}')),
+        );
+      }
     } catch (e) {
-      debugPrint('Error loading profile or setting up Realtime: $e');
+      debugPrint('MainDashboardScreen: General Error loading profile or setting up Realtime: $e');
       setState(() { _isLoadingProfile = false; });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,7 +183,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     _pulseController.dispose();
     _fadeScaleController.dispose();
     _scrollController.dispose();
-    _profileSubscription?.cancel(); // Cancel Realtime subscription to prevent memory leaks
+    _profileSubscription?.cancel();
     super.dispose();
   }
 
@@ -206,7 +219,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         const Text(
           'Suggested Profiles',
           style: TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -249,7 +262,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          fontFamily: 'Inter', // Ensure Inter font
+                          fontFamily: 'Inter',
                           shadows: [
                             Shadow(
                               color: Colors.pinkAccent,
@@ -284,7 +297,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         gradientColors: const [Color(0xFF8E24AA), Color(0xFFD32F2F)],
         height: 48,
         width: 160,
-        textStyle: const TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
+        textStyle: const TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter'),
       ),
     );
   }
@@ -306,14 +319,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                 style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 40, fontFamily: 'Inter'), // Ensure Inter font
+                    fontSize: 40, fontFamily: 'Inter'),
               ),
             ],
           ),
           const SizedBox(height: 12),
           const Text(
             'You both love deep conversations and outdoor adventures.',
-            style: TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'), // Ensure Inter font
+            style: TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'),
           ),
         ],
       ),
@@ -322,7 +335,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   }
 
   Widget _datingIntentions() {
-    const String intention = 'Looking for Long-term Relationship';
+    // Dynamically display intention from user profile if available
+    final String intention = _userProfile?.lookingFor ?? 'Not set yet';
 
     return DashboardInfoCard(
       title: 'Dating Intentions',
@@ -333,12 +347,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         icon: Icons.edit_rounded,
         text: 'Edit',
         onPressed: () {
-          context.go('/profile_setup');
+          context.go('/edit_profile'); // Go to general profile edit or specific intentions screen
         },
         gradientColors: const [Color(0xFF8E24AA), Color(0xFFD32F2F)],
         height: 44,
         width: 100,
-        textStyle: const TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
+        textStyle: const TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Inter'),
       ),
     );
   }
@@ -356,7 +370,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         const Text(
           'Nearby Events',
           style: TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
         ),
         const SizedBox(height: 16),
         ...dummyEvents.map(
@@ -376,7 +390,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             ),
             child: Text(
               event,
-              style: const TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'), // Ensure Inter font
+              style: const TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'),
             ),
           ),
         ),
@@ -394,17 +408,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         icon: Icons.upgrade_rounded,
         text: 'Upgrade Now',
         onPressed: () {
-          // context.go('/premium');
+          // context.go('/premium'); // TODO: Uncomment when premium route exists
         },
         gradientColors: const [Color(0xFFD32F2F), Color(0xFF8E24AA)],
         height: 52,
         width: double.infinity,
-        textStyle: const TextStyle(fontSize: 18, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
+        textStyle: const TextStyle(fontSize: 18, color: Colors.white, fontFamily: 'Inter'),
       ),
     );
   }
 
   Widget _weeklyInsights() {
+    // These should ideally come from _userProfile or a stats service
     final views = 45;
     final favorites = 12;
     final newMatches = 3;
@@ -434,11 +449,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         Text(
           '$value',
           style: const TextStyle(
-              color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
+              color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
         ),
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 16, fontFamily: 'Inter'), // Ensure Inter font
+          style: const TextStyle(color: Colors.white70, fontSize: 16, fontFamily: 'Inter'),
         ),
       ],
     );
@@ -479,7 +494,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         gradientColors: const [Color(0xFFD32F2F), Color(0xFF8E24AA)],
         height: 52,
         width: double.infinity,
-        textStyle: const TextStyle(fontSize: 20, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
+        textStyle: const TextStyle(fontSize: 20, color: Colors.white, fontFamily: 'Inter'),
       ),
     );
   }
@@ -498,7 +513,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         const Text(
           'Date Ideas',
           style: TextStyle(
-              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'), // Ensure Inter font
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
         ),
         const SizedBox(height: 16),
         ...ideas.map(
@@ -506,7 +521,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               '• $idea',
-              style: const TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'), // Ensure Inter font
+              style: const TextStyle(color: Colors.white70, fontSize: 18, fontFamily: 'Inter'),
             ),
           ),
         )
@@ -516,8 +531,40 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
-    // Removed: endDrawer: DashboardMenuDrawer(...)
+    final theme = Provider.of<ThemeController>(context);
+    final isDarkMode = theme.isDarkMode;
+
     return Scaffold(
+      extendBodyBehindAppBar: true, // Allow body to go behind app bar for background
+      appBar: AppBar(
+        title: Text(
+          'Main Dashboard', // Changed title as requested
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+          ),
+        ),
+        backgroundColor: Colors.transparent, // Make app bar transparent
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings, color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
+            onPressed: () {
+              context.go('/settings');
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.logout, color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+              if (mounted) {
+                context.go('/login');
+              }
+            },
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           const Positioned.fill(child: AnimatedOrbBackground()),
@@ -540,7 +587,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
-                  return false;
+                  return false; // Prevent default scroll behavior if needed
                 },
                 child: SingleChildScrollView(
                   controller: _scrollController,
@@ -548,29 +595,68 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // No longer need DashboardHeader directly if AppBar handles title
+                      // If DashboardHeader provides other elements (e.g., avatar, welcome text *below* app bar)
+                      // then adjust it to fit. For now, removing the redundant DashboardHeader.
+                      // _isLoadingProfile ? Center(child: CircularProgressIndicator()) : DashboardHeader(
+                      //   userName: _userProfile?.displayName ?? _userProfile?.fullName ?? 'User',
+                      //   profileImageUrl: _profilePictureDisplayUrl, // Use the prepared URL
+                      //   onProfileTap: () => context.go('/edit_profile'),
+                      // ),
+
+                      // Display simple welcome text and avatar if DashboardHeader widget is not used for this.
                       _isLoadingProfile
                           ? Center(
                               child: CircularProgressIndicator(
                                   color: Theme.of(context).colorScheme.secondary),
                             )
-                          : DashboardHeader(
-                              title: _userProfile?.fullName ?? 'Profile Dashboard', // Corrected to fullName (camelCase)
-                              glowColor: Colors.redAccent,
-                              shadowOffset: const Offset(0, 5),
+                          : Column( // Use Column to hold welcome text and avatar
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome, ${_userProfile?.displayName ?? _userProfile?.fullName ?? 'User'}!',
+                                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                    fontFamily: 'Inter',
+                                    color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                                  ),
+                                ),
+                                const SizedBox(height: AppConstants.spacingMedium),
+                                CircleAvatar(
+                                  radius: 50,
+                                  backgroundColor: isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor,
+                                  backgroundImage: _profilePictureDisplayUrl != null
+                                      ? NetworkImage(_profilePictureDisplayUrl!) as ImageProvider<Object>
+                                      : null,
+                                  child: _profilePictureDisplayUrl == null
+                                      ? Icon(
+                                          Icons.account_circle,
+                                          size: 60,
+                                          color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(height: AppConstants.spacingLarge),
+                              ],
                             ),
-                      const SizedBox(height: 24),
+
                       _animatedPenaltySection(),
-                      _animatedStatCard(
-                        label: 'Dates Attended',
-                        value: widget.totalDatesAttended,
-                        icon: Icons.event_available_rounded,
-                        iconColor: Colors.greenAccent.shade400,
-                      ),
-                      _animatedStatCard(
-                        label: 'Current Matches',
-                        value: widget.currentMatches,
-                        icon: Icons.favorite_rounded,
-                        iconColor: Colors.pink.shade400,
+                      const SizedBox(height: AppConstants.spacingLarge), // Add spacing after penalty section
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _animatedStatCard(
+                            label: 'Dates Attended',
+                            value: widget.totalDatesAttended,
+                            icon: Icons.event_available_rounded,
+                            iconColor: Colors.greenAccent.shade400,
+                          ),
+                          _animatedStatCard(
+                            label: 'Current Matches',
+                            value: widget.currentMatches,
+                            icon: Icons.favorite_rounded,
+                            iconColor: Colors.pink.shade400,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                       _suggestedProfiles(),
@@ -597,7 +683,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                         icon: Icons.edit_rounded,
                         text: 'Edit Profile',
                         onPressed: () {
-                          context.go('/profile_setup');
+                          context.go('/edit_profile'); // Updated to /edit_profile as it's the ProfileTabsScreen
                         },
                         gradientColors: const [
                           Color(0xFF8E24AA),
@@ -606,7 +692,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                         height: 52,
                         width: double.infinity,
                         textStyle:
-                            const TextStyle(fontSize: 20, color: Colors.white, fontFamily: 'Inter'), // Ensure Inter font
+                            const TextStyle(fontSize: 20, color: Colors.white, fontFamily: 'Inter'),
                       ),
                       const SizedBox(height: 40),
                     ],
@@ -620,4 +706,3 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     );
   }
 }
-

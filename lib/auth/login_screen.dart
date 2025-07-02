@@ -26,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
+    debugPrint('LoginScreen: initState - navigated to /login');
     _shakeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -40,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _emailController.dispose();
     _passwordController.dispose();
     _shakeController.dispose();
+    debugPrint('LoginScreen: dispose');
     super.dispose();
   }
 
@@ -59,26 +61,28 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
 
     try {
+      debugPrint('LoginScreen: Attempting login for email: $email');
       final AuthResponse response = await Supabase.instance.client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
       if (response.user != null) {
-        debugPrint('User logged in successfully with Supabase: ${response.user!.email}');
+        debugPrint('LoginScreen: User logged in successfully: ${response.user!.email}');
         if (mounted) {
           // Router redirect will handle navigation to /home, so no explicit context.go() needed here
           // This allows the redirect logic in main.dart to take over.
         }
+      } else {
+        // Corrected logging: Check specific properties or provide a generic message
+        debugPrint('LoginScreen: Supabase signInWithPassword returned null user. Session: ${response.session != null ? 'Exists' : 'Null'}, User: ${response.user != null ? 'Exists' : 'Null'}');
+        _showError('Login failed. Please check your credentials or verify your email.');
       }
-      // If user is null but no AuthException, it might indicate a silent failure or
-      // a specific Auth configuration (e.g., email not verified)
-      // The redirect in main.dart should catch unauthenticated users.
     } on AuthException catch (e) {
-      debugPrint('Supabase Auth error during login: ${e.message}');
+      debugPrint('LoginScreen: Supabase Auth error during login: ${e.message}');
       _showError('Login failed: ${e.message}');
     } catch (e) {
-      debugPrint('Unexpected error during login: $e');
+      debugPrint('LoginScreen: Unexpected error during login: $e');
       setState(() {
         _errorMessage = 'An unexpected error occurred: ${e.toString()}';
       });
@@ -99,15 +103,20 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     required IconData icon,
     required TextEditingController controller,
     bool obscure = false,
+    String? hintText,
+    TextInputType? keyboardType,
   }) {
     return TextField(
       controller: controller,
       obscureText: obscure,
+      keyboardType: keyboardType,
       style: const TextStyle(color: Colors.white, fontFamily: 'Inter'),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         prefixIcon: Icon(icon, color: Colors.white70),
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.white54, fontFamily: 'Inter'),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Colors.white30),
@@ -182,6 +191,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         label: 'Email Address',
                         icon: Icons.email_outlined,
                         controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        hintText: 'your.email@example.com',
                       ),
                       const SizedBox(height: 20),
                       _inputField(
@@ -189,6 +200,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         icon: Icons.lock_outline,
                         controller: _passwordController,
                         obscure: true,
+                        hintText: 'Your secret password',
                       ),
                       if (_errorMessage != null)
                         Padding(
@@ -209,11 +221,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         icon: Icons.login,
                         onPressed: _isLoading ? null : _attemptLogin,
                         gradientColors: [Colors.blue.shade700, Colors.cyan.shade600],
-                        disabled: _isLoading, // Ensure button is disabled while loading
+                        disabled: _isLoading,
                       ),
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () {
+                          debugPrint('LoginScreen: Navigating to /signup from TextButton');
                           context.go('/signup');
                         },
                         child: Text(
@@ -223,9 +236,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: Implement forgot password flow (call Supabase resetPasswordForEmail)
-                          debugPrint('Forgot password clicked (Supabase handles this via email)');
-                          // context.go('/forgot_password'); // Example navigation to a forgot password screen
+                          debugPrint('LoginScreen: Forgot password clicked');
                         },
                         child: Text(
                           'Forgot Password?',

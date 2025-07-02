@@ -184,7 +184,81 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                     height: 1.5,
                   ),
                 ),
-                SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL), // Space before buttons
+
+                // --- Login/Signup Buttons (Relocated and Styled) ---
+                Container(
+                  width: isSmallScreen ? double.infinity : (isMediumScreen ? 400 : 500), // Responsive width
+                  padding: const EdgeInsets.all(AppConstants.spacingLarge),
+                  decoration: BoxDecoration(
+                    color: (isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor).withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+                    border: Border.all(color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor).withOpacity(0.05),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Ready to Manifest Your Destiny?', // This text was already here, keeping it.
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: isSmallScreen ? AppConstants.fontSizeExtraLarge : AppConstants.fontSizeTitle,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis,
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
+                      SizedBox(
+                        width: double.infinity, // Buttons take full width of container
+                        child: ElevatedButton(
+                          onPressed: () => context.go('/login'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppConstants.primaryColor, // Use AppConstants
+                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)), // Use AppConstants
+                          ),
+                          child: Text(
+                            AppConstants.loginButtonText, // Use AppConstants
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? AppConstants.fontSizeMedium : AppConstants.fontSizeLarge,
+                              color: AppConstants.textHighEmphasis, // Use AppConstants
+                              fontFamily: 'Inter',
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium),
+                      SizedBox(
+                        width: double.infinity, // Buttons take full width of container
+                        child: OutlinedButton(
+                          onPressed: () => context.go('/signup'),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppConstants.secondaryColor, width: 2), // Use AppConstants
+                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)), // Use AppConstants
+                          ),
+                          child: Text(
+                            AppConstants.signupButtonText, // Use AppConstants
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? AppConstants.fontSizeMedium : AppConstants.fontSizeLarge,
+                              color: AppConstants.secondaryColor, // Use AppConstants
+                              fontFamily: 'Inter',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL), // Space after buttons, before AI Insights
 
                 // AI Insights Section
                 Align(
@@ -205,79 +279,6 @@ class _PortalPageState extends State<PortalPage> with TickerProviderStateMixin {
                         staggerDelay: index.toDouble(),
                       );
                     }).toList(),
-                  ),
-                ),
-                SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),
-
-                // Login/Signup Buttons
-                Container(
-                  padding: const EdgeInsets.all(AppConstants.spacingLarge),
-                  decoration: BoxDecoration(
-                    color: (isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor).withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-                    border: Border.all(color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.2)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor).withOpacity(0.05),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Ready to Manifest Your Destiny?',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: isSmallScreen ? AppConstants.fontSizeExtraLarge : AppConstants.fontSizeTitle,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis,
-                        ),
-                      ),
-                      SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
-                      SizedBox(
-                        width: isSmallScreen ? double.infinity : 300,
-                        child: ElevatedButton(
-                          onPressed: () => context.go('/login'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppConstants.primaryColor, // Use AppConstants
-                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)), // Use AppConstants
-                          ),
-                          child: Text(
-                            AppConstants.loginButtonText, // Use AppConstants
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? AppConstants.fontSizeMedium : AppConstants.fontSizeLarge,
-                              color: AppConstants.textHighEmphasis, // Use AppConstants
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium),
-                      SizedBox(
-                        width: isSmallScreen ? double.infinity : 300,
-                        child: OutlinedButton(
-                          onPressed: () => context.go('/signup'),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppConstants.secondaryColor, width: 2), // Use AppConstants
-                            padding: EdgeInsets.symmetric(vertical: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)), // Use AppConstants
-                          ),
-                          child: Text(
-                            AppConstants.signupButtonText, // Use AppConstants
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? AppConstants.fontSizeMedium : AppConstants.fontSizeLarge,
-                              color: AppConstants.secondaryColor, // Use AppConstants
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
                 SizedBox(height: isSmallScreen ? AppConstants.spacingXXL : AppConstants.spacingXXXL),

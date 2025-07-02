@@ -1,12 +1,15 @@
 // lib/profile/about_me_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:intl/intl.dart';
+
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io'; // Re-introduced conditionally for FileImage on non-web platforms
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint; // For kIsWeb and debugPrint
-
+import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for theming (but not spacing)
 
 class AboutMeScreen extends StatefulWidget {
   const AboutMeScreen({super.key});
@@ -16,105 +19,112 @@ class AboutMeScreen extends StatefulWidget {
 }
 
 class _AboutMeScreenState extends State<AboutMeScreen> {
-  // Renamed all snake_case variables and controllers to camelCase
-  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
-  final ProfileService _profileService = ProfileService(); // Using singleton
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _addressZipController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+
+  final ProfileService _profileService = ProfileService();
   final ImagePicker _picker = ImagePicker();
 
   UserProfile? _userProfile;
+  DateTime? _dateOfBirth;
   String? _gender;
+  String? _sexualOrientation;
   String? _lookingFor;
-  final List<String> _selectedInterests = [];
-  XFile? _pickedImage;
-  String? _displayedAvatarUrl;
-  bool _isLoading = true;
+  String? _profilePictureUrl; // The URL for display
+  XFile? _newPickedImage; // The newly picked image file
+  bool _isLoading = false;
 
   final List<String> _genders = [
-    'Male', 'Female', 'Non-binary', 'Prefer not to say'
+    'Male', 'Female', 'Non-binary', 'Transgender Male', 'Transgender Female',
+    'Genderqueer', 'Genderfluid', 'Agender', 'Bigender', 'Two-Spirit',
+    'Demigirl', 'Demiboy', 'Intersex', 'Other', 'Prefer not to say'
+  ];
+  final List<String> _sexualOrientations = [
+    'Straight', 'Gay', 'Lesbian', 'Bisexual', 'Pansexual', 'Asexual',
+    'Demisexual', 'Queer', 'Other', 'Prefer not to say'
   ];
   final List<String> _lookingForOptions = [
-    'Short-term dating', 'Long-term relationship', 'Friendship'
+    'Long-term relationship', 'Short-term dating', 'Casual dating',
+    'Friendship', 'Networking', 'Marriage', 'Something casual',
+    'Still figuring it out'
   ];
   final List<String> _allInterests = [
     'Reading', 'Hiking', 'Cooking', 'Gaming', 'Music', 'Movies', 'Travel',
     'Photography', 'Sports', 'Art', 'Writing', 'Dancing', 'Volunteering',
     'Fitness', 'Tech', 'Tasting', 'Animals', 'Fashion'
   ];
+  final List<String> _selectedInterests = [];
+
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    _loadProfile();
   }
 
   @override
   void dispose() {
+    _fullNameController.dispose();
     _displayNameController.dispose();
     _bioController.dispose();
+    _phoneNumberController.dispose();
+    _addressZipController.dispose();
+    _heightController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadUserProfile() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    final User? currentUser = Supabase.instance.client.auth.currentUser;
+  Future<void> _loadProfile() async {
+    setState(() { _isLoading = true; });
+    final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) {
-      debugPrint('No current user authenticated to load profile.');
-      setState(() { _isLoading = false; });
+      if (mounted) context.go('/login');
       return;
     }
 
     try {
-      final UserProfile? profile = await _profileService.getUserProfile(currentUser.id);
-
+      final UserProfile? profile = await _profileService.fetchUserProfile(currentUser.id);
       if (profile != null) {
-        _userProfile = profile;
-        _displayNameController.text = profile.fullName ?? '';
-        _bioController.text = profile.bio ?? '';
-        _gender = profile.gender;
-        _lookingFor = profile.lookingFor;
-        _selectedInterests.clear();
-        _selectedInterests.addAll(profile.interests);
-
-        if (profile.profilePictureUrl != null) {
-          final String? signedUrl = await _profileService.getAnalysisPhotoSignedUrl(profile.profilePictureUrl!);
-          setState(() {
-            _displayedAvatarUrl = signedUrl;
-          });
-        }
-      } else {
-        debugPrint('Profile not found for user: ${currentUser.id}. Creating default profile.');
-        _userProfile = UserProfile.fromSupabaseUser(currentUser);
-        _displayNameController.text = currentUser.email?.split('@').first ?? '';
-        _displayedAvatarUrl = null;
+        setState(() {
+          _userProfile = profile;
+          _fullNameController.text = profile.fullName ?? '';
+          _displayNameController.text = profile.displayName ?? '';
+          _bioController.text = profile.bio ?? '';
+          _phoneNumberController.text = profile.phoneNumber ?? '';
+          _addressZipController.text = profile.addressZip ?? '';
+          _heightController.text = profile.height?.toString() ?? '';
+          _dateOfBirth = profile.dateOfBirth;
+          _gender = profile.gender;
+          _sexualOrientation = profile.sexualOrientation;
+          _lookingFor = profile.lookingFor;
+          _selectedInterests.clear();
+          _selectedInterests.addAll(profile.interests);
+          _profilePictureUrl = profile.profilePictureUrl;
+        });
       }
     } catch (e) {
-      debugPrint('Error loading user profile: $e');
+      debugPrint('Error loading profile: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
         );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() { _isLoading = false; });
     }
   }
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
       if (image != null) {
         setState(() {
-          _pickedImage = image;
-          _displayedAvatarUrl = null; // Clear network image if new local image is picked
+          _newPickedImage = image;
+          _profilePictureUrl = image.path;
         });
-        debugPrint('Image picked for update: ${image.path}');
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
@@ -126,293 +136,329 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
     }
   }
 
-  void _saveProfileChanges() async {
-    if (!_formKey.currentState!.validate()) {
+  Future<void> _selectDateOfBirth(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+    );
+    if (picked != null && picked != _dateOfBirth) {
+      setState(() {
+        _dateOfBirth = picked;
+      });
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    setState(() { _isLoading = true; });
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
+      if (mounted) context.go('/login');
+      setState(() { _isLoading = false; });
       return;
     }
-    _formKey.currentState!.save();
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    final User? currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null || _userProfile == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: User not logged in or profile not loaded.')),
-        );
+    String? finalProfilePictureUrl = _profilePictureUrl;
+    if (_newPickedImage != null) {
+      try {
+        finalProfilePictureUrl = await _profileService.uploadAnalysisPhoto(currentUser.id, _newPickedImage!);
+      } catch (e) {
+        debugPrint('Error uploading new profile picture: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload new profile picture: ${e.toString()}')),
+          );
+        }
         setState(() { _isLoading = false; });
         return;
       }
     }
 
-    String? newAvatarPath = _userProfile?.profilePictureUrl;
-
-    if (_pickedImage != null) {
-      try {
-        newAvatarPath = await _profileService.uploadAnalysisPhoto(currentUser!.id, _pickedImage!);
-        if (newAvatarPath == null) {
-          throw Exception('Failed to upload new photo.');
-        }
-      } catch (e) {
-        debugPrint('Error uploading new photo: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update photo: ${e.toString()}')),
-          );
-          setState(() { _isLoading = false; });
-          return;
-        }
-      }
-    }
-
-    final UserProfile updatedProfile = _userProfile!.copyWith(
-      fullName: _displayNameController.text.trim(),
-      bio: _bioController.text.trim(),
-      gender: _gender,
-      interests: _selectedInterests,
-      lookingFor: _lookingFor,
-      isProfileComplete: true,
-      profilePictureUrl: newAvatarPath,
-    );
-
     try {
-      await _profileService.createOrUpdateProfile(
-        userId: currentUser!.id,
-        fullName: updatedProfile.fullName!,
-        dateOfBirth: updatedProfile.dateOfBirth!,
-        gender: updatedProfile.gender!,
-        bio: updatedProfile.bio!,
-        profilePictureUrl: updatedProfile.profilePictureUrl,
-        isProfileComplete: updatedProfile.isProfileComplete,
-        interests: updatedProfile.interests,
-        lookingFor: updatedProfile.lookingFor,
+      final UserProfile updatedProfile = (_userProfile ?? UserProfile.fromSupabaseUser(currentUser)).copyWith(
+        fullName: _fullNameController.text.trim(),
+        displayName: _displayNameController.text.trim(),
+        dateOfBirth: _dateOfBirth,
+        gender: _gender,
+        bio: _bioController.text.trim(),
+        profilePictureUrl: finalProfilePictureUrl,
+        isProfileComplete: true,
+        interests: _selectedInterests,
+        lookingFor: _lookingFor,
+        phoneNumber: _phoneNumberController.text.trim(),
+        addressZip: _addressZipController.text.trim(),
+        sexualOrientation: _sexualOrientation,
+        height: double.tryParse(_heightController.text.trim()),
       );
 
-      await _profileService.saveUserInterests(currentUser.id, _selectedInterests);
-      await _profileService.saveUserIntentions(currentUser.id, [_lookingFor!]);
+      await _profileService.createOrUpdateProfile(profile: updatedProfile);
 
-      debugPrint('Profile for ${updatedProfile.id} updated successfully.');
+      debugPrint('Profile for ${updatedProfile.userId} updated successfully.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile changes saved!')),
+          const SnackBar(content: Text('Profile updated successfully!')),
         );
-        _loadUserProfile();
       }
     } catch (e) {
-      debugPrint('Error saving profile changes: $e');
+      debugPrint('Error saving profile: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save changes: ${e.toString()}')),
+          SnackBar(content: Text('Failed to save profile: ${e.toString()}')),
         );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() { _isLoading = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading && _userProfile == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final colorScheme = theme.colorScheme;
 
-    if (_userProfile == null && !_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('No profile data available.', style: TextStyle(color: Colors.white, fontFamily: 'Inter')),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => _loadUserProfile(),
-              child: const Text('Try Reloading Profile', style: TextStyle(fontFamily: 'Inter')),
-            ),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Edit About Me',
+          style: textTheme.titleLarge?.copyWith(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onPrimary,
+          ),
         ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Edit Your Details',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white, fontFamily: 'Inter'),
-            ),
-            const SizedBox(height: 20),
-
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: Colors.deepPurple.shade800,
-                  backgroundImage: _pickedImage != null
-                      ? (kIsWeb
-                          // On web, XFile.path is a blob URL that NetworkImage can load.
-                          ? NetworkImage(_pickedImage!.path) as ImageProvider<Object>
-                          // On non-web, use FileImage with dart:io.File as it's the standard way
-                          : FileImage(File(_pickedImage!.path)) as ImageProvider<Object>)
-                      : (_displayedAvatarUrl != null // Use _displayedAvatarUrl for already uploaded image
-                          ? NetworkImage(_displayedAvatarUrl!) as ImageProvider<Object>
-                          : null),
-                  child: _pickedImage == null && _displayedAvatarUrl == null
-                      ? Icon(
-                          Icons.camera_alt,
-                          size: 40,
-                          color: Colors.white.withOpacity(0.7),
-                        )
-                      : null,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            TextFormField(
-              controller: _displayNameController,
-              decoration: const InputDecoration(
-                labelText: 'Display Name',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a display name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _bioController,
-              decoration: const InputDecoration(
-                labelText: 'About Me (Bio)',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
-              ),
-              maxLines: 4,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please write a short bio';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            DropdownButtonFormField<String>(
-              value: _gender,
-              decoration: const InputDecoration(
-                labelText: 'Gender',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.transgender),
-              ),
-              items: _genders.map((String gender) {
-                return DropdownMenuItem<String>(
-                  value: gender,
-                  child: Text(gender),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _gender = newValue;
-                });
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select your gender';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            DropdownButtonFormField<String>(
-              value: _lookingFor,
-              decoration: const InputDecoration(
-                labelText: 'Looking For',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.favorite),
-              ),
-              items: _lookingForOptions.map((String option) {
-                return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _lookingFor = newValue;
-                });
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select what you\'re looking for';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              'Select Your Interests:',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontFamily: 'Inter'),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 4.0,
-              children: _allInterests.map((interest) {
-                final isSelected = _selectedInterests.contains(interest);
-                return FilterChip(
-                  label: Text(interest, style: const TextStyle(fontFamily: 'Inter')),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedInterests.add(interest);
-                      } else {
-                        _selectedInterests.remove(interest);
-                      }
-                    });
-                  },
-                  selectedColor: Theme.of(context).colorScheme.primary.withAlpha((255 * 0.3).round()),
-                  checkmarkColor: Theme.of(context).colorScheme.primary,
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-
-            Center(
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveProfileChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Save Changes',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(fontFamily: 'Inter'),
-                      ),
-              ),
-            ),
-          ],
-        ),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0), // Hardcoded value (was AppConstants.paddingLarge)
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: colorScheme.primary.withOpacity(0.2),
+                        backgroundImage: _profilePictureUrl != null
+                            ? (kIsWeb
+                                ? NetworkImage(_profilePictureUrl!) as ImageProvider<Object>
+                                : FileImage(File(_profilePictureUrl!)) as ImageProvider<Object>)
+                            : null,
+                        child: _profilePictureUrl == null
+                            ? Icon(
+                                Icons.camera_alt,
+                                size: 40,
+                                color: colorScheme.onSurface.withOpacity(0.7),
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16.0), // Hardcoded value (was AppConstants.spacingMedium)
+                  Center(
+                    child: Text(
+                      'Tap to change profile picture',
+                      style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: colorScheme.onSurface.withOpacity(0.7)),
+                    ),
+                  ),
+                  const SizedBox(height: 24.0), // Hardcoded value (was AppConstants.spacingLarge)
+                  TextFormField(
+                    controller: _fullNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Full Legal Name',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.badge),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _displayNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Display Name',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.person_outline),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _bioController,
+                    decoration: InputDecoration(
+                      labelText: 'About Me (Bio)',
+                      alignLabelWithHint: true,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.description),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    maxLines: 4,
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  ListTile(
+                    title: Text(
+                      _dateOfBirth == null
+                          ? 'Select Date of Birth'
+                          : 'Date of Birth: ${DateFormat('yyyy-MM-dd').format(_dateOfBirth!)}',
+                      style: textTheme.titleMedium?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () => _selectDateOfBirth(context),
+                  ),
+                  const SizedBox(height: 16.0),
+                  DropdownButtonFormField<String>(
+                    value: _gender,
+                    decoration: InputDecoration(
+                      labelText: 'Gender',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.transgender),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    items: _genders.map((String gender) {
+                      return DropdownMenuItem<String>(
+                        value: gender,
+                        child: Text(gender, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _gender = newValue;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _phoneNumberController,
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.phone),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _addressZipController,
+                    decoration: InputDecoration(
+                      labelText: 'Address / ZIP Code',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.location_on),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _heightController,
+                    decoration: InputDecoration(
+                      labelText: 'Height (in cm or inches)',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.height),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    keyboardType: TextInputType.text,
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  DropdownButtonFormField<String>(
+                    value: _sexualOrientation,
+                    decoration: InputDecoration(
+                      labelText: 'Sexual Orientation',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.diversity_3),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    items: _sexualOrientations.map((String option) {
+                      return DropdownMenuItem<String>(
+                        value: option,
+                        child: Text(option, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _sexualOrientation = newValue;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  DropdownButtonFormField<String>(
+                    value: _lookingFor,
+                    decoration: InputDecoration(
+                      labelText: 'Looking For',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.favorite),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    items: _lookingForOptions.map((String option) {
+                      return DropdownMenuItem<String>(
+                        value: option,
+                        child: Text(option, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _lookingFor = newValue;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    'Your Interests:',
+                    style: textTheme.titleLarge?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 4.0,
+                    children: _allInterests.map((interest) {
+                      final isSelected = _selectedInterests.contains(interest);
+                      return FilterChip(
+                        label: Text(interest, style: const TextStyle(fontFamily: 'Inter')),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedInterests.add(interest);
+                            } else {
+                              _selectedInterests.remove(interest);
+                            }
+                          });
+                        },
+                        selectedColor: colorScheme.primary.withOpacity(0.3),
+                        checkmarkColor: colorScheme.primary,
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24.0),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.secondary,
+                        foregroundColor: colorScheme.onSecondary,
+                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              'Save Profile',
+                              style: textTheme.labelLarge?.copyWith(fontFamily: 'Inter'),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
