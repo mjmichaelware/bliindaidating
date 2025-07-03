@@ -1,101 +1,74 @@
 // lib/services/profile_service.dart
-import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is imported
+import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:cross_file/cross_file.dart'; // FIXED: Import XFile
 
-/// A service class for managing user profiles in Supabase.
-/// This includes fetching, creating/updating profiles, and handling photo uploads.
 class ProfileService {
-  final SupabaseClient _supabase = Supabase.instance.client;
-  final String _profileTableName = 'profiles';
-  final String _bucketName = 'profile_images'; // Ensure this bucket exists
+  final SupabaseClient _supabaseClient = Supabase.instance.client;
 
-  // Private constructor for singleton pattern
-  ProfileService._privateConstructor();
-
-  // Singleton instance
-  static final ProfileService _instance = ProfileService._privateConstructor();
-
-  // Factory constructor to return the same instance
-  factory ProfileService() {
-    return _instance;
-  }
-
-  /// Fetches a user's profile by their user ID.
-  /// Returns null if the profile does not exist.
+  // Fetches a user profile by their UUID (which is the 'id' in the profiles table)
   Future<UserProfile?> fetchUserProfile(String userId) async {
     try {
-      final Map<String, dynamic> response = await _supabase
-          .from(_profileTableName)
+      final response = await _supabaseClient
+          .from('profiles')
           .select()
-          .eq('user_id', userId)
-          .single();
+          .eq('id', userId) // Corrected: Query by 'id' column
+          .single(); // Expecting a single row for a user's profile
 
-      return UserProfile.fromJson(response);
-
-    } on PostgrestException catch (e, stackTrace) { // Added stackTrace here
-      if (e.code == 'PGRST116') {
-        debugPrint('No existing profile found for user $userId (PGRST116).');
-        return null;
+      if (response.isNotEmpty) {
+        return UserProfile.fromJson(response);
       }
-      debugPrint('Error fetching user profile for $userId: ${e.message}');
-      debugPrint(stackTrace.toString()); // Use the stackTrace from the catch block
-      rethrow;
-    } catch (e, stackTrace) {
+      return null; // Profile not found
+    } on PostgrestException catch (e) {
+      debugPrint('Supabase Postgrest Error fetching user profile for $userId: ${e.message}');
+      throw e; // Re-throw to be caught by calling widget/service
+    } catch (e) {
       debugPrint('General Error fetching user profile for $userId: $e');
-      debugPrint(stackTrace.toString());
-      rethrow;
+      rethrow; // Re-throw any other exceptions
     }
   }
 
-  /// Creates a new user profile or updates an existing one using a UserProfile object.
+  // Creates or updates a user profile
   Future<void> createOrUpdateProfile({required UserProfile profile}) async {
     try {
-      await _supabase.from(_profileTableName).upsert(profile.toJson(), onConflict: 'user_id');
+      // Upsert: if 'id' exists, update; otherwise, insert
+      // FIXED: Removed .execute() as it's not needed with newer Supabase Flutter versions
+      await _supabaseClient
+          .from('profiles')
+          .upsert(profile.toJson())
+          .eq('id', profile.userId); // Ensure upsert uses 'id' to match existing row
       debugPrint('Profile for ${profile.userId} upserted successfully.');
-    } on PostgrestException catch (e, stackTrace) { // Added stackTrace here
-      debugPrint('Supabase Postgrest Error upserting profile for ${profile.userId}: ${e.message}');
-      debugPrint(stackTrace.toString()); // Use the stackTrace from the catch block
-      rethrow;
-    } catch (e, stackTrace) {
-      debugPrint('General Error upserting profile for ${profile.userId}: $e');
-      debugPrint(stackTrace.toString());
+    } on PostgrestException catch (e) {
+      debugPrint('Supabase Postgrest Error creating/updating profile for ${profile.userId}: ${e.message}');
+      throw e;
+    } catch (e) {
+      debugPrint('General Error creating/updating profile for ${profile.userId}: $e');
       rethrow;
     }
   }
 
-  /// Uploads an analysis photo to Supabase storage.
-  /// Returns the full public URL of the uploaded file.
+  // Uploads an analysis photo to Supabase Storage and returns the public URL
   Future<String?> uploadAnalysisPhoto(String userId, XFile imageFile) async {
     try {
-      final String fileName = 'analysis_photos/$userId/${DateTime.now().millisecondsSinceEpoch}.png';
+      // Define the path in storage
+      final String path = 'analysis_photos/$userId/${imageFile.name}';
 
-      String uploadedPath;
-      if (kIsWeb) {
-        final Uint8List bytes = await imageFile.readAsBytes();
-        uploadedPath = await _supabase.storage.from(_bucketName).uploadBinary(
-              fileName,
-              bytes,
-              fileOptions: const FileOptions(contentType: 'image/png', upsert: true),
-            );
-      } else {
-        uploadedPath = await _supabase.storage.from(_bucketName).upload(
-              fileName,
-              imageFile.path,
-              fileOptions: const FileOptions(contentType: 'image/png', upsert: true),
-            );
-      }
-      return _supabase.storage.from(_bucketName).getPublicUrl(uploadedPath);
-    } on StorageException catch (e, stackTrace) { // Added stackTrace here
+      // Upload the file
+      final String publicUrl = await _supabaseClient.storage
+          .from('avatars') // Assuming 'avatars' bucket is used for profile pictures
+          .upload(path, await imageFile.readAsBytes(),
+              fileOptions: const FileOptions(upsert: true));
+
+      // Get the public URL for the uploaded file
+      final String signedUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);
+      return signedUrl; // Return the public URL
+    } on StorageException catch (e) {
       debugPrint('Supabase Storage Error uploading photo: ${e.message}');
-      debugPrint(stackTrace.toString()); // Use the stackTrace from the catch block
-      return null;
-    } catch (e, stackTrace) {
+      throw e;
+    } catch (e) {
       debugPrint('General Error uploading photo: $e');
-      debugPrint(stackTrace.toString());
-      return null;
+      rethrow;
     }
   }
 }
