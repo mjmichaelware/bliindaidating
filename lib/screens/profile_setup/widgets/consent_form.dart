@@ -220,6 +220,7 @@ class _ConsentFormState extends State<ConsentForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align items to space between
                 children: [
                   Expanded(
                     child: Text(
@@ -227,6 +228,12 @@ class _ConsentFormState extends State<ConsentForm> {
                       style: textTheme.headlineSmall?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
                     ),
                   ),
+                  // "Blind AI Dating" title
+                  Text(
+                    'Blind AI Dating',
+                    style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                  ),
+                  const SizedBox(width: 8), // Small space between text and icon
                   SvgPicture.asset(
                     'assets/svg/DrawKit Vector Illustration Love & Dating (9).svg', // Example SVG for Consent/Security
                     height: 50,
@@ -241,71 +248,125 @@ class _ConsentFormState extends State<ConsentForm> {
                 style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
               ),
               const SizedBox(height: 16),
-              CheckboxListTile(
-                title: RichText(
-                  text: TextSpan(
-                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor),
+              FormField<bool>(
+                initialValue: widget.agreedToTerms,
+                validator: (value) {
+                  if (value == null || !value) {
+                    return 'You must agree to the Terms of Service and Privacy Policy.';
+                  }
+                  return null;
+                },
+                builder: (FormFieldState<bool> state) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const TextSpan(text: 'I agree to the '),
-                      TextSpan(
-                        text: 'Terms of Service',
-                        style: TextStyle(
-                          color: activeColor,
-                          decoration: TextDecoration.underline,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            showDialog(
-                              context: context,
-                              builder: (dialogContext) => PolicyViewerDialog(
-                                title: 'Terms of Service',
-                                content: _termsContent, // Use internal content
-                                isDarkMode: isDarkMode,
+                      CheckboxListTile(
+                        title: RichText(
+                          text: TextSpan(
+                            style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor),
+                            children: [
+                              const TextSpan(text: 'I agree to the '),
+                              TextSpan(
+                                text: 'Terms of Service',
+                                style: TextStyle(
+                                  color: activeColor,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (dialogContext) => PolicyViewerDialog(
+                                        title: 'Terms of Service',
+                                        content: _termsContent, // Use internal content
+                                        isDarkMode: isDarkMode,
+                                      ),
+                                    );
+                                    debugPrint('View Terms of Service in dialog.');
+                                  },
                               ),
-                            );
-                            debugPrint('View Terms of Service in dialog.');
-                          },
-                      ),
-                      const TextSpan(text: ' and '),
-                      TextSpan(
-                        text: 'Privacy Policy.',
-                        style: TextStyle(
-                          color: activeColor,
-                          decoration: TextDecoration.underline,
-                        ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            showDialog(
-                              context: context,
-                              builder: (dialogContext) => PolicyViewerDialog(
-                                title: 'Privacy Policy',
-                                content: _privacyContent, // Use internal content
-                                isDarkMode: isDarkMode,
+                              const TextSpan(text: ' and '),
+                              TextSpan(
+                                text: 'Privacy Policy.',
+                                style: TextStyle(
+                                  color: activeColor,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (dialogContext) => PolicyViewerDialog(
+                                        title: 'Privacy Policy',
+                                        content: _privacyContent, // Use internal content
+                                        isDarkMode: isDarkMode,
+                                      ),
+                                    );
+                                    debugPrint('View Privacy Policy in dialog.');
+                                  },
                               ),
-                            );
-                            debugPrint('View Privacy Policy in dialog.');
-                          },
+                            ],
+                          ),
+                        ),
+                        value: widget.agreedToTerms,
+                        onChanged: (bool? newValue) {
+                          widget.onTermsChanged(newValue);
+                          state.didChange(newValue); // Update FormField state
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        activeColor: activeColor,
+                        checkColor: isDarkMode ? Colors.black : Colors.white,
                       ),
+                      if (state.hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0, top: 0.0),
+                          child: Text(
+                            state.errorText!,
+                            style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ),
                     ],
-                  ),
-                ),
-                value: widget.agreedToTerms,
-                onChanged: widget.onTermsChanged,
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: activeColor,
-                checkColor: isDarkMode ? Colors.black : Colors.white,
+                  );
+                },
               ),
-              const SizedBox(height: 8),
-              CheckboxListTile(
-                title: Text(
-                  'I agree to abide by the Community Guidelines and Code of Conduct.',
-                  style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor),
-                ),
-                value: widget.agreedToCommunityGuidelines,
-                onChanged: widget.onCommunityGuidelinesChanged,
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: activeColor,
-                checkColor: isDarkMode ? Colors.black : Colors.white,
+              const SizedBox(height: 16),
+              FormField<bool>(
+                initialValue: widget.agreedToCommunityGuidelines,
+                validator: (value) {
+                  if (value == null || !value) {
+                    return 'You must agree to the Community Guidelines and Code of Conduct.';
+                  }
+                  return null;
+                },
+                builder: (FormFieldState<bool> state) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CheckboxListTile(
+                        title: Text(
+                          'I agree to abide by the Community Guidelines and Code of Conduct.',
+                          style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor),
+                        ),
+                        value: widget.agreedToCommunityGuidelines,
+                        onChanged: (bool? newValue) {
+                          widget.onCommunityGuidelinesChanged(newValue);
+                          state.didChange(newValue); // Update FormField state
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        activeColor: activeColor,
+                        checkColor: isDarkMode ? Colors.black : Colors.white,
+                      ),
+                      if (state.hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0, top: 0.0),
+                          child: Text(
+                            state.errorText!,
+                            style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 24),
               Text(

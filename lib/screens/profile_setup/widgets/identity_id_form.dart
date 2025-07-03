@@ -9,13 +9,12 @@ import 'package:flutter_svg/flutter_svg.dart'; // For SVG assets
 import 'package:cross_file/cross_file.dart'; // Import XFile
 
 class IdentityIDForm extends StatefulWidget {
-  final Function(XFile? image) onImagePicked; // Corrected to accept XFile?
+  final Function(XFile? image) onImagePicked;
   final TextEditingController phoneNumberController;
   final TextEditingController addressZipController;
-  final String? imagePreviewPath;
+  final String? imagePreviewPath; // Used for network image display
   final GlobalKey<FormState> formKey;
-  // Added the picked XFile directly as a parameter for display
-  final XFile? pickedImageFile;
+  final XFile? pickedImageFile; // Used for newly picked image display
 
   const IdentityIDForm({
     super.key,
@@ -24,7 +23,7 @@ class IdentityIDForm extends StatefulWidget {
     required this.addressZipController,
     this.imagePreviewPath,
     required this.formKey,
-    this.pickedImageFile, // New parameter
+    this.pickedImageFile, // New parameter for displaying the picked XFile
   });
 
   @override
@@ -38,8 +37,7 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
       if (image != null) {
-        // Pass the XFile directly to the callback
-        widget.onImagePicked(image);
+        widget.onImagePicked(image); // Pass the XFile directly
       }
     } catch (e) {
       debugPrint('Error picking analysis photo: $e');
@@ -67,7 +65,7 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
     if (widget.pickedImageFile != null) {
       // If a new image was picked (XFile is available)
       if (kIsWeb) {
-        currentImageProvider = NetworkImage(widget.pickedImageFile!.path);
+        currentImageProvider = NetworkImage(widget.pickedImageFile!.path); // XFile.path works as URL for web
       } else {
         // For non-web, XFile.path can be used with File for display
         currentImageProvider = FileImage(File(widget.pickedImageFile!.path));
@@ -76,7 +74,6 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
       // If no new image picked, but there's an existing network URL
       currentImageProvider = NetworkImage(widget.imagePreviewPath!);
     }
-
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -108,6 +105,7 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(
@@ -115,11 +113,9 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                       style: textTheme.headlineSmall?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
                     ),
                   ),
-                  SvgPicture.asset(
-                    'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg', // Example SVG for Identity
-                    height: 50,
-                    semanticsLabel: 'Identity Icon',
-                    colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                  Text(
+                    'Blind AI Dating',
+                    style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
                   ),
                 ],
               ),
@@ -136,8 +132,7 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                     CircleAvatar(
                       radius: 70,
                       backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                      // Use the determined image provider
-                      backgroundImage: currentImageProvider,
+                      backgroundImage: currentImageProvider, // Use the determined image provider
                       child: currentImageProvider == null
                           ? SvgPicture.asset(
                               'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg', // Use an SVG icon/illustration
@@ -211,6 +206,10 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Please enter your phone number.';
+                  }
+                  // Basic phone number validation (you can enhance this with regex)
+                  if (value.length < 10) {
+                    return 'Phone number must be at least 10 digits.';
                   }
                   return null;
                 },

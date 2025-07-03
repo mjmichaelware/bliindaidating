@@ -1,6 +1,5 @@
 // lib/profile/profile_setup_screen.dart
 
-// REMOVE: import 'dart:io'; // No longer needed directly for _pickedImage
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,9 +8,7 @@ import 'package:bliindaidating/services/profile_service.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-
-// Import cross_file for XFile type
-import 'package:cross_file/cross_file.dart'; // Or 'package:image_picker/image_picker.dart' if you use it directly in this file
+import 'package:cross_file/cross_file.dart'; // Import XFile
 
 // Import custom background/effects for immersion
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
@@ -37,11 +34,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
 
   bool _isLoading = true;
 
-  // --- Changing _pickedImage type to XFile? ---
-  XFile? _pickedImage; // For the analysis photo
-  String? _imagePreviewPath; // For displaying existing photo or new pick
+  // --- Image Handling State ---
+  XFile? _pickedImage; // Stores the XFile picked by the user
+  String? _imagePreviewPath; // Stores the URL for network images or path for local preview
 
-  // TextEditingControllers for form fields
+  // --- TextEditingControllers for form fields ---
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
@@ -49,7 +46,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   final TextEditingController _addressZipController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
 
-  // Variables for dropdowns/pickers/checkboxes
+  // --- Variables for dropdowns/pickers/checkboxes ---
   DateTime? _dateOfBirth;
   String? _gender;
   String? _sexualOrientation;
@@ -58,12 +55,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   bool _agreedToTerms = false;
   bool _agreedToCommunityGuidelines = false;
 
-  // --- Dating Preferences State ---
+  // --- Dating Preferences State (Already declared, good) ---
   String? _preferredGender;
   RangeValues _ageRange = const RangeValues(18, 50);
   double _maxDistance = 100; // in miles
 
-  // --- Profile Visibility State ---
+  // --- Profile Visibility State (Already declared, good) ---
   bool _showFullName = false;
   bool _showDisplayName = true;
   bool _showAge = true;
@@ -135,11 +132,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     setState(() {});
   }
 
-  // --- Changing _onImagePicked callback signature to accept XFile? ---
-  void _onImagePicked(XFile? image, String? previewPath) {
+  // --- Callbacks to update state from child forms ---
+  void _onImagePicked(XFile? image) {
     setState(() {
       _pickedImage = image;
-      _imagePreviewPath = previewPath;
+      // For display, use the XFile's path if it's a new pick, otherwise rely on imagePreviewPath for network images
+      _imagePreviewPath = image?.path; // This will be used by IdentityIDForm for display
     });
   }
 
@@ -261,8 +259,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     // Validate current tab's form before saving all
     if (!_formKeys[_tabController.index].currentState!.validate()) {
       debugPrint('ProfileSetupScreen: Validation failed for current tab.');
-      // If validation fails, navigate back to the problematic tab
-      // You might want to scroll to the first invalid field too.
+      // Show a message to the user that validation failed
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill out all required fields on this tab.')),
+        );
+      }
       return;
     }
 
@@ -280,11 +282,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     }
 
     String? uploadedPhotoPath;
-    // The photo is NOW OPTIONAL. Validation for it has been removed from here.
-    // So, we only attempt to upload if _pickedImage is not null.
     if (_pickedImage != null) {
       try {
-        // Now _profileService.uploadAnalysisPhoto must accept XFile!
         uploadedPhotoPath = await _profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!);
         if (uploadedPhotoPath == null) {
           throw Exception('Failed to get uploaded photo path after upload.');
@@ -306,26 +305,28 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       debugPrint('ProfileSetupScreen: No analysis photo provided, continuing without upload.');
     }
 
-
     try {
-      // --- Corrected access to form values using controllers ---
+      // Ensure all required fields are non-null before creating UserProfile
+      // The validators in the forms should prevent this from being an issue if fields are required.
+      // If any of these can genuinely be null in your UserProfile model and database,
+      // you should remove the '!' operator and ensure UserProfile fields are nullable.
       final UserProfile profile = UserProfile(
         userId: currentUser.id,
         fullName: _fullNameController.text.trim(),
         displayName: _displayNameController.text.trim(),
-        dateOfBirth: _dateOfBirth!,
-        gender: _gender!,
+        dateOfBirth: _dateOfBirth!, // Assuming this is required and validated by BasicInfoForm
+        gender: _gender!,           // Assuming this is required and validated by BasicInfoForm
         phoneNumber: _phoneNumberController.text.trim(),
         addressZip: _addressZipController.text.trim(),
-        profilePictureUrl: uploadedPhotoPath, // This can now be null
-        sexualOrientation: _sexualOrientation!,
-        lookingFor: _lookingFor!,
+        profilePictureUrl: uploadedPhotoPath,
+        sexualOrientation: _sexualOrientation!, // Assuming this is required and validated by PreferencesForm
+        lookingFor: _lookingFor!,     // Assuming this is required and validated by PreferencesForm
         height: double.tryParse(_heightController.text.trim()),
         bio: _bioController.text.trim(),
         interests: _selectedInterests,
-        isProfileComplete: true, // Mark as complete after initial setup
+        isProfileComplete: true,
         agreedToTerms: _agreedToTerms,
-        agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
+        agreedToCommunityGuidelines: _agreedToCommunityGuidelines, // Corrected typo here
         createdAt: currentUser.createdAt != null
             ? DateTime.tryParse(currentUser.createdAt!) ?? DateTime.now()
             : DateTime.now(),
@@ -431,13 +432,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
                       ),
                       IdentityIDForm(
                         formKey: _formKeys[1],
-                        // Updated to match _onImagePicked's new signature
-                        onImagePicked: (XFile? image) { // IdentityIDForm's onImagePicked likely expects XFile?
-                          _onImagePicked(image, image?.path); // Pass image.path as previewPath
-                        },
+                        onImagePicked: _onImagePicked,
                         phoneNumberController: _phoneNumberController,
                         addressZipController: _addressZipController,
                         imagePreviewPath: _imagePreviewPath,
+                        pickedImageFile: _pickedImage, // Pass the picked XFile for display
                       ),
                       PreferencesForm(
                         formKey: _formKeys[2],
@@ -465,7 +464,23 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _savePreferences,
+                  onPressed: _isLoading ? null : () {
+                    // If it's the last tab, save preferences, otherwise go to next tab
+                    if (_tabController.index == _profileTabs.length - 1) {
+                      _savePreferences();
+                    } else {
+                      // Validate current tab before moving to the next
+                      if (_formKeys[_tabController.index].currentState!.validate()) {
+                        _tabController.animateTo(_tabController.index + 1);
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please fill out all required fields on this tab.')),
+                          );
+                        }
+                      }
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: secondaryColor,
                     foregroundColor: textColor,

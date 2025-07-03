@@ -183,6 +183,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align items to space between
                 children: [
                   Expanded(
                     child: Text(
@@ -190,6 +191,12 @@ class _PreferencesFormState extends State<PreferencesForm> {
                       style: textTheme.headlineSmall?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
                     ),
                   ),
+                  // "Blind AI Dating" title
+                  Text(
+                    'Blind AI Dating',
+                    style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                  ),
+                  const SizedBox(width: 8), // Small space between text and icon
                   SvgPicture.asset(
                     'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg', // Example SVG for Preferences
                     height: 50,
@@ -323,17 +330,17 @@ class _PreferencesFormState extends State<PreferencesForm> {
               ),
               const SizedBox(height: 8),
               // Primary Interests
-              _buildInterestCategory(
-                'Popular Interests',
-                _primaryInterests,
-                widget.selectedInterests,
-                widget.onInterestSelected,
-                widget.onInterestDeselected,
-                isDarkMode,
-                textTheme,
-                activeColor,
-                cardColor, // Pass cardColor for background
-                primaryTextColor,
+              _InterestCategorySection(
+                title: 'Popular Interests',
+                interests: _primaryInterests,
+                selectedInterests: widget.selectedInterests,
+                onInterestSelected: widget.onInterestSelected,
+                onInterestDeselected: widget.onInterestDeselected,
+                isDarkMode: isDarkMode,
+                textTheme: textTheme,
+                activeColor: activeColor,
+                widgetBackgroundColor: cardColor,
+                primaryTextColor: primaryTextColor,
               ),
               // "More Options" button
               Center(
@@ -362,69 +369,47 @@ class _PreferencesFormState extends State<PreferencesForm> {
                 secondChild: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: _interestCategories.entries.where((entry) => !_primaryInterests.any((p) => entry.value.contains(p))).map((entry) {
-                    return _buildInterestCategory(
-                      entry.key,
-                      entry.value,
-                      widget.selectedInterests,
-                      widget.onInterestSelected,
-                      widget.onInterestDeselected,
-                      isDarkMode,
-                      textTheme,
-                      activeColor,
-                      cardColor, // Pass cardColor for background
-                      primaryTextColor,
+                    return _InterestCategorySection(
+                      title: entry.key,
+                      interests: entry.value,
+                      selectedInterests: widget.selectedInterests,
+                      onInterestSelected: widget.onInterestSelected,
+                      onInterestDeselected: widget.onInterestDeselected,
+                      isDarkMode: isDarkMode,
+                      textTheme: textTheme,
+                      activeColor: activeColor,
+                      widgetBackgroundColor: cardColor,
+                      primaryTextColor: primaryTextColor,
                     );
                   }).toList(),
                 ),
+              ),
+              // Validator for interests
+              FormField<List<String>>(
+                initialValue: widget.selectedInterests,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select at least one interest.';
+                  }
+                  return null;
+                },
+                builder: (FormFieldState<List<String>> state) {
+                  if (state.hasError) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        state.errorText!,
+                        style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  // Helper method to build an interest category section
-  Widget _buildInterestCategory(String title, List<String> interests, List<String> selectedInterests,
-      Function(String) onInterestSelected, Function(String) onInterestDeselected,
-      bool isDarkMode, TextTheme textTheme, Color activeColor, Color widgetBackgroundColor, Color primaryTextColor) {
-    final Color secondaryTextColor = isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: textTheme.titleMedium?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 4.0,
-          children: interests.map((interest) {
-            final isSelected = selectedInterests.contains(interest);
-            return FilterChip(
-              label: Text(interest, style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: isSelected ? (isDarkMode ? Colors.black : Colors.white) : primaryTextColor)),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  onInterestSelected(interest);
-                } else {
-                  onInterestDeselected(interest);
-                }
-              },
-              selectedColor: activeColor.withOpacity(0.7),
-              checkmarkColor: isDarkMode ? Colors.black : Colors.white,
-              backgroundColor: widgetBackgroundColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: isSelected ? activeColor : secondaryTextColor.withOpacity(0.5)),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 16),
-      ],
     );
   }
 }
