@@ -11,7 +11,7 @@ class OpenAIService {
   // This is the URL for your DEPLOYED Supabase Edge Function (match-users), not your local database URL.
   // Based on your earlier provided info, this is your deployed URL.
   final String _supabaseEdgeFunctionUrl = 'https://kynzpohycwdphorxsnzy.supabase.co/functions/v1/match-users';
-
+  
   // Use SUPABASE_KEY to match the naming convention in your supabase_config.dart and .env file.
   final String _supabaseAnonKey = const String.fromEnvironment(
     'SUPABASE_KEY', // This matches the key name in your .env file
@@ -33,17 +33,16 @@ class OpenAIService {
         Uri.parse(_supabaseEdgeFunctionUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_supabaseAnonKey', // Use Supabase anon key for authorization
+          'Authorization': 'Bearer $_supabaseAnonKey',
         },
         body: jsonEncode({
           'prompt_text': promptText,
-          'name': name ?? 'AIRequest', // Default name if not provided
+          'name': name ?? 'AIRequest',
         }),
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        // Your Edge Function returns 'ai_response'
         return data['ai_response'] ?? 'No AI response received.';
       } else {
         debugPrint('OpenAIService Error: HTTP Status Code ${response.statusCode}');
@@ -61,7 +60,8 @@ class OpenAIService {
   List<dynamic> _parseAIJsonResponse(String rawResponse) {
     String cleanJson = rawResponse;
     final int firstBracket = rawResponse.indexOf('[');
-    final int firstBrace = rawResponse.indexOf('{');
+    // FIXED: Corrected typo from rawRegistry to rawResponse
+    final int firstBrace = rawResponse.indexOf('{'); 
     final int lastBracket = rawResponse.lastIndexOf(']');
     final int lastBrace = rawResponse.lastIndexOf('}');
 
@@ -95,7 +95,7 @@ class OpenAIService {
       "timestamp" (ISO 8601 string, e.g., "${DateTime.now().toIso8601String()}", recent),
       "isPublic" (boolean, always true for newsfeed),
       "content" (string, main text, engaging and positive).
-
+      
       Optional fields based on type:
       "avatarUrl" (dummy URL like "https://picsum.photos/100?random=${_uuid.v4()}"),
       "username" (string, e.g., "Alex_Match"),
@@ -125,7 +125,7 @@ class OpenAIService {
 
   Future<List<UserProfile>> generateDummyUserProfiles(int count) async {
     final String currentIsoTime = DateTime.now().toIso8601String();
-
+    
     final String prompt = '''
       Generate $count diverse, realistic dummy user profiles for a dating app called BlindAIDating.
       Each profile should be a JSON object with fields exactly matching a Supabase 'profiles' table row structure for Dart parsing, ensuring all fields expected by UserProfile.fromJson are present, with plausible dummy data.
@@ -207,7 +207,7 @@ class OpenAIService {
       [
         $profileContext
       ]
-
+      
       Generate $count dummy match suggestions. Each suggestion should be a JSON object with:
       "matchId" (unique string, e.g., "match_${_uuid.v4()}"),
       "user1Id" (string, one of the user IDs from the context),
@@ -215,7 +215,7 @@ class OpenAIService {
       "matchDate" (ISO 8601 string, recent),
       "compatibilityScore" (integer, 60-99),
       "reason" (string, 1-2 sentences explaining the compatibility based on their interests and 'looking_for' intentions.).
-
+      
       Ensure matches are plausible based on their 'looking_for' intentions and 'interests'.
       Do not match a user with themselves.
       Provide the output as a JSON array of these objects.

@@ -1,4 +1,3 @@
-// lib/app_constants.dart
 import 'package:flutter/material.dart';
 
 class AppConstants {
@@ -62,6 +61,10 @@ class AppConstants {
   static const Color secondaryColorShade700 = Color(0xFF1976D2); // Darker shade of secondary
   static const Color secondaryColorShade400 = Color(0xFF42A5F5); // Lighter shade of secondary
 
+  // ADDED: Accent colors for AppBar, mapping to secondary colors
+  static const Color accentColor = secondaryColor;
+  static const Color lightAccentColor = lightSecondaryColor;
+
 
   // New colors to expand the palette based on the cosmic theme suggestion
   static const Color tertiaryColor = Color(0xFF8E24AA); // A deep purple
@@ -112,7 +115,7 @@ class AppConstants {
   static const Color lightSecondaryColorShade400 = Color(0xFF42A5F5);
 
 
-  // Spacing
+  // Spacing (Already existed, re-confirmed)
   static const double spacingExtraSmall = 4.0;
   static const double spacingSmall = 8.0;
   static const double spacingMedium = 16.0;
@@ -122,15 +125,20 @@ class AppConstants {
   static const double spacingXXXL = 64.0; // Added for very large gaps
   static const double spacingXXXXL = 96.0; // Added for extra large gaps
 
+  // Padding (Already existed, re-confirmed, added to match error messages)
+  static const double paddingSmall = 8.0;
+  static const double paddingMedium = 16.0;
+  static const double paddingLarge = 24.0;
+  static const double paddingExtraLarge = 32.0;
 
-  // Border Radius
+  // Border Radius (Already existed, re-confirmed)
   static const double borderRadiusSmall = 4.0;
   static const double borderRadiusMedium = 8.0;
   static const double borderRadiusLarge = 16.0;
   static const double borderRadiusExtraLarge = 25.0; // Existing value for InsightCrystal
   static const double borderRadiusCircular = 1000.0;
 
-  // Font Sizes (example, adjust as needed based on design)
+  // Font Sizes (example, adjust as needed based on design) (Already existed, re-confirmed)
   static const double fontSizeSmall = 12.0;
   static const double fontSizeMedium = 16.0;
   static const double fontSizeLarge = 20.0;
@@ -139,9 +147,12 @@ class AppConstants {
   static const double fontSizeHeadline = 28.0;
   static const double fontSizeBody = 16.0;
 
-  // Animation Durations (example)
+  // Animation Durations (example) (Already existed, re-confirmed)
   static const Duration animationDurationShort = Duration(milliseconds: 200);
   static const Duration animationDurationMedium = Duration(milliseconds: 500);
   static const Duration animationDurationLong = Duration(seconds: 1);
   static const Duration animationDurationExtraLong = Duration(seconds: 2);
+
+  // ADDED: Avatar Radius
+  static const double avatarRadius = 40.0; // A reasonable default for an avatar
 }

@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -131,11 +130,8 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         ),
         GoRoute(
           path: '/home',
-          builder: (context, state) => const MainDashboardScreen(
-            totalDatesAttended: 0, // TODO: Fetch from Supabase after authentication
-            currentMatches: 0,     // TODO: Fetch from Supabase after authentication
-            penaltyCount: 0,      // TODO: Fetch from Supabase after authentication
-          ),
+          // Removed named parameters as MainDashboardScreen no longer expects them
+          builder: (context, state) => const MainDashboardScreen(),
         ),
         GoRoute(
           path: '/profile_setup',
