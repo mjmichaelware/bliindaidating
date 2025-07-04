@@ -7,18 +7,19 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart'; // For debugPrint
 
-// Local imports (ensure these files are present in your project from the reverted state)
+// Local imports (these files exist in your project from the reverted state)
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
+import 'package:bliindaidating/widgets/dashboard_header.dart'; // Keep if used for more than just title
 import 'package:bliindaidating/widgets/dashboard_penalty_section.dart';
 import 'package:bliindaidating/widgets/dashboard_stat_card.dart';
 import 'package:bliindaidating/widgets/dashboard_info_card.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // UserProfile import
-import 'package:bliindaidating/services/profile_service.dart';
+import 'package:bliindaidating/services/profile_service.dart'; // ProfileService import
 import 'package:bliindaidating/app_constants.dart'; // AppConstants import
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
-// OpenAI Integration Imports (already assumed to be present and correct)
+// NEW: OpenAI Integration Imports (these files are now confirmed to exist and be populated)
 import 'package:bliindaidating/services/openai_service.dart';
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
@@ -58,7 +59,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
 
   final ProfileService _profileService = ProfileService();
-  final OpenAIService _openAIService = OpenAIService(); // Instantiate OpenAIService
+  final OpenAIService _openAIService = OpenAIService(); // NEW: Instantiate OpenAIService
 
 
   @override
@@ -93,11 +94,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     _scrollController = ScrollController();
 
     _loadUserProfileAndSubscribe();
-    // This call will attempt to fetch AI data and print to console.
+    // NEW: Call the AI dummy data fetch method for console verification
     _fetchAIDummyData(); 
   }
 
-  // Temporary method to fetch AI-generated dummy data and print to console
+  // NEW: Temporary method to fetch AI-generated dummy data and print to console
   Future<void> _fetchAIDummyData() async {
     debugPrint('--- Fetching AI Dummy Data (from MainDashboardScreen) ---');
     try {
@@ -186,8 +187,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
       _profileSubscription = Supabase.instance.client
           .from('profiles')
-          .stream(primaryKey: ['id']) // FIXED: Changed primaryKey from 'user_id' to 'id'
-          .eq('id', currentUser.id) // FIXED: Changed eq filter from 'user_id' to 'id'
+          .stream(primaryKey: ['id']) // Ensure 'id' as primary key
+          .eq('id', currentUser.id) // Ensure querying by 'id'
           .listen((List<Map<String, dynamic>> data) async {
         if (data.isNotEmpty) {
           final UserProfile updatedProfile = UserProfile.fromJson(data.first);

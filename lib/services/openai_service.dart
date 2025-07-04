@@ -9,12 +9,13 @@ import 'package:uuid/uuid.dart'; // Ensure Uuid is imported
 
 class OpenAIService {
   // This is the URL for your DEPLOYED Supabase Edge Function (match-users), not your local database URL.
+  // Based on your earlier provided info, this is your deployed URL.
   final String _supabaseEdgeFunctionUrl = 'https://kynzpohycwdphorxsnzy.supabase.co/functions/v1/match-users';
-  
+
   // Use SUPABASE_KEY to match the naming convention in your supabase_config.dart and .env file.
   final String _supabaseAnonKey = const String.fromEnvironment(
-    'SUPABASE_KEY',
-    defaultValue: 'YOUR_SUPABASE_KEY_FROM_DOTENV_OR_DART_DEFINE_HERE',
+    'SUPABASE_KEY', // This matches the key name in your .env file
+    defaultValue: 'YOUR_SUPABASE_KEY_FROM_DOTENV_OR_DART_DEFINE_HERE', // Placeholder
   ); 
 
   final Uuid _uuid = const Uuid(); // Instantiate Uuid for ID generation
@@ -32,25 +33,26 @@ class OpenAIService {
         Uri.parse(_supabaseEdgeFunctionUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_supabaseAnonKey',
+          'Authorization': 'Bearer $_supabaseAnonKey', // Use Supabase anon key for authorization
         },
         body: jsonEncode({
           'prompt_text': promptText,
-          'name': name ?? 'AIRequest',
+          'name': name ?? 'AIRequest', // Default name if not provided
         }),
       );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
+        // Your Edge Function returns 'ai_response'
         return data['ai_response'] ?? 'No AI response received.';
       } else {
         debugPrint('OpenAIService Error: HTTP Status Code ${response.statusCode}');
         debugPrint('OpenAIService Error: Response Body ${response.body}');
-        throw Exception('Failed to call Edge Function: ${response.statusCode} - ${response.body}'); // FIXED error message syntax
+        throw Exception('Failed to call Edge Function: ${response.statusCode} - ${response.body}');
       }
-    } catch (e, stackTrace) { // FIXED: Capture stackTrace to print for better debugging
+    } catch (e, stackTrace) {
       debugPrint('OpenAIService Exception during Edge Function call: $e');
-      debugPrint('StackTrace: $stackTrace'); // Print stack trace
+      debugPrint('StackTrace: $stackTrace');
       throw Exception('Error communicating with AI service: ${e.toString()}');
     }
   }
@@ -74,10 +76,10 @@ class OpenAIService {
     try {
       final List<dynamic> jsonList = jsonDecode(cleanJson);
       return jsonList;
-    } catch (e, stackTrace) { // Capture stackTrace
+    } catch (e, stackTrace) {
       debugPrint('Error decoding JSON from AI response: $e');
       debugPrint('Attempted to decode: $cleanJson');
-      debugPrint('StackTrace: $stackTrace'); // Print stack trace
+      debugPrint('StackTrace: $stackTrace');
       rethrow;
     }
   }
@@ -93,7 +95,7 @@ class OpenAIService {
       "timestamp" (ISO 8601 string, e.g., "${DateTime.now().toIso8601String()}", recent),
       "isPublic" (boolean, always true for newsfeed),
       "content" (string, main text, engaging and positive).
-      
+
       Optional fields based on type:
       "avatarUrl" (dummy URL like "https://picsum.photos/100?random=${_uuid.v4()}"),
       "username" (string, e.g., "Alex_Match"),
@@ -114,7 +116,7 @@ class OpenAIService {
       final String rawResponse = await _callEdgeFunction(promptText: prompt);
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.map((json) => NewsfeedItem.fromJson(json)).toList();
-    } catch (e, stackTrace) { // Capture stackTrace
+    } catch (e, stackTrace) {
       debugPrint('Error generating newsfeed items: $e');
       debugPrint('StackTrace: $stackTrace');
       return [];
@@ -123,7 +125,7 @@ class OpenAIService {
 
   Future<List<UserProfile>> generateDummyUserProfiles(int count) async {
     final String currentIsoTime = DateTime.now().toIso8601String();
-    
+
     final String prompt = '''
       Generate $count diverse, realistic dummy user profiles for a dating app called BlindAIDating.
       Each profile should be a JSON object with fields exactly matching a Supabase 'profiles' table row structure for Dart parsing, ensuring all fields expected by UserProfile.fromJson are present, with plausible dummy data.
@@ -132,7 +134,7 @@ class OpenAIService {
       "email" (string, valid dummy email, e.g., "user_${_uuid.v4().substring(0,4)}@example.com"),
       "full_name" (string, e.g., "Alice Johnson"),
       "display_name" (string, e.g., "CuriousAlice"),
-      "profile_picture_url" (dummy URL like "https://picsum.photos/200?random=${_uuid.v4()}"),
+      "profile_picture_url" (dummy URL like "https://picsum.photos/200?random=${_uuid.v4()}"), // Match the property name in UserProfile
       "bio" (string, 2-3 sentences, positive, engaging, reflects personality),
       "looking_for" (string, e.g., "Long-term relationship", "Friendship", "Casual dating", "Something open"),
       "profile_complete" (boolean, always true for these dummy profiles),
@@ -156,7 +158,7 @@ class OpenAIService {
       final String rawResponse = await _callEdgeFunction(promptText: prompt);
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.map((json) => UserProfile.fromJson(json)).toList();
-    } catch (e, stackTrace) { // Capture stackTrace
+    } catch (e, stackTrace) {
       debugPrint('Error generating dummy user profiles: $e');
       debugPrint('StackTrace: $stackTrace');
       return [];
@@ -181,7 +183,7 @@ class OpenAIService {
       final String rawResponse = await _callEdgeFunction(promptText: prompt);
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.map((json) => AIEngagementPrompt.fromJson(json)).toList();
-    } catch (e, stackTrace) { // Capture stackTrace
+    } catch (e, stackTrace) {
       debugPrint('Error generating AI engagement prompts: $e');
       debugPrint('StackTrace: $stackTrace');
       return [];
@@ -205,7 +207,7 @@ class OpenAIService {
       [
         $profileContext
       ]
-      
+
       Generate $count dummy match suggestions. Each suggestion should be a JSON object with:
       "matchId" (unique string, e.g., "match_${_uuid.v4()}"),
       "user1Id" (string, one of the user IDs from the context),
@@ -213,7 +215,7 @@ class OpenAIService {
       "matchDate" (ISO 8601 string, recent),
       "compatibilityScore" (integer, 60-99),
       "reason" (string, 1-2 sentences explaining the compatibility based on their interests and 'looking_for' intentions.).
-      
+
       Ensure matches are plausible based on their 'looking_for' intentions and 'interests'.
       Do not match a user with themselves.
       Provide the output as a JSON array of these objects.
@@ -223,7 +225,7 @@ class OpenAIService {
       final String rawResponse = await _callEdgeFunction(promptText: prompt);
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.cast<Map<String, dynamic>>();
-    } catch (e, stackTrace) { // Capture stackTrace
+    } catch (e, stackTrace) {
       debugPrint('Error generating dummy matches: $e');
       debugPrint('StackTrace: $stackTrace');
       return [];

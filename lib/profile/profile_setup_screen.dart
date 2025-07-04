@@ -5,15 +5,23 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
-import 'package:bliindaidating/app_constants.dart';
+// lib/profile/profile_setup_screen.dart
+
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is imported
+import 'package:bliindaidating/services/profile_service.dart'; // Ensure ProfileService is imported
+import 'package:bliindaidating/app_constants.dart'; // Ensure AppConstants is imported
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:cross_file/cross_file.dart'; // Import XFile
 
-// Import custom background/effects for immersion
+
+// Import custom background/effects for immersion (assuming these exist from your base project)
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
 
-// Import the modular form widgets
+// Import the modular form widgets (assuming these exist from your base project)
 import 'package:bliindaidating/screens/profile_setup/widgets/basic_info_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/identity_id_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/preferences_form.dart';
@@ -230,7 +238,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _maxDistance = 100; // Or fetch from userProfile if stored
 
         // --- Profile Visibility State population ---
-        _showFullName = userProfile.fullName != null; // This logic needs to be tied to actual visibility settings in UserProfile
+        // These logic lines should be based on actual fields in UserProfile for visibility settings
+        _showFullName = userProfile.fullName != null; 
         _showDisplayName = userProfile.displayName != null;
         _showAge = userProfile.dateOfBirth != null;
         _showGender = userProfile.gender != null;
@@ -240,7 +249,35 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showInterests = userProfile.interests.isNotEmpty;
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.addressZip != null;
-        // Continue for all other visibility flags if they exist in UserProfile
+        // The remaining _show flags need corresponding fields in UserProfile to be correctly populated
+        _showEthnicity = false; // Example: userProfile.ethnicity != null;
+        _showLanguagesSpoken = false; // userProfile.languagesSpoken.isNotEmpty;
+        _showEducationLevel = false;
+        _showDesiredOccupation = false;
+        _showLoveLanguages = false;
+        _showFavoriteMedia = false;
+        _showMaritalStatus = false;
+        _showChildrenPreference = false;
+        _showWillingToRelocate = false;
+        _showMonogamyPolyamory = false;
+        _showLoveRelationshipGoals = false;
+        _showDealbreakersBoundaries = false;
+        _showAstrologicalSign = false;
+        _showAttachmentStyle = false;
+        _showCommunicationStyle = false;
+        _showMentalHealthDisclosures = false;
+        _showPetOwnership = false;
+        _showTravelFrequencyDestinations = false;
+        _showPoliticalViews = false;
+        _showReligionBeliefs = false;
+        _showDiet = false;
+        _showSmokingHabits = false;
+        _showDrinkingHabits = false;
+        _showExerciseFrequency = false;
+        _showSleepSchedule = false;
+        _showPersonalityTraits = false;
+
+
       }
       debugPrint('ProfileSetupScreen: Preferences loaded.');
     } catch (e) {
@@ -312,21 +349,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       // you should remove the '!' operator and ensure UserProfile fields are nullable.
       final UserProfile profile = UserProfile(
         userId: currentUser.id,
+        email: currentUser.email!, // Provide email from currentUser
         fullName: _fullNameController.text.trim(),
         displayName: _displayNameController.text.trim(),
-        dateOfBirth: _dateOfBirth!, // Assuming this is required and validated by BasicInfoForm
-        gender: _gender!,           // Assuming this is required and validated by BasicInfoForm
+        dateOfBirth: _dateOfBirth!,
+        gender: _gender!,
         phoneNumber: _phoneNumberController.text.trim(),
         addressZip: _addressZipController.text.trim(),
         profilePictureUrl: uploadedPhotoPath,
-        sexualOrientation: _sexualOrientation!, // Assuming this is required and validated by PreferencesForm
-        lookingFor: _lookingFor!,     // Assuming this is required and validated by PreferencesForm
+        sexualOrientation: _sexualOrientation!,
+        lookingFor: _lookingFor!,
         height: double.tryParse(_heightController.text.trim()),
         bio: _bioController.text.trim(),
         interests: _selectedInterests,
         isProfileComplete: true,
         agreedToTerms: _agreedToTerms,
-        agreedToCommunityGuidelines: _agreedToCommunityGuidelines, // Corrected typo here
+        agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
         createdAt: currentUser.createdAt != null
             ? DateTime.tryParse(currentUser.createdAt!) ?? DateTime.now()
             : DateTime.now(),
