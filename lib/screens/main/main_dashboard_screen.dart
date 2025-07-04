@@ -5,20 +5,23 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart'; // For debugPrint
 
+// Local imports (ensure these files are present in your project from the reverted state)
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
-import 'package:bliindaidating/widgets/dashboard_header.dart'; // Keep if used for more than just title
 import 'package:bliindaidating/widgets/dashboard_penalty_section.dart';
 import 'package:bliindaidating/widgets/dashboard_stat_card.dart';
 import 'package:bliindaidating/widgets/dashboard_info_card.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is imported
-import 'package:bliindaidating/services/profile_service.dart'; // Ensure ProfileService is imported
-import 'package:bliindaidating/app_constants.dart'; // Ensure AppConstants is imported
+import 'package:bliindaidating/models/user_profile.dart'; // UserProfile import
+import 'package:bliindaidating/services/profile_service.dart';
+import 'package:bliindaidating/app_constants.dart'; // AppConstants import
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
-// NOTE: OpenAI imports are NOT here yet, as those files do not exist in your current tree.
-// We will add them systematically in later steps.
+// OpenAI Integration Imports (already assumed to be present and correct)
+import 'package:bliindaidating/services/openai_service.dart';
+import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
+import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 
 
 class MainDashboardScreen extends StatefulWidget {
@@ -55,6 +58,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
 
   final ProfileService _profileService = ProfileService();
+  final OpenAIService _openAIService = OpenAIService(); // Instantiate OpenAIService
+
 
   @override
   void initState() {
@@ -88,7 +93,52 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     _scrollController = ScrollController();
 
     _loadUserProfileAndSubscribe();
+    // This call will attempt to fetch AI data and print to console.
+    _fetchAIDummyData(); 
   }
+
+  // Temporary method to fetch AI-generated dummy data and print to console
+  Future<void> _fetchAIDummyData() async {
+    debugPrint('--- Fetching AI Dummy Data (from MainDashboardScreen) ---');
+    try {
+      final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
+      debugPrint('AI Generated Dummy Profiles:');
+      for (var profile in dummyProfiles) {
+        debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${profile.interests.join(', ')}');
+      }
+
+      final List<NewsfeedItem> newsfeedItems = await _openAIService.generateNewsfeedItems(
+        5,
+        userLocation: 'Salt Lake City, UT',
+        userRadius: 50,
+      );
+      debugPrint('AI Generated Newsfeed Items:');
+      for (var item in newsfeedItems) {
+        debugPrint('  - [${item.type.name}] ${item.username ?? ''}: ${item.content}');
+      }
+
+      final List<AIEngagementPrompt> aiPrompts = await _openAIService.generateAIEngagementPrompts(3);
+      debugPrint('AI Generated Engagement Prompts:');
+      for (var prompt in aiPrompts) {
+        debugPrint('  - ${prompt.tip}');
+      }
+
+      if (dummyProfiles.isNotEmpty) {
+        final List<Map<String, dynamic>> dummyMatches = await _openAIService.generateDummyMatches(2, dummyProfiles);
+        debugPrint('AI Generated Dummy Matches:');
+        for (var match in dummyMatches) {
+          debugPrint('  - Match between ${match['user1Id']} and ${match['user2Id']} - Score: ${match['compatibilityScore']}, Reason: ${match['reason']}');
+        }
+      }
+      debugPrint('--- AI Dummy Data Fetch Complete ---');
+    } catch (e) {
+      debugPrint('Error fetching AI dummy data: $e');
+      if (kDebugMode) {
+        print('Detailed AI Dummy Data Error: ${e.toString()}');
+      }
+    }
+  }
+
 
   @override
   void didUpdateWidget(covariant MainDashboardScreen oldWidget) {
@@ -116,7 +166,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           _userProfile = fetchedProfile;
           _isLoadingProfile = false;
         });
-        // Corrected: Use profilePictureUrl from UserProfile
         if (fetchedProfile.profilePictureUrl != null) {
           setState(() {
             _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
@@ -137,8 +186,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
       _profileSubscription = Supabase.instance.client
           .from('profiles')
-          .stream(primaryKey: ['user_id']) // Assuming user_id is the primary key in this old version
-          .eq('user_id', currentUser.id)
+          .stream(primaryKey: ['id']) // FIXED: Changed primaryKey from 'user_id' to 'id'
+          .eq('id', currentUser.id) // FIXED: Changed eq filter from 'user_id' to 'id'
           .listen((List<Map<String, dynamic>> data) async {
         if (data.isNotEmpty) {
           final UserProfile updatedProfile = UserProfile.fromJson(data.first);
@@ -146,7 +195,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             _userProfile = updatedProfile;
           });
           debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
-          // Corrected: Use profilePictureUrl from UserProfile
           if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
             setState(() {
               _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
