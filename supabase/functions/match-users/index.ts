@@ -1,17 +1,10 @@
 // supabase/functions/match-users/index.ts
-
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-
-// Import the Supabase client if you need to interact with your database from this function.
-// For this example, we're just hitting OpenAI, so it's not strictly necessary unless you add DB logic.
-// import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-console.log("Hello from Functions! (Now with AI capabilities)")
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // Define CORS headers for allowing cross-origin requests from your Flutter web app
 const corsHeaders = {
@@ -27,21 +20,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Parse the request body to get the 'name' and any other relevant data for AI
-    const { name, prompt_text } = await req.json();
-
-    // 🔥🔥🔥 TEMPORARY, INSECURE WORKAROUND - HARDCODED OPENAI API KEY 🔥🔥🔥
-    // This is your OpenAI API Key, hardcoded for immediate progress.
-    // REPLACE 'YOUR_OPENAI_API_KEY_HERE' with your actual key.
-    const OPENAI_API_KEY = 'sk-proj-m1tl77NQ-Qxz2UMBSdqBxDQtgryOGBHX3YnSji25NC7h5tpvn0ApHwgN5iyL6Rkxsq2jPLUy8IT2BlbkFJSO4eyVCsh5Smt6KLPFL3e83K9YXlb5p_LK6fmUX7j7D2ZDUZsQMVGAX8QFictXGv5_bXyhz1wA'; // <= PASTE YOUR ACTUAL KEY HERE
-    // 🔥🔥🔥 END OF HARDCODED KEY WORKAROUND 🔥🔥🔥
+    // 🔥🔥🔥 FIX: Get OpenAI API Key from Supabase Secrets (Environment Variables) 🔥🔥🔥
+    // This is the correct way to access your secret.
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
     if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured.');
+      // Log this error clearly if the secret isn't found
+      console.error('Edge Function Error: OPENAI_API_KEY environment variable is not set.');
+      throw new Error('OpenAI API key is not configured as a Supabase Secret.');
     }
 
-    // Construct a prompt for OpenAI based on the input
-    const aiPrompt = prompt_text || `Tell me something interesting about the name ${name}.`;
+    // Parse the request body to get the 'prompt_text'
+    const { prompt_text } = await req.json();
+
+    if (!prompt_text) {
+      throw new Error('prompt_text is required in the request body.');
+    }
 
     // Call the OpenAI Chat Completions API
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -51,10 +45,12 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // You can change this to 'gpt-4o' or another model if desired
-        messages: [{ role: 'user', content: aiPrompt }],
-        temperature: 0.7, // Controls randomness: lower for more deterministic, higher for more creative
-        max_tokens: 150, // Maximum number of tokens to generate in the response
+        model: 'gpt-3.5-turbo', // Or 'gpt-4o' for better JSON generation
+        messages: [{ role: 'user', content: prompt_text }],
+        temperature: 0.7,
+        // Increased max_tokens for potentially larger JSON outputs (e.g., multiple newsfeed items/profiles)
+        max_tokens: 1000,
+        response_format: { type: "json_object" } // Instruct OpenAI to return JSON
       }),
     });
 
@@ -65,13 +61,19 @@ Deno.serve(async (req) => {
       throw new Error(`OpenAI API request failed: ${openaiData.error?.message || JSON.stringify(openaiData)}`);
     }
 
-    const aiMessage = openaiData.choices[0]?.message?.content || "No AI response received.";
+    // OpenAI's response will contain the JSON string within the content.
+    // We need to extract that string and return it directly.
+    const aiContentString = openaiData.choices[0]?.message?.content;
 
-    // Prepare the response data to send back to the client
+    if (!aiContentString) {
+      throw new Error('No content received from OpenAI.');
+    }
+
+    // The AI is instructed to return a JSON array as a string.
+    // We will return this string directly to the Flutter app.
+    // The Flutter app's _parseAIJsonResponse will then parse this string.
     const responseData = {
-      greeting: `Hello ${name}!`,
-      ai_response: aiMessage,
-      // You can include more data here if needed
+      ai_response: aiContentString // This will be the JSON array string
     };
 
     return new Response(
@@ -87,19 +89,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Deploy this function locally (if you haven't already):
-     `npx supabase functions deploy match-users --no-verify-jwt`
-  3. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/match-users' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions", "prompt_text": "Tell me a fun fact about Flutter."}'
-
-  Remember to replace 'match-users' in the curl command if you renamed your function.
-  The 'prompt_text' field is new and allows you to send a specific AI prompt.
-*/

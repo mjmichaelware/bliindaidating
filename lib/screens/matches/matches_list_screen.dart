@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // Import go_router
-import 'package:provider/provider.dart'; // Import provider for theme
-import 'package:bliindaidating/app_constants.dart'; // Import app_constants
-import 'package:bliindaidating/controllers/theme_controller.dart'; // Import theme controller
-import 'package:bliindaidating/models/user_profile.dart'; // Assume you have a UserProfile model
-// import 'package:bliindaidating/services/match_service.dart'; // Uncomment and use for real data
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
+import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/data/dummy_data.dart'; // Import dummy data for profiles
+import 'package:uuid/uuid.dart'; // Still needed for generating dummy match IDs if not directly from dummyDiscoveryProfiles
 
 class MatchesListScreen extends StatefulWidget {
   const MatchesListScreen({super.key});
@@ -14,42 +15,59 @@ class MatchesListScreen extends StatefulWidget {
 }
 
 class _MatchesListScreenState extends State<MatchesListScreen> {
-  // Sample list of matches. In a real app, these would be UserProfile objects fetched from a service.
-  // For demonstration, let's use a dummy structure that includes a pseudo-ID.
-  List<Map<String, dynamic>> _matches = [
-    {'name': 'Alice', 'id': 'user_alice_123', 'subtitle': 'You have a mutual interest!'},
-    {'name': 'Bob', 'id': 'user_bob_456', 'subtitle': 'Great compatibility!'},
-    {'name': 'Charlie', 'id': 'user_charlie_789', 'subtitle': 'Similar hobbies!'},
-  ];
-
-  bool _isLoading = false; // To show loading state if fetching real matches
-  String? _errorMessage; // To show error if fetching fails
+  List<Map<String, dynamic>> _matches = [];
+  bool _isLoading = true; // Set to true initially to show loading
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // In a real app, you would call a match service here
-    // _fetchMatches();
+    _loadDummyMatches(); // Load dummy matches from dummy data
   }
 
-  // Example of a dummy fetch function
-  // Future<void> _fetchMatches() async {
-  //   setState(() { _isLoading = true; _errorMessage = null; });
-  //   try {
-  //     // Replace with actual API call
-  //     await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-  //     // List<UserProfile> fetchedMatches = await MatchService().fetchMyMatches();
-  //     // setState(() {
-  //     //   _matches = fetchedMatches.map((p) => {'name': p.displayName, 'id': p.userId, 'subtitle': 'Your compatibility message'}).toList();
-  //     //   _isLoading = false;
-  //     // });
-  //   } catch (e) {
-  //     setState(() {
-  //       _errorMessage = 'Failed to load matches: ${e.toString()}';
-  //       _isLoading = false;
-  //     });
-  //   }
-  // }
+  Future<void> _loadDummyMatches() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await Future.delayed(const Duration(seconds: 1)); // Simulate loading
+      // Create dummy matches using IDs from dummyDiscoveryProfiles
+      // This ensures that when "View Profile" is clicked, the ID exists in dummyDiscoveryProfiles
+      List<Map<String, dynamic>> generatedMatches = [];
+      if (dummyDiscoveryProfiles.length >= 3) { // Ensure enough profiles to create matches
+        generatedMatches.add({
+          'name': dummyDiscoveryProfiles[0].displayName ?? dummyDiscoveryProfiles[0].fullName,
+          'id': dummyDiscoveryProfiles[0].userId,
+          'subtitle': 'You have a mutual interest!',
+        });
+        generatedMatches.add({
+          'name': dummyDiscoveryProfiles[1].displayName ?? dummyDiscoveryProfiles[1].fullName,
+          'id': dummyDiscoveryProfiles[1].userId,
+          'subtitle': 'Great compatibility!',
+        });
+        generatedMatches.add({
+          'name': dummyDiscoveryProfiles[2].displayName ?? dummyDiscoveryProfiles[2].fullName,
+          'id': dummyDiscoveryProfiles[2].userId,
+          'subtitle': 'Similar hobbies!',
+        });
+      } else {
+        // Fallback if not enough dummy profiles
+        generatedMatches.add({'name': 'Dummy Match 1', 'id': const Uuid().v4(), 'subtitle': 'A placeholder match'});
+      }
+
+      setState(() {
+        _matches = generatedMatches;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading dummy matches: $e');
+      setState(() {
+        _errorMessage = 'Failed to load matches: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +108,7 @@ class _MatchesListScreenState extends State<MatchesListScreen> {
             fontSize: AppConstants.fontSizeExtraLarge,
           ),
         ),
-        backgroundColor: Colors.transparent, // AppBar is typically handled by DashboardAppBar in shell
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: ListView.builder(
@@ -124,7 +142,6 @@ class _MatchesListScreenState extends State<MatchesListScreen> {
               ),
               trailing: ElevatedButton(
                 onPressed: () {
-                  // Navigate to the profile view screen using GoRouter
                   if (match['id'] != null) {
                     context.push('/profile/${match['id']}');
                     debugPrint('Navigating to profile of ${match['name']} with ID: ${match['id']}');

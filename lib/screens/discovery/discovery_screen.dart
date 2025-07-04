@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Assume your UserProfile model is here
-import 'package:bliindaidating/services/openai_service.dart'; // For dummy profiles
+import 'package:bliindaidating/models/user_profile.dart';
+// import 'package:bliindaidating/services/openai_service.dart'; // No longer directly used for data fetching
+import 'package:bliindaidating/data/dummy_data.dart'; // Import dummy data
 import 'dart:ui'; // For ImageFilter.blur
 
-// NEW WIDGET IMPORT (will be created in a new file below)
 import 'package:bliindaidating/widgets/profile/profile_discovery_card.dart';
-
 
 class DiscoveryScreen extends StatefulWidget {
   const DiscoveryScreen({super.key});
@@ -18,7 +17,7 @@ class DiscoveryScreen extends StatefulWidget {
 }
 
 class _DiscoveryScreenState extends State<DiscoveryScreen> {
-  final OpenAIService _openAIService = OpenAIService();
+  // Removed OpenAIService instance
   List<UserProfile> _discoverableProfiles = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -28,7 +27,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchDiscoverableProfiles();
+    _loadDummyDiscoverableProfiles(); // Call local dummy data loader
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -45,21 +44,20 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     });
   }
 
-  Future<void> _fetchDiscoverableProfiles() async {
+  Future<void> _loadDummyDiscoverableProfiles() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
-      // Fetch dummy profiles. In a real app, you'd fetch from Supabase
-      // Ensure generateDummyUserProfiles can create profiles with dummy URLs and diverse interests.
-      final profiles = await _openAIService.generateDummyUserProfiles(10);
+      // Simulate loading delay
+      await Future.delayed(const Duration(seconds: 2));
       setState(() {
-        _discoverableProfiles = profiles;
+        _discoverableProfiles = dummyDiscoveryProfiles; // Use hardcoded dummy data
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error fetching discoverable profiles: $e');
+      debugPrint('Error loading dummy discoverable profiles: $e');
       setState(() {
         _errorMessage = 'Failed to load profiles: ${e.toString()}';
         _isLoading = false;
@@ -84,13 +82,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
   }
 
   void _onLikeProfile(UserProfile profile) {
-    // TODO: Implement actual like logic to send to AI/backend
+    // TODO: Implement actual like logic (e.g., store in a local list, send to backend later)
     debugPrint('Liked profile: ${profile.displayName ?? profile.fullName}');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('You liked ${profile.displayName ?? "this user"}! (Dummy)')),
     );
-    // You might want to remove the liked profile from the list or move it
-    // to a "liked" list in the UI. For simplicity, we just show a snackbar.
   }
 
   @override
@@ -148,7 +144,6 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                       : GridView.builder(
                           padding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
                           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            // Adjust crossAxisCount based on screen width
                             crossAxisCount: MediaQuery.of(context).size.width > 900 ? 3 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
                             childAspectRatio: 0.8, // Adjust as needed for card size
                             crossAxisSpacing: AppConstants.spacingMedium,

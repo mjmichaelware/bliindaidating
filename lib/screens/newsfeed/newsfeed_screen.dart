@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart'; // Ensure this model exists
-import 'package:bliindaidating/services/openai_service.dart'; // Ensure this service exists
+import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
+// import 'package:bliindaidating/services/openai_service.dart'; // No longer directly used for data fetching
+import 'package:bliindaidating/data/dummy_data.dart'; // Import dummy data
 
 class NewsfeedScreen extends StatefulWidget {
   const NewsfeedScreen({super.key});
@@ -13,7 +14,7 @@ class NewsfeedScreen extends StatefulWidget {
 }
 
 class _NewsfeedScreenState extends State<NewsfeedScreen> {
-  final OpenAIService _openAIService = OpenAIService();
+  // Removed OpenAIService instance
   List<NewsfeedItem> _newsfeedItems = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -21,28 +22,23 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchNewsfeedItems();
+    _loadDummyNewsfeedItems(); // Call local dummy data loader
   }
 
-  Future<void> _fetchNewsfeedItems() async {
+  Future<void> _loadDummyNewsfeedItems() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
-      // Call your OpenAI service to generate newsfeed items
-      // You can pass dynamic user data (e.g., location, radius) if your generateNewsfeedItems method supports it.
-      final items = await _openAIService.generateNewsfeedItems(
-        5, // Number of items to generate
-        userLocation: 'Snyderville, Utah', // Example: Current User Location
-        userRadius: 50, // Example: User's preferred discovery radius
-      );
+      // Simulate loading delay
+      await Future.delayed(const Duration(seconds: 2));
       setState(() {
-        _newsfeedItems = items;
+        _newsfeedItems = dummyNewsfeedItems; // Use hardcoded dummy data
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error fetching newsfeed items: $e');
+      debugPrint('Error loading dummy newsfeed items: $e');
       setState(() {
         _errorMessage = 'Failed to load newsfeed: ${e.toString()}';
         _isLoading = false;
@@ -72,7 +68,7 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
     if (_newsfeedItems.isEmpty) {
       return Center(
         child: Text(
-          'No newsfeed items to display yet. Pull to refresh or check back later!',
+          'No newsfeed items to display yet. Check back later!',
           style: TextStyle(color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis),
           textAlign: TextAlign.center,
         ),
@@ -80,7 +76,7 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchNewsfeedItems,
+      onRefresh: _loadDummyNewsfeedItems, // Still allow refresh to reload dummy data
       color: AppConstants.primaryColor,
       backgroundColor: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
       child: ListView.builder(
@@ -102,7 +98,7 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.title ?? 'Newsfeed Update', // Assuming NewsfeedItem has a title or default
+                    item.title ?? 'Newsfeed Update', // Use the title field
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
                       fontWeight: FontWeight.bold,

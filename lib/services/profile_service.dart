@@ -1,67 +1,95 @@
-// lib/services/profile_service.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bliindaidating/models/user_profile.dart';
-import 'package:flutter/foundation.dart';
-import 'package:cross_file/cross_file.dart'; // Ensure XFile is imported for uploadAnalysisPhoto
+import 'package:bliindaidating/data/dummy_data.dart'; // Import dummy data
+import 'package:image_picker/image_picker.dart'; // Import XFile for web compatibility
 
 class ProfileService {
-  final SupabaseClient _supabaseClient = Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
+  // Fetches a user profile by ID.
+  // This method will now prioritize dummy data if a matching dummy ID is found.
   Future<UserProfile?> fetchUserProfile(String userId) async {
+    // --- First, try to find in dummy data ---
     try {
-      final response = await _supabaseClient
-          .from('profiles')
-          .select() // Selects all columns implicitly
-          .eq('id', userId)
-          .single(); // Expecting a single row for a user's profile
+      final dummyProfile = dummyDiscoveryProfiles.firstWhere(
+        (profile) => profile.userId == userId,
+      );
+      print('ProfileService: Found dummy profile for ID: $userId');
+      return dummyProfile;
+    } catch (e) {
+      // If not found in dummy data, proceed to Supabase
+      print('ProfileService: Dummy profile not found for ID: $userId. Attempting Supabase fetch.');
+    }
 
-      if (response.isNotEmpty) {
+    // --- If not found in dummy data, attempt to fetch from Supabase ---
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .single();
+
+      if (response != null) {
         return UserProfile.fromJson(response);
       }
-      return null; // Profile not found
+      return null;
     } on PostgrestException catch (e) {
-      debugPrint('Supabase Postgrest Error fetching user profile for $userId: ${e.message}');
-      throw e;
+      print('ProfileService: Error fetching user profile from Supabase: ${e.message}');
+      // It's crucial to handle cases where the user ID might not exist in Supabase
+      // or if there are RLS issues.
+      return null;
     } catch (e) {
-      debugPrint('General Error fetching user profile for $userId: $e');
-      rethrow;
+      print('ProfileService: General error fetching user profile: $e');
+      return null;
     }
   }
 
+  // FIXED: Changed parameter type from File to XFile? for web compatibility
+  Future<String> uploadAnalysisPhoto(String userId, XFile? imageFile) async {
+    print('ProfileService: Dummy photo upload for userId: $userId, image: ${imageFile?.name ?? 'null'}');
+    // Simulate upload delay
+    await Future.delayed(const Duration(seconds: 1));
+    // Return a dummy URL. Replace with actual Supabase Storage upload logic later.
+    // For a real implementation on web, you'd work with imageFile.readAsBytes()
+    return 'https://placehold.co/200x200/ff0000/white?text=UPLOADED';
+  }
+
+  // Placeholder for createOrUpdateProfile method
+  // This is a stub to satisfy calls from profile_setup_screen and about_me_screen.
+  // You will need to implement the actual Supabase database insert/update logic here later.
   Future<void> createOrUpdateProfile({required UserProfile profile}) async {
-    try {
-      await _supabaseClient
-          .from('profiles')
-          .upsert(profile.toJson())
-          .eq('id', profile.userId);
-      debugPrint('Profile for ${profile.userId} upserted successfully.');
-    } on PostgrestException catch (e) {
-      debugPrint('Supabase Postgrest Error creating/updating profile for ${profile.userId}: ${e.message}');
-      throw e;
-    } catch (e) {
-      debugPrint('General Error creating/updating profile for ${profile.userId}: $e');
-      rethrow;
-    }
+    print('ProfileService: Dummy create/update profile for ${profile.userId}');
+    // Simulate database operation delay
+    await Future.delayed(const Duration(seconds: 1));
+    // TODO: Implement actual Supabase upsert logic (insert if new, update if exists)
+    // Example:
+    // await _supabase.from('profiles').upsert(profile.toJson());
   }
 
-  Future<String?> uploadAnalysisPhoto(String userId, XFile imageFile) async {
+  // Example: Method to check if a profile is complete
+  Future<bool> isProfileComplete(String userId) async {
+    // For dummy data scenario, you might always return true or false,
+    // or you could check if the userId exists in dummyDiscoveryProfiles
+    // if (!dummyDiscoveryProfiles.any((p) => p.userId == userId)) {
+    //   // If not a dummy profile, try Supabase
+    // }
     try {
-      final String path = 'analysis_photos/$userId/${imageFile.name}';
+      final response = await _supabase
+          .from('profiles')
+          .select('profile_complete')
+          .eq('id', userId)
+          .single();
 
-      // Ensure 'avatars' bucket exists in your Supabase storage
-      final String publicUrl = await _supabaseClient.storage
-          .from('avatars')
-          .upload(path, await imageFile.readAsBytes(),
-              fileOptions: const FileOptions(upsert: true));
-
-      final String signedUrl = _supabaseClient.storage.from('avatars').getPublicUrl(path);
-      return signedUrl;
-    } on StorageException catch (e) {
-      debugPrint('Supabase Storage Error uploading photo: ${e.message}');
-      throw e;
+      if (response != null && response['profile_complete'] == true) {
+        return true;
+      }
+      return false;
+    } on PostgrestException catch (e) {
+      print('Error checking profile completion: ${e.message}');
+      return false;
     } catch (e) {
-      debugPrint('General Error uploading photo: $e');
-      rethrow;
+      print('General error checking profile completion: $e');
+      return false;
     }
   }
 }

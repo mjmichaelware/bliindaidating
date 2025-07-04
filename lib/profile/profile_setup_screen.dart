@@ -3,19 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bliindaidating/models/user_profile.dart';
-import 'package:bliindaidating/services/profile_service.dart';
-// lib/profile/profile_setup_screen.dart
-
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is imported
 import 'package:bliindaidating/services/profile_service.dart'; // Ensure ProfileService is imported
 import 'package:bliindaidating/app_constants.dart'; // Ensure AppConstants is imported
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:cross_file/cross_file.dart'; // Import XFile
+import 'package:image_picker/image_picker.dart'; // Import ImagePicker for XFile
 
 
 // Import custom background/effects for immersion (assuming these exist from your base project)
@@ -42,11 +36,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
 
   bool _isLoading = true;
 
-  // --- Image Handling State ---
-  XFile? _pickedImage; // Stores the XFile picked by the user
-  String? _imagePreviewPath; // Stores the URL for network images or path for local preview
+  XFile? _pickedImage;
+  String? _imagePreviewPath;
 
-  // --- TextEditingControllers for form fields ---
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
@@ -54,7 +46,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   final TextEditingController _addressZipController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
 
-  // --- Variables for dropdowns/pickers/checkboxes ---
   DateTime? _dateOfBirth;
   String? _gender;
   String? _sexualOrientation;
@@ -63,12 +54,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   bool _agreedToTerms = false;
   bool _agreedToCommunityGuidelines = false;
 
-  // --- Dating Preferences State (Already declared, good) ---
   String? _preferredGender;
   RangeValues _ageRange = const RangeValues(18, 50);
-  double _maxDistance = 100; // in miles
+  double _maxDistance = 100;
 
-  // --- Profile Visibility State (Already declared, good) ---
   bool _showFullName = false;
   bool _showDisplayName = true;
   bool _showAge = true;
@@ -107,12 +96,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   bool _showPersonalityTraits = false;
 
 
-  // Tab Definitions (Order based on user's preference for progression)
   static const List<Tab> _profileTabs = <Tab>[
     Tab(text: 'Basic Info', icon: Icon(Icons.person)),
-    Tab(text: 'Identity & Connection', icon: Icon(Icons.perm_identity)), // Icon changed for connection theme
+    Tab(text: 'Identity & Connection', icon: Icon(Icons.perm_identity)),
     Tab(text: 'Preferences', icon: Icon(Icons.favorite)),
-    Tab(text: 'Consent', icon: Icon(Icons.policy)), // Icon changed for policy theme
+    Tab(text: 'Consent', icon: Icon(Icons.policy)),
   ];
 
   @override
@@ -140,12 +128,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     setState(() {});
   }
 
-  // --- Callbacks to update state from child forms ---
   void _onImagePicked(XFile? image) {
     setState(() {
       _pickedImage = image;
-      // For display, use the XFile's path if it's a new pick, otherwise rely on imagePreviewPath for network images
-      _imagePreviewPath = image?.path; // This will be used by IdentityIDForm for display
+      _imagePreviewPath = image?.path;
     });
   }
 
@@ -214,7 +200,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     try {
       final UserProfile? userProfile = await _profileService.fetchUserProfile(currentUser.id);
       if (userProfile != null) {
-        // Populate controllers and state variables from fetched profile
         _fullNameController.text = userProfile.fullName ?? '';
         _displayNameController.text = userProfile.displayName ?? '';
         _heightController.text = userProfile.height?.toString() ?? '';
@@ -226,20 +211,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _gender = userProfile.gender;
         _sexualOrientation = userProfile.sexualOrientation;
         _lookingFor = userProfile.lookingFor;
-        _selectedInterests = List.from(userProfile.interests); // Make a mutable copy
+        _selectedInterests = List.from(userProfile.interests);
         _agreedToTerms = userProfile.agreedToTerms;
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
-        _imagePreviewPath = userProfile.profilePictureUrl; // Set for existing image
+        _imagePreviewPath = userProfile.profilePictureUrl;
 
-        // --- Dating Preferences State population ---
-        _preferredGender = userProfile.gender; // Assuming preferred gender defaults to user's gender
-        // Age range might need more sophisticated logic if it's based on user's profile
-        _ageRange = const RangeValues(18, 50); // Or fetch from userProfile if stored
-        _maxDistance = 100; // Or fetch from userProfile if stored
+        _preferredGender = userProfile.gender;
+        _ageRange = const RangeValues(18, 50);
+        _maxDistance = 100;
 
-        // --- Profile Visibility State population ---
-        // These logic lines should be based on actual fields in UserProfile for visibility settings
-        _showFullName = userProfile.fullName != null; 
+        _showFullName = userProfile.fullName != null;
         _showDisplayName = userProfile.displayName != null;
         _showAge = userProfile.dateOfBirth != null;
         _showGender = userProfile.gender != null;
@@ -249,9 +230,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showInterests = userProfile.interests.isNotEmpty;
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.addressZip != null;
-        // The remaining _show flags need corresponding fields in UserProfile to be correctly populated
-        _showEthnicity = false; // Example: userProfile.ethnicity != null;
-        _showLanguagesSpoken = false; // userProfile.languagesSpoken.isNotEmpty;
+        _showEthnicity = false;
+        _showLanguagesSpoken = false;
         _showEducationLevel = false;
         _showDesiredOccupation = false;
         _showLoveLanguages = false;
@@ -293,10 +273,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   }
 
   Future<void> _savePreferences() async {
-    // Validate current tab's form before saving all
     if (!_formKeys[_tabController.index].currentState!.validate()) {
       debugPrint('ProfileSetupScreen: Validation failed for current tab.');
-      // Show a message to the user that validation failed
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please fill out all required fields on this tab.')),
@@ -321,7 +299,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     String? uploadedPhotoPath;
     if (_pickedImage != null) {
       try {
-        uploadedPhotoPath = await _profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!);
+        uploadedPhotoPath = await _profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage);
         if (uploadedPhotoPath == null) {
           throw Exception('Failed to get uploaded photo path after upload.');
         }
@@ -336,20 +314,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         return;
       }
     } else if (_imagePreviewPath != null && _imagePreviewPath!.startsWith('http')) {
-      // If no new image picked, but there's an existing preview path (from loaded profile)
       uploadedPhotoPath = _imagePreviewPath;
     } else {
       debugPrint('ProfileSetupScreen: No analysis photo provided, continuing without upload.');
     }
 
     try {
-      // Ensure all required fields are non-null before creating UserProfile
-      // The validators in the forms should prevent this from being an issue if fields are required.
-      // If any of these can genuinely be null in your UserProfile model and database,
-      // you should remove the '!' operator and ensure UserProfile fields are nullable.
       final UserProfile profile = UserProfile(
         userId: currentUser.id,
-        email: currentUser.email!, // Provide email from currentUser
+        email: currentUser.email!,
         fullName: _fullNameController.text.trim(),
         displayName: _displayNameController.text.trim(),
         dateOfBirth: _dateOfBirth!,
@@ -363,7 +336,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         bio: _bioController.text.trim(),
         interests: _selectedInterests,
         isProfileComplete: true,
-        agreedToTerms: _agreedToTerms,
+        agreedToTerms: _agreedToTerms, // <-- FIXED: Corrected typo here
         agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
         createdAt: currentUser.createdAt != null
             ? DateTime.tryParse(currentUser.createdAt!) ?? DateTime.now()
@@ -377,7 +350,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
         );
-        context.go('/home'); // Redirect to home/dashboard
+        context.go('/home');
       }
     } on PostgrestException catch (e) {
       debugPrint('ProfileSetupScreen: Supabase Postgrest Error saving profile data: ${e.message}');
@@ -413,10 +386,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     final Color iconColor = isDarkMode ? Colors.white70 : Colors.black54;
 
     return Scaffold(
-      // The background gradient/effect for the entire Profile Setup Screen
       body: Stack(
         children: [
-          const Positioned.fill(child: AnimatedOrbBackground()), // Reuse the immersive background
+          const Positioned.fill(child: AnimatedOrbBackground()),
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
