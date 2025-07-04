@@ -17,6 +17,7 @@ class NewsfeedItem {
   final String? avatarUrl; // Optional for AI tips, etc.
   final String? username; // Optional for AI tips, etc.
   final String? location; // Optional for AI tips, etc.
+  final String? title; // <--- ADDED THIS LINE: The missing 'title' field
 
   // Specific fields for different types
   final String? partnerName; // For date_success
@@ -39,6 +40,7 @@ class NewsfeedItem {
     this.eventName,
     this.eventDate,
     this.eventLocation,
+    this.title, // <--- ADDED TO CONSTRUCTOR
   });
 
   factory NewsfeedItem.fromJson(Map<String, dynamic> json) {
@@ -77,6 +79,7 @@ class NewsfeedItem {
       eventName: json['eventName'] as String?,
       eventDate: json['eventDate'] != null ? DateTime.parse(json['eventDate'] as String) : null,
       eventLocation: json['eventLocation'] as String?,
+      title: json['title'] as String?, // <--- ADDED FROM JSON PARSING
     );
   }
 }

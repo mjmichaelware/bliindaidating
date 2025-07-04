@@ -125,7 +125,9 @@ class AppConstants {
   static const double spacingXXXL = 64.0; // Added for very large gaps
   static const double spacingXXXXL = 96.0; // Added for extra large gaps
 
-  // Padding (Already existed, re-confirmed, added to match error messages)
+
+  // Padding (Already existed, re-confirmed, ADDED paddingExtraSmall)
+  static const double paddingExtraSmall = 4.0; // <--- ADDED THIS LINE
   static const double paddingSmall = 8.0;
   static const double paddingMedium = 16.0;
   static const double paddingLarge = 24.0;

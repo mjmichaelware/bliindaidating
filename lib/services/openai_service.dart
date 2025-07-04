@@ -60,7 +60,6 @@ class OpenAIService {
   List<dynamic> _parseAIJsonResponse(String rawResponse) {
     String cleanJson = rawResponse;
     final int firstBracket = rawResponse.indexOf('[');
-    // FIXED: Corrected typo from rawRegistry to rawResponse
     final int firstBrace = rawResponse.indexOf('{'); 
     final int lastBracket = rawResponse.lastIndexOf(']');
     final int lastBrace = rawResponse.lastIndexOf('}');
@@ -91,29 +90,30 @@ class OpenAIService {
       Generate $count diverse newsfeed items for a dating app called BlindAIDating.
       Each item should be a JSON object and include:
       "id" (unique string, e.g., "${_uuid.v4()}"),
-      "type" (string, enum: "date_success", "match_announce", "event_nearby", "public_post", "ai_tip"),
+      "type" (string, enum: "dateSuccess", "matchAnnounce", "eventNearby", "publicPost", "aiTip"),
       "timestamp" (ISO 8601 string, e.g., "${DateTime.now().toIso8601String()}", recent),
       "isPublic" (boolean, always true for newsfeed),
       "content" (string, main text, engaging and positive).
-      
+      "title" (string, a short, descriptive title for the newsfeed item). // <--- ADDED "title" to prompt
+
       Optional fields based on type:
       "avatarUrl" (dummy URL like "https://picsum.photos/100?random=${_uuid.v4()}"),
       "username" (string, e.g., "Alex_Match"),
       "location" (string, e.g., "Salt Lake City, UT").
 
-      For "date_success" type: include "partnerName" (string, e.g., "Sophia"). Content should be a positive reflection on a date.
-      For "match_announce" type: include "matchUsername" (string, e.g., "ChrisDater"). Content should celebrate a new match.
-      For "event_nearby" type: include "eventName" (string), "eventDate" (ISO 8601 string, future date), "eventLocation" (string, e.g., "Downtown Cafe"). These should be plausible events and locations somewhat within a $userRadius mile radius of $userLocation.
-      For "public_post" type: content should be a short, positive "tweet" about dating or social interaction, e.g., "Just had an amazing conversation about tree hugging! #BlindAIDating #DeepConnections".
-      For "ai_tip" type: content should be a social engagement tip for BlindAIDating, following the "childlike wonder" theme (e.g., "Ask 'Why?' twice to truly understand someone's passion.").
+      For "dateSuccess" type: include "partnerName" (string, e.g., "Sophia"). Content should be a positive reflection on a date.
+      For "matchAnnounce" type: include "matchUsername" (string, e.g., "ChrisDater"). Content should celebrate a new match.
+      For "eventNearby" type: include "eventName" (string), "eventDate" (ISO 8601 string, future date), "eventLocation" (string, e.g., "Downtown Cafe"). These should be plausible events and locations somewhat within a $userRadius mile radius of $userLocation.
+      For "publicPost" type: content should be a short, positive "tweet" about dating or social interaction, e.g., "Just had an amazing conversation about tree hugging! #BlindAIDating #DeepConnections".
+      For "aiTip" type: content should be a social engagement tip for BlindAIDating, following the "childlike wonder" theme (e.g., "Ask 'Why?' twice to truly understand someone's passion.").
 
       Ensure content is diverse and reflects different aspects of dating and social interaction.
-      Make sure locations for 'date_success' and 'match_announce' feel natural for dating app users.
+      Make sure locations for 'dateSuccess' and 'matchAnnounce' feel natural for dating app users.
       Provide the output as a JSON array of these objects.
     ''';
 
     try {
-      final String rawResponse = await _callEdgeFunction(promptText: prompt);
+      final String rawResponse = await _callEdgeFunction(promptText: prompt, name: "generateNewsfeedItems"); // Added name for logging
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.map((json) => NewsfeedItem.fromJson(json)).toList();
     } catch (e, stackTrace) {
@@ -155,7 +155,7 @@ class OpenAIService {
     ''';
 
     try {
-      final String rawResponse = await _callEdgeFunction(promptText: prompt);
+      final String rawResponse = await _callEdgeFunction(promptText: prompt, name: "generateDummyUserProfiles"); // Added name for logging
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.map((json) => UserProfile.fromJson(json)).toList();
     } catch (e, stackTrace) {
@@ -180,7 +180,7 @@ class OpenAIService {
     ''';
 
     try {
-      final String rawResponse = await _callEdgeFunction(promptText: prompt);
+      final String rawResponse = await _callEdgeFunction(promptText: prompt, name: "generateAIEngagementPrompts"); // Added name for logging
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.map((json) => AIEngagementPrompt.fromJson(json)).toList();
     } catch (e, stackTrace) {
@@ -222,7 +222,7 @@ class OpenAIService {
     ''';
 
     try {
-      final String rawResponse = await _callEdgeFunction(promptText: prompt);
+      final String rawResponse = await _callEdgeFunction(promptText: prompt, name: "generateDummyMatches"); // Added name for logging
       final List<dynamic> jsonList = _parseAIJsonResponse(rawResponse);
       return jsonList.cast<Map<String, dynamic>>();
     } catch (e, stackTrace) {

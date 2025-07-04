@@ -1,7 +1,7 @@
-// lib/widgets/dashboard_shell/dashboard_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
@@ -36,6 +36,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
             size: AppConstants.fontSizeExtraLarge,
           ),
           onPressed: () {
+            // Navigate to notifications screen
             context.push('/notifications');
             debugPrint('Notification button pressed!');
           },
@@ -57,7 +58,19 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
             size: AppConstants.fontSizeExtraLarge,
           ),
           onPressed: () async {
-            debugPrint('Logout button pressed (logic needs to be handled by parent/service)!');
+            debugPrint('Logout button pressed! Attempting to sign out.');
+            try {
+              await Supabase.instance.client.auth.signOut();
+              // The GoRouterRefreshStream in main.dart will detect this auth state change
+              // and automatically redirect the user to the appropriate page (e.g., /login or /portal_hub).
+              // No explicit context.go() call is needed here, as it's handled by the redirect logic.
+            } catch (e) {
+              debugPrint('Error signing out: $e');
+              // Optionally show a user-friendly message if logout fails
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to sign out: ${e.toString()}')),
+              );
+            }
           },
         ),
         SizedBox(width: AppConstants.paddingSmall),

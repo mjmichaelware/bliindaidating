@@ -65,6 +65,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   Future<void> _fetchAIDummyData() async {
     debugPrint('--- Fetching AI Dummy Data (from MainDashboardScreen) ---');
     try {
+      // NOTE: Ensure your OpenAIService.generateDummyUserProfiles returns UserProfile objects
+      // with a 'userId' and 'profilePictureUrl' for these next steps to work correctly.
       final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
       debugPrint('AI Generated Dummy Profiles:');
       for (var profile in dummyProfiles) {
@@ -73,7 +75,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
       final List<NewsfeedItem> newsfeedItems = await _openAIService.generateNewsfeedItems(
         5,
-        userLocation: 'Salt Lake City, UT',
+        userLocation: 'Snyderville, Utah', // Updated to current location
         userRadius: 50,
       );
       debugPrint('AI Generated Newsfeed Items:');
@@ -88,6 +90,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       }
 
       if (dummyProfiles.isNotEmpty) {
+        // Ensure generateDummyMatches can handle UserProfile objects
         final List<Map<String, dynamic>> dummyMatches = await _openAIService.generateDummyMatches(2, dummyProfiles);
         debugPrint('AI Generated Dummy Matches:');
         for (var match in dummyMatches) {
@@ -126,14 +129,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         }
         if (!fetchedProfile.isProfileComplete) {
            debugPrint('MainDashboardScreen: Profile is not marked complete. Redirecting to setup.');
-           if (mounted) context.go('/profile-setup');
+           if (mounted) context.go('/profile_setup'); // Corrected path if it was profile-setup
            return;
         }
       } else {
         setState(() { _isLoadingProfile = false; });
         debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
         if (mounted) {
-          context.go('/profile-setup');
+          context.go('/profile_setup'); // Corrected path if it was profile-setup
         }
       }
 
@@ -194,10 +197,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
     // List of screens for the DashboardContentSwitcher
     final List<Widget> _dashboardScreens = [
-      const NewsfeedScreen(),
-      const MatchesListScreen(), // Existing screen
-      const DiscoveryScreen(), // Existing screen for Profile Discovery
-      const QuestionnaireScreen(),
+      const NewsfeedScreen(), // Now a Stateful widget that fetches AI data
+      const MatchesListScreen(), // Now correctly navigates to ProfileViewScreen
+      const DiscoveryScreen(), // Now the overhauled Profile Discovery screen
+      const QuestionnaireScreen(), // Now a Stateful widget that fetches questions
     ];
 
     return Scaffold(
@@ -261,5 +264,5 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         ],
       ),
     );
-  }
+  } 
 }

@@ -38,6 +38,10 @@ import 'package:bliindaidating/screens/feedback_report/feedback_screen.dart';
 import 'package:bliindaidating/screens/feedback_report/report_screen.dart';
 import 'package:bliindaidating/screens/admin/admin_dashboard_screen.dart';
 
+// NEW IMPORTS for screens
+import 'package:bliindaidating/screens/notifications/notifications_screen.dart'; // NEW SCREEN
+import 'package:bliindaidating/screens/profile/profile_view_screen.dart'; // NEW SCREEN
+
 
 // A simple Not Found screen for GoRouter's errorBuilder
 class NotFoundScreen extends StatelessWidget {
@@ -196,6 +200,22 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(
           path: '/admin',
           builder: (context, state) => const AdminDashboardScreen(),
+        ),
+        // NEW: Notifications Screen Route
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationsScreen(),
+        ),
+        // NEW: Profile View Screen Route for other users
+        GoRoute(
+          path: '/profile/:userId', // Define a path parameter for the user ID
+          builder: (context, state) {
+            final userId = state.pathParameters['userId'];
+            if (userId == null) {
+              return const NotFoundScreen(); // Or handle error appropriately
+            }
+            return ProfileViewScreen(userId: userId);
+          },
         ),
       ],
       // Redirection logic based on authentication state and profile setup
