@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -39,8 +41,8 @@ import 'package:bliindaidating/screens/feedback_report/report_screen.dart';
 import 'package:bliindaidating/screens/admin/admin_dashboard_screen.dart';
 
 // NEW IMPORTS for screens
-import 'package:bliindaidating/screens/notifications/notifications_screen.dart'; // NEW SCREEN
-import 'package:bliindaidating/screens/profile/profile_view_screen.dart'; // NEW SCREEN
+import 'package:bliindaidating/screens/notifications/notifications_screen.dart';
+import 'package:bliindaidating/screens/profile/profile_view_screen.dart';
 
 
 // A simple Not Found screen for GoRouter's errorBuilder
@@ -49,7 +51,6 @@ class NotFoundScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Access theme colors dynamically using Provider
     final theme = Provider.of<ThemeController>(context);
     return Scaffold(
       backgroundColor: theme.isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
@@ -70,10 +71,8 @@ class NotFoundScreen extends StatelessWidget {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    // Initialize Supabase using the centralized SupabaseConfig
     await SupabaseConfig.init();
     runApp(
-      // Provide ThemeController to the widget tree
       ChangeNotifierProvider(
         create: (context) => ThemeController(),
         child: const BlindAIDatingApp(),
@@ -106,120 +105,48 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
-  final ProfileService _profileService = ProfileService(); // Instantiate ProfileService
+  final ProfileService _profileService = ProfileService();
 
   @override
   void initState() {
     super.initState();
     _router = GoRouter(
       initialLocation: '/',
-      // Listen to authentication state changes from Supabase to trigger route refreshes
       refreshListenable: GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
       routes: [
+        GoRoute(path: '/', builder: (context, state) => const LandingPage()),
+        GoRoute(path: '/portal_hub', builder: (context, state) => const PortalPage()),
+        GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+        GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
+        GoRoute(path: '/home', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
+        GoRoute(path: '/edit_profile', builder: (context, state) => const ProfileTabsScreen()),
+        GoRoute(path: '/about_me', builder: (context, state) => const AboutMeScreen()),
+        GoRoute(path: '/availability', builder: (context, state) => const AvailabilityScreen()),
+        GoRoute(path: '/interests', builder: (context, state) => const InterestsScreen()),
+        GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])),
+        GoRoute(path: '/penalties', builder: (context, state) => const PenaltyDisplayScreen()),
+        GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
+        GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
+        GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
+        GoRoute(path: '/discovery', builder: (context, state) => const DiscoveryScreen()),
+        GoRoute(path: '/matches', builder: (context, state) => const MatchesListScreen()),
+        GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
+        GoRoute(path: '/feedback', builder: (context, state) => const FeedbackScreen()),
+        GoRoute(path: '/report', builder: (context, state) => const ReportScreen()),
+        GoRoute(path: '/admin', builder: (context, state) => const AdminDashboardScreen()),
+        GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
         GoRoute(
-          path: '/',
-          builder: (context, state) => const LandingPage(),
-        ),
-        GoRoute(
-          path: '/portal_hub',
-          builder: (context, state) => const PortalPage(),
-        ),
-        GoRoute(
-          path: '/login',
-          builder: (context, state) => const LoginScreen(),
-        ),
-        GoRoute(
-          path: '/signup',
-          builder: (context, state) => const SignUpScreen(),
-        ),
-        GoRoute(
-          path: '/home',
-          // Removed named parameters as MainDashboardScreen no longer expects them
-          builder: (context, state) => const MainDashboardScreen(),
-        ),
-        GoRoute(
-          path: '/profile_setup',
-          builder: (context, state) => const ProfileSetupScreen(),
-        ),
-        GoRoute(
-          path: '/edit_profile',
-          builder: (context, state) => const ProfileTabsScreen(),
-        ),
-        GoRoute(
-          path: '/about_me',
-          builder: (context, state) => const AboutMeScreen(),
-        ),
-        GoRoute(
-          path: '/availability',
-          builder: (context, state) => const AvailabilityScreen(),
-        ),
-        GoRoute(
-          path: '/interests',
-          builder: (context, state) => const InterestsScreen(),
-        ),
-        GoRoute(
-          path: '/events',
-          builder: (context, state) => const LocalEventsScreen(events: []), // TODO: Fetch events from Supabase
-        ),
-        GoRoute(
-          path: '/penalties',
-          builder: (context, state) => const PenaltyDisplayScreen(),
-        ),
-        GoRoute(
-          path: '/about-us',
-          builder: (context, state) => const AboutUsScreen(),
-        ),
-        GoRoute(
-          path: '/privacy',
-          builder: (context, state) => const PrivacyScreen(),
-        ),
-        GoRoute(
-          path: '/terms',
-          builder: (context, state) => const TermsScreen(),
-        ),
-        GoRoute(
-          path: '/discovery',
-          builder: (context, state) => const DiscoveryScreen(),
-        ),
-        GoRoute(
-          path: '/matches',
-          builder: (context, state) => const MatchesListScreen(),
-        ),
-        GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
-        ),
-        GoRoute(
-          path: '/feedback',
-          builder: (context, state) => const FeedbackScreen(),
-        ),
-        GoRoute(
-          path: '/report',
-          builder: (context, state) => const ReportScreen(),
-        ),
-        GoRoute(
-          path: '/admin',
-          builder: (context, state) => const AdminDashboardScreen(),
-        ),
-        // NEW: Notifications Screen Route
-        GoRoute(
-          path: '/notifications',
-          builder: (context, state) => const NotificationsScreen(),
-        ),
-        // NEW: Profile View Screen Route for other users
-        GoRoute(
-          path: '/profile/:userId', // Define a path parameter for the user ID
+          path: '/profile/:userId',
           builder: (context, state) {
             final userId = state.pathParameters['userId'];
-            if (userId == null) {
-              return const NotFoundScreen(); // Or handle error appropriately
-            }
+            if (userId == null) return const NotFoundScreen();
             return ProfileViewScreen(userId: userId);
           },
         ),
       ],
-      // Redirection logic based on authentication state and profile setup
-      redirect: (context, state) async { // Made async to allow fetching profile
+      // THIS IS THE BYPASS LOGIC:
+      redirect: (context, state) async {
         final User? currentUser = Supabase.instance.client.auth.currentUser;
         final bool loggedIn = currentUser != null;
         final String currentPath = state.matchedLocation;
@@ -233,50 +160,51 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('  Is Auth Path: $isAuthPath');
         debugPrint('  On Public Initial Page: $isOnPublicInitialPage');
 
-
-        // If user is not logged in:
         if (!loggedIn) {
-          // Allow navigation to auth paths or public initial pages
-          if (isAuthPath || isOnPublicInitialPage) {
-            debugPrint('  Redirect decision: Not logged in but on auth/public path. Allowing navigation.');
-            return null;
+          if (!isAuthPath && !isOnPublicInitialPage) {
+            debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /');
+            return '/';
           }
-          // If trying to access any other page, redirect to login
-          debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /login');
-          return '/login';
+          debugPrint('  Redirect decision: Not logged in but on auth/public path. Allowing navigation.');
+          return null;
         }
 
-        // If user is logged in:
         if (loggedIn) {
-          // Fetch user profile to check completion status
+          // --- START BYPASS SECTION (COMMENTED OUT PROFILE COMPLETION CHECK) ---
+          // This section is commented out to temporarily bypass the profile completion check.
+          // It will force logged-in users to /home if they are on auth/public pages or profile_setup.
+          // Uncomment this section when you are ready to re-enable profile completion checks
+          // and have fixed the underlying TypeError from Supabase.
+
+          /*
           UserProfile? userProfile;
           try {
             userProfile = await _profileService.fetchUserProfile(currentUser.id);
           } catch (e) {
-            debugPrint('Error fetching user profile in redirect: $e');
-            // If profile fetch fails, treat as incomplete or redirect to login
-            // Consider logging out or showing an error page here for robust error handling
-            // For now, assume profile fetch failure implies incomplete or issue.
+            debugPrint('Error fetching user profile in redirect (bypassed for now): $e');
+            // If fetching fails due to TypeErrors, treat as incomplete for now,
+            // but the bypass below will take precedence.
+            userProfile = null;
           }
 
           final bool isProfileComplete = userProfile?.isProfileComplete ?? false;
-
           debugPrint('  Is Profile Complete: $isProfileComplete');
 
-          // If profile setup is required (not complete) and user is not on the profile setup screen, redirect to it.
           if (!isProfileComplete && currentPath != '/profile_setup') {
             debugPrint('  Redirect decision: Logged in, profile NOT complete. Redirecting to /profile_setup');
             return '/profile_setup';
           }
-          // If profile setup is NOT required (complete) AND user is trying to access login/signup/public pages,
-          // or is on the profile setup page but doesn't need to be, redirect to home.
-          if (isProfileComplete && (isAuthPath || isOnPublicInitialPage || currentPath == '/profile_setup')) {
-            debugPrint('  Redirect decision: Logged in, profile IS complete. Redirecting to /home');
+          */
+          // --- END BYPASS SECTION ---
+
+          // FORCED BYPASS: If logged in, and on an auth page, public page, or profile setup, force to /home.
+          // This overrides the profile completion check from the commented out section above.
+          if (isAuthPath || isOnPublicInitialPage || currentPath == '/profile_setup') {
+            debugPrint('  Redirect decision (BYPASSED): Logged in, forcing to /home.');
             return '/home';
           }
         }
 
-        // No redirection needed, allow navigation to the requested path
         debugPrint('  Redirect decision: No specific redirection needed. Allowing current path.');
         return null;
       },
@@ -286,12 +214,9 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Consume the ThemeController to get the current theme
     final themeController = Provider.of<ThemeController>(context);
-
     return MaterialApp.router(
-      title: AppConstants.appName, // Use app name from constants
-      // Apply theme dynamically from ThemeController
+      title: AppConstants.appName,
       theme: themeController.currentTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
@@ -299,20 +224,19 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   }
 }
 
-// Helper class for GoRouter to listen to a stream (Supabase auth changes)
 class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription<AuthState> _subscription;
 
   GoRouterRefreshStream(Stream<AuthState> stream) {
-    notifyListeners(); // Initial notification to set initial state
+    notifyListeners();
     _subscription = stream.asBroadcastStream().listen(
-          (AuthState event) => notifyListeners(), // Notify listeners on each auth state change
+          (AuthState event) => notifyListeners(),
         );
   }
 
   @override
   void dispose() {
-    _subscription.cancel(); // Cancel the subscription when no longer needed
+    _subscription.cancel();
     super.dispose();
   }
 }
