@@ -15,10 +15,7 @@ class PhysicalAttributesAndHealthForm extends StatefulWidget {
 }
 
 class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndHealthForm> with TickerProviderStateMixin {
-  // Controllers for text input fields
-  final TextEditingController _heightFeetController = TextEditingController();
-  final TextEditingController _heightInchesController = TextEditingController();
-  final TextEditingController _weightController = TextEditingController();
+  // Controllers for text input fields - Height and Weight REMOVED
   final TextEditingController _exerciseFrequencyController = TextEditingController();
   final TextEditingController _healthConcernsController = TextEditingController();
 
@@ -80,9 +77,7 @@ class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndH
 
   @override
   void dispose() {
-    _heightFeetController.dispose();
-    _heightInchesController.dispose();
-    _weightController.dispose();
+    // Dispose controllers for removed fields are also removed here
     _exerciseFrequencyController.dispose();
     _healthConcernsController.dispose();
     _fadeInController.dispose();
@@ -104,6 +99,7 @@ class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndH
     final Color fillColor = isDarkMode ? AppConstants.surfaceColor.withOpacity(0.7) : AppConstants.lightSurfaceColor.withOpacity(0.7);
     final Color borderColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.4) : AppConstants.lightBorderColor.withOpacity(0.6);
     final Color dropdownColor = isDarkMode ? AppConstants.cardColor.withOpacity(0.95) : AppConstants.lightCardColor.withOpacity(0.95);
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Consistent active color
 
     return Container(
       decoration: BoxDecoration(
@@ -133,7 +129,7 @@ class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndH
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-            borderSide: BorderSide(color: AppConstants.secondaryColor, width: 2.0),
+            borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
         ),
@@ -164,6 +160,7 @@ class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndH
     final Color hintColor = isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis;
     final Color fillColor = isDarkMode ? AppConstants.surfaceColor.withOpacity(0.7) : AppConstants.lightSurfaceColor.withOpacity(0.7);
     final Color borderColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.4) : AppConstants.lightBorderColor.withOpacity(0.6);
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Consistent active color
 
     return Container(
       decoration: BoxDecoration(
@@ -196,11 +193,11 @@ class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndH
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-            borderSide: BorderSide(color: AppConstants.secondaryColor, width: 2.0),
+            borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingMedium),
         ),
-        cursorColor: AppConstants.secondaryColor,
+        cursorColor: activeColor, // Consistent cursor color
       ),
     );
   }
@@ -244,49 +241,6 @@ class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndH
                     ),
                   );
                 },
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Height Input
-              Text(
-                'Your Height',
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeMedium,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                  fontFamily: 'Inter',
-                ),
-              ),
-              const SizedBox(height: AppConstants.spacingSmall),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildThemedTextField(
-                      controller: _heightFeetController,
-                      label: 'Feet',
-                      isDarkMode: isDarkMode,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: AppConstants.spacingMedium),
-                  Expanded(
-                    child: _buildThemedTextField(
-                      controller: _heightInchesController,
-                      label: 'Inches',
-                      isDarkMode: isDarkMode,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Weight Input
-              _buildThemedTextField(
-                controller: _weightController,
-                label: 'Your Weight (lbs) (Optional)',
-                isDarkMode: isDarkMode,
-                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: AppConstants.spacingLarge),
 
@@ -420,6 +374,7 @@ class _PhysicalAttributesAndHealthFormState extends State<PhysicalAttributesAndH
                 isDarkMode: isDarkMode,
                 maxLines: 3,
               ),
+              const SizedBox(height: AppConstants.paddingSmall), // Final spacing
             ],
           ),
         ),

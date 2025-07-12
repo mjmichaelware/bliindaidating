@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'dart:math' as math; // For subtle animations
+import 'package:flutter_svg/flutter_svg.dart'; // For SVG assets
 
 /// A detailed form for users to specify their lifestyle and values.
 /// This widget aims for an immersive UI/UX consistent with the app's cosmic theme,
@@ -22,9 +23,9 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
 
   // State variables for form selections
   String? _socialPreference;
-  String? _fitnessLevel;
-  String? _dietaryPreference;
-  final List<String> _habits = [];
+  String? _fitnessLevel; // This maps to exerciseFrequencyOrFitnessLevel in UserProfile
+  String? _dietaryPreference; // This maps to diet in UserProfile
+  final List<String> _habits = []; // This maps to sleepSchedule or other specific habits in UserProfile
 
   // Animation controllers for various UI elements
   late AnimationController _fadeInController;
@@ -98,6 +99,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
     final Color fillColor = isDarkMode ? AppConstants.surfaceColor.withOpacity(0.7) : AppConstants.lightSurfaceColor.withOpacity(0.7);
     final Color borderColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.4) : AppConstants.lightBorderColor.withOpacity(0.6);
     final Color dropdownColor = isDarkMode ? AppConstants.cardColor.withOpacity(0.95) : AppConstants.lightCardColor.withOpacity(0.95);
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Consistent active color
 
     return Container(
       decoration: BoxDecoration(
@@ -127,7 +129,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-            borderSide: BorderSide(color: AppConstants.secondaryColor, width: 2.0),
+            borderSide: BorderSide(color: activeColor, width: 2.0),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
         ),
@@ -158,6 +160,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
     final Color hintColor = isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis;
     final Color fillColor = isDarkMode ? AppConstants.surfaceColor.withOpacity(0.7) : AppConstants.lightSurfaceColor.withOpacity(0.7);
     final Color borderColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.4) : AppConstants.lightBorderColor.withOpacity(0.6);
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Consistent active color
 
     return Container(
       decoration: BoxDecoration(
@@ -190,11 +193,11 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-            borderSide: BorderSide(color: AppConstants.secondaryColor, width: 2.0),
+            borderSide: BorderSide(color: activeColor, width: 2.0),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingMedium),
         ),
-        cursorColor: AppConstants.secondaryColor,
+        cursorColor: activeColor,
       ),
     );
   }
@@ -208,7 +211,8 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color activeColor = AppConstants.secondaryColor;
-    final Color checkColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+    final Color checkColor = isDarkMode ? Colors.black : Colors.white; // Checkmark color
+    final Color tileColor = isDarkMode ? AppConstants.surfaceColor.withOpacity(0.5) : AppConstants.lightSurfaceColor.withOpacity(0.5); // Subtle background for the tile
 
     return CheckboxListTile(
       title: Text(
@@ -223,9 +227,10 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
       onChanged: onChanged,
       activeColor: activeColor,
       checkColor: checkColor,
-      tileColor: Colors.transparent, // Ensure it blends with the parent container
+      tileColor: tileColor, // Apply tile background
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadius)), // Rounded corners for tile
       controlAffinity: ListTileControlAffinity.leading, // Checkbox on the left
-      contentPadding: EdgeInsets.zero, // Remove default padding
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall, vertical: AppConstants.paddingExtraSmall), // Adjusted padding
     );
   }
 
@@ -237,230 +242,323 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
     final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
 
     return FadeTransition(
       opacity: _fadeInAnimation,
       child: SlideTransition(
         position: _formFieldSlideAnimation,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: AppConstants.paddingMedium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Section Title with Animation
-              AnimatedBuilder(
-                animation: _glowPulseAnimation,
-                builder: (context, child) {
-                  return Text(
-                    'Your Lifestyle & Values',
-                    style: TextStyle(
-                      fontSize: AppConstants.fontSizeHeadline,
-                      fontWeight: FontWeight.bold,
-                      color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
-                      fontFamily: 'Inter',
-                      shadows: [
-                        BoxShadow(
-                          color: secondaryColor.withOpacity(0.3 + 0.4 * _glowPulseAnimation.value),
-                          blurRadius: 10.0 + 5.0 * _glowPulseAnimation.value,
-                          offset: const Offset(0, 0),
+          padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
+          child: Container( // Wrap with Container for custom background/shadows
+            // Apply the beautiful background, border, shadow, and gradient
+            decoration: BoxDecoration(
+              color: cardColor, // Base background color for the form panel
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge), // Rounded corners
+              boxShadow: [
+                BoxShadow(
+                  color: activeColor.withOpacity(0.2), // Subtle glow effect
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+              gradient: LinearGradient( // Elegant gradient for depth
+                colors: [
+                  cardColor.withOpacity(0.9), // Slightly transparent to show background
+                  cardColor.withOpacity(0.7),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all( // Subtle border for definition
+                color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Row with Title and App Name/Icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: AnimatedBuilder(
+                        animation: _glowPulseAnimation,
+                        builder: (context, child) {
+                          return Text(
+                            'Your Lifestyle & Values',
+                            style: TextStyle(
+                              fontSize: AppConstants.fontSizeHeadline,
+                              fontWeight: FontWeight.bold,
+                              color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
+                              fontFamily: 'Inter',
+                              shadows: [
+                                BoxShadow(
+                                  color: secondaryColor.withOpacity(0.3 + 0.4 * _glowPulseAnimation.value),
+                                  blurRadius: 10.0 + 5.0 * _glowPulseAnimation.value,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // App Name and Icon for branding
+                    Row(
+                      children: [
+                        Text(
+                          'Blind AI Dating',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
+                        ),
+                        const SizedBox(width: AppConstants.spacingSmall),
+                        SvgPicture.asset(
+                          'assets/svg/DrawKit Vector Illustration Love & Dating (7).svg', // Example SVG for Lifestyle/Values
+                          height: 40,
+                          semanticsLabel: 'Lifestyle Icon',
+                          colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Social Preference Dropdown
-              _buildThemedDropdown(
-                label: 'How do you prefer to socialize?',
-                items: const [
-                  'Extrovert (love large groups)',
-                  'Introvert (prefer small, intimate settings)',
-                  'Ambivert (mix of both)',
-                  'Homebody',
-                ],
-                value: _socialPreference,
-                onChanged: (newValue) {
-                  setState(() {
-                    _socialPreference = newValue;
-                  });
-                },
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Fitness Level Dropdown
-              _buildThemedDropdown(
-                label: 'What is your general fitness level?',
-                items: const [
-                  'Very Active (daily exercise)',
-                  'Moderately Active (regular exercise)',
-                  'Occasionally Active (some exercise)',
-                  'Sedentary (minimal exercise)',
-                ],
-                value: _fitnessLevel,
-                onChanged: (newValue) {
-                  setState(() {
-                    _fitnessLevel = newValue;
-                  });
-                },
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Dietary Preference Dropdown
-              _buildThemedDropdown(
-                label: 'Do you have any dietary preferences?',
-                items: const [
-                  'No specific preference',
-                  'Vegetarian',
-                  'Vegan',
-                  'Pescatarian',
-                  'Keto',
-                  'Gluten-free',
-                  'Other',
-                ],
-                value: _dietaryPreference,
-                onChanged: (newValue) {
-                  setState(() {
-                    _dietaryPreference = newValue;
-                  });
-                },
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Daily Routine Text Field
-              _buildThemedTextField(
-                controller: _dailyRoutineController,
-                label: 'Describe your typical daily routine (Optional)',
-                isDarkMode: isDarkMode,
-                maxLines: 3,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Important Values Text Field
-              _buildThemedTextField(
-                controller: _importantValuesController,
-                label: 'What are 3-5 values most important to you in life and a partner?',
-                isDarkMode: isDarkMode,
-                maxLines: 3,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Stress Management Text Field
-              _buildThemedTextField(
-                controller: _stressManagementController,
-                label: 'How do you typically manage stress?',
-                isDarkMode: isDarkMode,
-                maxLines: 2,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
-
-              // Habits Checkboxes
-              Text(
-                'Which of these habits apply to you?',
-                style: TextStyle(
-                  fontSize: AppConstants.fontSizeMedium,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                  fontFamily: 'Inter',
+                  ],
                 ),
-              ),
-              const SizedBox(height: AppConstants.spacingSmall),
-              Column(
-                children: [
-                  _buildThemedCheckboxListTile(
-                    title: 'Early Riser',
-                    value: _habits.contains('Early Riser'),
-                    onChanged: (bool? checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _habits.add('Early Riser');
-                        } else {
-                          _habits.remove('Early Riser');
-                        }
-                      });
-                    },
-                    isDarkMode: isDarkMode,
+                const SizedBox(height: AppConstants.spacingSmall),
+                Text(
+                  'Share insights into your daily life, social preferences, and what truly matters to you. This helps us find partners who align with your core values.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8)),
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
+
+                // Social Preference Dropdown
+                _buildThemedDropdown(
+                  label: 'How do you prefer to socialize?',
+                  items: const [
+                    'Extrovert (love large groups)',
+                    'Introvert (prefer small, intimate settings)',
+                    'Ambivert (mix of both)',
+                    'Homebody',
+                    'Prefer not to say', // Added option
+                  ],
+                  value: _socialPreference,
+                  onChanged: (newValue) {
+                    setState(() {
+                      _socialPreference = newValue;
+                    });
+                  },
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
+
+                // Fitness Level Dropdown (Maps to exerciseFrequencyOrFitnessLevel)
+                _buildThemedDropdown(
+                  label: 'What is your general fitness level?',
+                  items: const [
+                    'Very Active (daily exercise)',
+                    'Moderately Active (regular exercise)',
+                    'Occasionally Active (some exercise)',
+                    'Sedentary (minimal exercise)',
+                    'Prefer not to say', // Added option
+                  ],
+                  value: _fitnessLevel,
+                  onChanged: (newValue) {
+                    setState(() {
+                      _fitnessLevel = newValue;
+                    });
+                  },
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
+
+                // Dietary Preference Dropdown (Maps to diet)
+                _buildThemedDropdown(
+                  label: 'Do you have any dietary preferences?',
+                  items: const [
+                    'No specific preference',
+                    'Vegetarian',
+                    'Vegan',
+                    'Pescatarian',
+                    'Keto',
+                    'Gluten-free',
+                    'Halal', // Added common preference
+                    'Kosher', // Added common preference
+                    'Other',
+                    'Prefer not to say', // Added option
+                  ],
+                  value: _dietaryPreference,
+                  onChanged: (newValue) {
+                    setState(() {
+                      _dietaryPreference = newValue;
+                    });
+                  },
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
+
+                // Daily Routine Text Field
+                _buildThemedTextField(
+                  controller: _dailyRoutineController,
+                  label: 'Describe your typical daily routine (Optional)',
+                  isDarkMode: isDarkMode,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
+
+                // Important Values Text Field
+                _buildThemedTextField(
+                  controller: _importantValuesController,
+                  label: 'What are 3-5 values most important to you in life and a partner?',
+                  isDarkMode: isDarkMode,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
+
+                // Stress Management Text Field
+                _buildThemedTextField(
+                  controller: _stressManagementController,
+                  label: 'How do you typically manage stress? (Optional)', // Made optional
+                  isDarkMode: isDarkMode,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
+
+                // Habits Checkboxes
+                Text(
+                  'Which of these habits apply to you?',
+                  style: TextStyle(
+                    fontSize: AppConstants.fontSizeMedium,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                    fontFamily: 'Inter',
                   ),
-                  _buildThemedCheckboxListTile(
-                    title: 'Night Owl',
-                    value: _habits.contains('Night Owl'),
-                    onChanged: (bool? checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _habits.add('Night Owl');
-                        } else {
-                          _habits.remove('Night Owl');
-                        }
-                      });
-                    },
-                    isDarkMode: isDarkMode,
-                  ),
-                  _buildThemedCheckboxListTile(
-                    title: 'Organized',
-                    value: _habits.contains('Organized'),
-                    onChanged: (bool? checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _habits.add('Organized');
-                        } else {
-                          _habits.remove('Organized');
-                        }
-                      });
-                    },
-                    isDarkMode: isDarkMode,
-                  ),
-                  _buildThemedCheckboxListTile(
-                    title: 'Spontaneous',
-                    value: _habits.contains('Spontaneous'),
-                    onChanged: (bool? checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _habits.add('Spontaneous');
-                        } else {
-                          _habits.remove('Spontaneous');
-                        }
-                      });
-                    },
-                    isDarkMode: isDarkMode,
-                  ),
-                  _buildThemedCheckboxListTile(
-                    title: 'Loves to cook',
-                    value: _habits.contains('Loves to cook'),
-                    onChanged: (bool? checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _habits.add('Loves to cook');
-                        } else {
-                          _habits.remove('Loves to cook');
-                        }
-                      });
-                    },
-                    isDarkMode: isDarkMode,
-                  ),
-                  _buildThemedCheckboxListTile(
-                    title: 'Enjoys trying new restaurants',
-                    value: _habits.contains('Enjoys trying new restaurants'),
-                    onChanged: (bool? checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _habits.add('Enjoys trying new restaurants');
-                        } else {
-                          _habits.remove('Enjoys trying new restaurants');
-                        }
-                      });
-                    },
-                    isDarkMode: isDarkMode,
-                  ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: AppConstants.spacingSmall),
+                Column(
+                  children: [
+                    _buildThemedCheckboxListTile(
+                      title: 'Early Riser',
+                      value: _habits.contains('Early Riser'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Early Riser');
+                          } else {
+                            _habits.remove('Early Riser');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildThemedCheckboxListTile(
+                      title: 'Night Owl',
+                      value: _habits.contains('Night Owl'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Night Owl');
+                          } else {
+                            _habits.remove('Night Owl');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildThemedCheckboxListTile(
+                      title: 'Organized',
+                      value: _habits.contains('Organized'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Organized');
+                          } else {
+                            _habits.remove('Organized');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildThemedCheckboxListTile(
+                      title: 'Spontaneous',
+                      value: _habits.contains('Spontaneous'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Spontaneous');
+                          } else {
+                            _habits.remove('Spontaneous');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildThemedCheckboxListTile(
+                      title: 'Loves to cook',
+                      value: _habits.contains('Loves to cook'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Loves to cook');
+                          } else {
+                            _habits.remove('Loves to cook');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildThemedCheckboxListTile(
+                      title: 'Enjoys trying new restaurants',
+                      value: _habits.contains('Enjoys trying new restaurants'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Enjoys trying new restaurants');
+                          } else {
+                            _habits.remove('Enjoys trying new restaurants');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildThemedCheckboxListTile(
+                      title: 'Enjoys quiet nights in',
+                      value: _habits.contains('Enjoys quiet nights in'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Enjoys quiet nights in');
+                          } else {
+                            _habits.remove('Enjoys quiet nights in');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                    _buildThemedCheckboxListTile(
+                      title: 'Loves to travel',
+                      value: _habits.contains('Loves to travel'),
+                      onChanged: (bool? checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _habits.add('Loves to travel');
+                          } else {
+                            _habits.remove('Loves to travel');
+                          }
+                        });
+                      },
+                      isDarkMode: isDarkMode,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppConstants.paddingSmall), // Final spacing
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+

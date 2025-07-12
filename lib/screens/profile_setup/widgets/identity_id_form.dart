@@ -55,10 +55,13 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
     final isDarkMode = themeController.isDarkMode;
     final textTheme = Theme.of(context).textTheme;
 
+    // Define theme-dependent colors for consistent UI
     final Color primaryTextColor = isDarkMode ? Colors.white : Colors.black87;
     final Color secondaryTextColor = isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54;
-    final Color activeColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
     final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
+    final Color inputFillColor = isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05);
+    final Color inputBorderColor = secondaryTextColor.withOpacity(0.3);
 
     // Determine the image provider based on available data
     ImageProvider<Object>? currentImageProvider;
@@ -76,55 +79,80 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
       child: Container( // Wrap with Container for custom background/shadows
+        // Apply the beautiful background, border, shadow, and gradient
         decoration: BoxDecoration(
-          color: cardColor, // Background of the form panel
-          borderRadius: BorderRadius.circular(24),
+          color: cardColor, // Base background color for the form panel
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge), // Rounded corners
           boxShadow: [
             BoxShadow(
-              color: activeColor.withOpacity(0.2),
+              color: activeColor.withOpacity(0.2), // Subtle glow effect
               blurRadius: 20,
               spreadRadius: 5,
               offset: const Offset(0, 8),
             ),
           ],
-          gradient: LinearGradient( // Subtle gradient for vibrancy
+          gradient: LinearGradient( // Elegant gradient for depth
             colors: [
-              cardColor.withOpacity(0.9),
+              cardColor.withOpacity(0.9), // Slightly transparent to show background
               cardColor.withOpacity(0.7),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          border: Border.all( // Subtle border for definition
+            color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.3),
+            width: 1.5,
+          ),
         ),
-        padding: const EdgeInsets.all(24.0), // Inner padding for content
+        padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
         child: Form(
           key: widget.formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header Row with Title and App Name/Icon
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(
-                      'Identity & Connection',
-                      style: textTheme.headlineSmall?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
+                      'Identity & Contact', // Updated title
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
+                        fontSize: AppConstants.fontSizeExtraLarge,
+                      ),
                     ),
                   ),
-                  Text(
-                    'Blind AI Dating',
-                    style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                  // App Name and Icon for branding
+                  Row(
+                    children: [
+                      Text(
+                        'Blind AI Dating',
+                        style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                      ),
+                      const SizedBox(width: AppConstants.spacingSmall),
+                      SvgPicture.asset(
+                        'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg', // Example SVG for Identity/Contact
+                        height: 40,
+                        semanticsLabel: 'Identity Icon',
+                        colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingSmall),
               Text(
-                'Provide essential contact information and an optional photo for AI analysis.',
+                'Provide essential contact information and an optional photo for AI analysis. Your privacy is our priority.',
                 style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppConstants.spacingLarge),
+
+              // Profile Photo for AI Analysis
               Center(
                 child: Stack(
                   alignment: Alignment.center,
@@ -161,7 +189,7 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingSmall),
               Center(
                 child: Text(
                   'Upload your photo for AI analysis (Optional)',
@@ -169,18 +197,20 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingMedium),
               Text(
                 'Why your photo matters for AI matching:',
                 style: textTheme.titleMedium?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingSmall),
               Text(
                 'Your photo is analyzed by our AI to understand certain facial features (like golden ratio and symmetry). This data helps create **deeply compatible matches** by factoring in scientifically-backed elements of attraction. This information is **converted into a numerical ratio and is NEVER publicly displayed on your profile.** Your privacy is paramount, and this data is solely for enhancing your match quality.',
-                style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.8)),
                 textAlign: TextAlign.justify,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppConstants.spacingLarge),
+
+              // Phone Number Input Field
               TextFormField(
                 controller: widget.phoneNumberController,
                 style: TextStyle(color: primaryTextColor, fontFamily: 'Inter'),
@@ -188,14 +218,14 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                   labelText: 'Phone Number (for Login/Recovery)',
                   labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
                   filled: true, // Use filled for background color
-                  fillColor: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05), // Subtle background
-                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+                  fillColor: inputFillColor, // Subtle background
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppConstants.borderRadiusMedium))),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: secondaryTextColor.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: inputBorderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                     borderSide: BorderSide(color: activeColor, width: 2),
                   ),
                   prefixIcon: Icon(Icons.phone, color: secondaryTextColor),
@@ -214,26 +244,28 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Address/ZIP Code Input Field
               TextFormField(
                 controller: widget.addressZipController,
                 style: TextStyle(color: primaryTextColor, fontFamily: 'Inter'),
                 decoration: InputDecoration(
-                  labelText: 'Address or ZIP/Postal Code',
+                  labelText: 'Location (City, State, or ZIP/Postal Code)', // More descriptive label
                   labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
                   filled: true, // Use filled for background color
-                  fillColor: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05), // Subtle background
-                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+                  fillColor: inputFillColor, // Subtle background
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppConstants.borderRadiusMedium))),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: secondaryTextColor.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: inputBorderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                     borderSide: BorderSide(color: activeColor, width: 2),
                   ),
                   prefixIcon: Icon(Icons.location_on, color: secondaryTextColor),
-                  hintText: 'City, State or ZIP Code',
+                  hintText: 'e.g., New York, NY or 10001',
                   hintStyle: TextStyle(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.7)),
                 ),
                 validator: (value) {
@@ -243,11 +275,13 @@ class _IdentityIDFormState extends State<IdentityIDForm> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingMedium),
               Text(
                 'Government-issued ID verification (e.g., Driver\'s License, Passport) is **not required for initial setup.** It may be requested at a later stage for certain advanced features or enhanced trust and safety measures.',
                 style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.8)),
+                textAlign: TextAlign.justify,
               ),
+              const SizedBox(height: AppConstants.paddingSmall), // Final spacing
             ],
           ),
         ),

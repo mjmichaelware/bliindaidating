@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'dart:math' as math; // For subtle animations
+import 'package:flutter_svg/flutter_svg.dart'; // For SVG assets
 
 /// A detailed form for users to specify their education and career details.
 /// This widget aims for an immersive UI/UX consistent with the app's cosmic theme,
@@ -100,6 +101,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
     final Color fillColor = isDarkMode ? AppConstants.surfaceColor.withOpacity(0.7) : AppConstants.lightSurfaceColor.withOpacity(0.7);
     final Color borderColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.4) : AppConstants.lightBorderColor.withOpacity(0.6);
     final Color dropdownColor = isDarkMode ? AppConstants.cardColor.withOpacity(0.95) : AppConstants.lightCardColor.withOpacity(0.95);
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Consistent active color
 
     return Container(
       decoration: BoxDecoration(
@@ -129,7 +131,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-            borderSide: BorderSide(color: AppConstants.secondaryColor, width: 2.0),
+            borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
         ),
@@ -160,6 +162,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
     final Color hintColor = isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis;
     final Color fillColor = isDarkMode ? AppConstants.surfaceColor.withOpacity(0.7) : AppConstants.lightSurfaceColor.withOpacity(0.7);
     final Color borderColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.4) : AppConstants.lightBorderColor.withOpacity(0.6);
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Consistent active color
 
     return Container(
       decoration: BoxDecoration(
@@ -192,11 +195,11 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-            borderSide: BorderSide(color: AppConstants.secondaryColor, width: 2.0),
+            borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingMedium),
         ),
-        cursorColor: AppConstants.secondaryColor,
+        cursorColor: activeColor, // Consistent cursor color
       ),
     );
   }
@@ -240,115 +243,175 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
     final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
 
     return FadeTransition(
       opacity: _fadeInAnimation,
       child: SlideTransition(
         position: _formFieldSlideAnimation,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: AppConstants.paddingMedium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Section Title with Animation
-              AnimatedBuilder(
-                animation: _glowPulseAnimation,
-                builder: (context, child) {
-                  return Text(
-                    'Your Education & Career',
-                    style: TextStyle(
-                      fontSize: AppConstants.fontSizeHeadline,
-                      fontWeight: FontWeight.bold,
-                      color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
-                      fontFamily: 'Inter',
-                      shadows: [
-                        BoxShadow(
-                          color: secondaryColor.withOpacity(0.3 + 0.4 * _glowPulseAnimation.value),
-                          blurRadius: 10.0 + 5.0 * _glowPulseAnimation.value,
-                          offset: const Offset(0, 0),
+          padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
+          child: Container( // Wrap with Container for custom background/shadows
+            // Apply the beautiful background, border, shadow, and gradient
+            decoration: BoxDecoration(
+              color: cardColor, // Base background color for the form panel
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge), // Rounded corners
+              boxShadow: [
+                BoxShadow(
+                  color: activeColor.withOpacity(0.2), // Subtle glow effect
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+              gradient: LinearGradient( // Elegant gradient for depth
+                colors: [
+                  cardColor.withOpacity(0.9), // Slightly transparent to show background
+                  cardColor.withOpacity(0.7),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all( // Subtle border for definition
+                color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Row with Title and App Name/Icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: AnimatedBuilder(
+                        animation: _glowPulseAnimation,
+                        builder: (context, child) {
+                          return Text(
+                            'Your Education & Career',
+                            style: TextStyle(
+                              fontSize: AppConstants.fontSizeHeadline,
+                              fontWeight: FontWeight.bold,
+                              color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
+                              fontFamily: 'Inter',
+                              shadows: [
+                                BoxShadow(
+                                  color: secondaryColor.withOpacity(0.3 + 0.4 * _glowPulseAnimation.value),
+                                  blurRadius: 10.0 + 5.0 * _glowPulseAnimation.value,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // App Name and Icon for branding
+                    Row(
+                      children: [
+                        Text(
+                          'Blind AI Dating',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
+                        ),
+                        const SizedBox(width: AppConstants.spacingSmall),
+                        SvgPicture.asset(
+                          'assets/svg/DrawKit Vector Illustration Love & Dating (4).svg', // Example SVG for Education/Career
+                          height: 40,
+                          semanticsLabel: 'Education Icon',
+                          colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
+                  ],
+                ),
+                const SizedBox(height: AppConstants.spacingSmall),
+                Text(
+                  'Share your academic achievements and professional aspirations. This helps us understand your intellectual and career compatibility.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8)),
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-              // Education Level Dropdown
-              _buildThemedDropdown(
-                label: 'Highest Education Level',
-                items: const [
-                  'High School',
-                  'Some College',
-                  'Associate Degree',
-                  'Bachelor\'s Degree',
-                  'Master\'s Degree',
-                  'Doctorate',
-                  'Vocational/Trade School',
-                ],
-                value: _educationLevel,
-                onChanged: (newValue) {
-                  setState(() {
-                    _educationLevel = newValue;
-                  });
-                },
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
+                // Education Level Dropdown
+                _buildThemedDropdown(
+                  label: 'Highest Education Level',
+                  items: const [
+                    'High School',
+                    'Some College',
+                    'Associate Degree',
+                    'Bachelor\'s Degree',
+                    'Master\'s Degree',
+                    'Doctorate',
+                    'Vocational/Trade School',
+                    'Prefer not to say', // Added option
+                  ],
+                  value: _educationLevel,
+                  onChanged: (newValue) {
+                    setState(() {
+                      _educationLevel = newValue;
+                    });
+                  },
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-              // University Text Field
-              _buildThemedTextField(
-                controller: _universityController,
-                label: 'University/Institution (Optional)',
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingMedium),
+                // University Text Field
+                _buildThemedTextField(
+                  controller: _universityController,
+                  label: 'University/Institution (Optional)',
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingMedium),
 
-              // Degree/Major Text Field
-              _buildThemedTextField(
-                controller: _degreeController,
-                label: 'Degree/Major (Optional)',
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
+                // Degree/Major Text Field
+                _buildThemedTextField(
+                  controller: _degreeController,
+                  label: 'Degree/Major (Optional)',
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-              // Is Student Switch
-              _buildThemedSwitchListTile(
-                title: 'Are you currently a student?',
-                value: _isStudent,
-                onChanged: (bool value) {
-                  setState(() {
-                    _isStudent = value;
-                  });
-                },
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
+                // Is Student Switch
+                _buildThemedSwitchListTile(
+                  title: 'Are you currently a student?',
+                  value: _isStudent,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _isStudent = value;
+                    });
+                  },
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-              // Job Title Text Field
-              _buildThemedTextField(
-                controller: _jobTitleController,
-                label: 'Current Job Title',
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingMedium),
+                // Job Title Text Field
+                _buildThemedTextField(
+                  controller: _jobTitleController,
+                  label: 'Current Job Title',
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingMedium),
 
-              // Industry Text Field
-              _buildThemedTextField(
-                controller: _industryController,
-                label: 'Industry',
-                isDarkMode: isDarkMode,
-              ),
-              const SizedBox(height: AppConstants.spacingLarge),
+                // Industry Text Field
+                _buildThemedTextField(
+                  controller: _industryController,
+                  label: 'Industry',
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: AppConstants.spacingLarge),
 
-              // Career Aspirations Text Field
-              _buildThemedTextField(
-                controller: _careerAspirationsController,
-                label: 'What are your career aspirations?',
-                isDarkMode: isDarkMode,
-                maxLines: 3,
-              ),
-            ],
+                // Career Aspirations Text Field
+                _buildThemedTextField(
+                  controller: _careerAspirationsController,
+                  label: 'What are your career aspirations? (Optional)', // Made optional
+                  isDarkMode: isDarkMode,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: AppConstants.paddingSmall), // Final spacing
+              ],
+            ),
           ),
         ),
       ),

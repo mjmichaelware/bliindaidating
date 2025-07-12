@@ -4,13 +4,15 @@ import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'dart:math' as math;
 import 'dart:ui'; // For ImageFilter
+import 'package:go_router/go_router.dart'; // Import go_router for navigation
+import 'package:supabase_flutter/supabase_flutter.dart'; // For Supabase and User
+import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
+import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService
 
-// Import all 7 sub-tab form files (these will remain empty placeholders for now)
-import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/dating_and_relationship_goals_form.dart';
+// Import remaining 5 sub-tab form files
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/education_and_career_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/family_and_background_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/lifestyle_and_values_form.dart';
-import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/personal_and_contact_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/personality_and_self_reflection_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/physical_attributes_and_health_form.dart';
 
@@ -107,6 +109,7 @@ class Phase2SetupScreen extends StatefulWidget {
 class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isSaving = false; // New state to manage saving process
 
   // Animation controllers for background and UI elements
   late AnimationController _globalFadeInController;
@@ -125,13 +128,11 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
   final List<Offset> _deepSpaceParticles = [];
   final math.Random _random = math.Random();
 
-  // List of the 7 sub-tab form widgets
+  // List of the 5 sub-tab form widgets (UPDATED)
   final List<Widget> _phase2SubForms = const [
-    DatingAndRelationshipGoalsForm(),
     EducationAndCareerForm(),
     FamilyAndBackgroundForm(),
     LifestyleAndValuesForm(),
-    PersonalAndContactForm(),
     PersonalityAndSelfReflectionForm(),
     PhysicalAttributesAndHealthForm(),
   ];
@@ -203,19 +204,80 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     }
   }
 
-  void _submitPhase2Completion() {
-    // TODO: Implement actual Phase 2 profile completion logic
-    // This would typically involve saving data from all sub-tabs to Supabase
-    // and setting isPhase2Complete to true in the user's profile.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Phase 2 Profile Setup Complete! (Dummy Action)'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    // After completion, you might navigate back to the dashboard or a confirmation screen
-    // Navigator.of(context).pop(); // Example to pop back
+  Future<void> _submitPhase2Completion() async {
+    setState(() {
+      _isSaving = true; // Indicate saving in progress
+    });
+
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: User not logged in!')),
+        );
+        context.go('/login');
+      }
+      setState(() { _isSaving = false; });
+      return;
+    }
+
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+
+    try {
+      // Fetch current profile to update only isPhase2Complete
+      final UserProfile? existingProfile = await profileService.fetchUserProfile(currentUser.id);
+
+      if (existingProfile != null) {
+        final UserProfile updatedProfile = existingProfile.copyWith(
+          isPhase2Complete: true, // Mark Phase 2 as complete
+          updatedAt: DateTime.now(), // Update timestamp
+          // Other fields remain as they were, as this screen only sets the flag
+        );
+        await profileService.createOrUpdateProfile(profile: updatedProfile);
+
+        debugPrint('Phase 2 Profile Setup Complete for user ${currentUser.id}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile Phase 2 Complete!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Navigate back to the main dashboard
+          context.go('/home');
+        }
+      } else {
+        debugPrint('Error: Existing profile not found for user ${currentUser.id}. Cannot mark Phase 2 complete.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to complete Phase 2: Profile not found.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } on PostgrestException catch (e) {
+      debugPrint('Supabase Postgrest Error completing Phase 2: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Database error: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error completing Phase 2: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to complete Phase 2: ${e.toString()}')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -231,8 +293,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     final Color textMediumEmphasis = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
     final Color surfaceColor = isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor;
     final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
-    final Color dialogBackgroundColor = isDarkMode ? AppConstants.dialogBackgroundColor : AppConstants.lightDialogBackgroundColor;
-
+    // final Color dialogBackgroundColor = isDarkMode ? AppConstants.dialogBackgroundColor : AppConstants.lightDialogBackgroundColor; // Not used directly
 
     return Scaffold(
       backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
@@ -261,6 +322,31 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
             ),
           ),
         ),
+        // Added the Exit/Close Button
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppConstants.paddingMedium),
+            child: TextButton(
+              onPressed: _isSaving ? null : () {
+                // Navigate back to the home screen (dashboard)
+                context.go('/home');
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: textColor,
+                backgroundColor: (isDarkMode ? AppConstants.primaryColorShade700 : AppConstants.lightPrimaryColorShade400).withOpacity(0.7),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadius)),
+              ),
+              child: Text(
+                'Close',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -399,7 +485,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                             context,
                             label: 'Previous',
                             icon: Icons.arrow_back_ios_new_rounded,
-                            onPressed: _goToPreviousPage,
+                            onPressed: _isSaving ? null : _goToPreviousPage, // Disable during saving
                             isPrimary: false, // Not the main action
                             isDarkMode: isDarkMode,
                           ),
@@ -417,7 +503,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                           icon: _currentPage == _phase2SubForms.length - 1
                               ? Icons.done_all_rounded
                               : Icons.arrow_forward_ios_rounded,
-                          onPressed: _goToNextPage,
+                          onPressed: _isSaving ? null : _goToNextPage, // Disable during saving
                           isPrimary: true, // Main action button
                           isDarkMode: isDarkMode,
                         ),
@@ -428,6 +514,31 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
               ),
             ),
           ),
+          // Loading Overlay
+          if (_isSaving)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: secondaryColor),
+                      const SizedBox(height: AppConstants.spacingMedium),
+                      Text(
+                        'Completing Phase 2...',
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'Inter',
+                          fontSize: AppConstants.fontSizeLarge,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -438,7 +549,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     BuildContext context, {
     required String label,
     required IconData icon,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed, // Make onPressed nullable
     required bool isPrimary,
     required bool isDarkMode,
   }) {
@@ -479,7 +590,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: onPressed,
+                onTap: onPressed, // Use the nullable onPressed directly
                 borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(

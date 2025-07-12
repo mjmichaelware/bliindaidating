@@ -1,5 +1,3 @@
-// lib/screens/profile_setup/widgets/consent_form.dart
-
 import 'package:flutter/material.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:provider/provider.dart';
@@ -27,11 +25,22 @@ class PolicyViewerDialog extends StatelessWidget {
     final primaryTextColor = isDarkMode ? Colors.white : Colors.black87;
     final secondaryTextColor = isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54;
     final cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
-    final activeColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
+    final activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Consistent active color
 
     return AlertDialog(
-      title: Text(title, style: textTheme.titleLarge?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor)),
-      backgroundColor: cardColor,
+      title: Text(
+        title,
+        style: textTheme.titleLarge?.copyWith(
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.bold,
+          color: primaryTextColor,
+        ),
+      ),
+      backgroundColor: cardColor, // Consistent card background
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge), // Consistent rounded corners
+        side: BorderSide(color: activeColor.withOpacity(0.5), width: 1.5), // Subtle border
+      ),
       content: Container(
         width: MediaQuery.of(context).size.width * 0.8, // Adjust width as needed
         height: MediaQuery.of(context).size.height * 0.6, // Adjust height
@@ -46,7 +55,15 @@ class PolicyViewerDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Close', style: TextStyle(color: activeColor)),
+          style: TextButton.styleFrom(
+            foregroundColor: activeColor, // Consistent button color
+            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadius)),
+          ),
+          child: Text(
+            'Close',
+            style: textTheme.labelLarge?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
@@ -90,7 +107,7 @@ class _ConsentFormState extends State<ConsentForm> {
   **4. Privacy:** Your privacy is paramount. Please refer to our Privacy Policy for information on how we collect, use, and disclose information from our users.
 
   **5. AI Matching & Data Use:**
-      * **Photo Analysis:** You consent to our AI analyzing your uploaded photo for facial features (e.g., golden ratio, symmetry) to generate a numerical score. This score is used **solely for matching compatibility** and is **never publicly displayed on your profile.**
+      * **Photo Analysis:** You consent to our AI analyzing your uploaded photo for facial features (e.g., golden ratio and symmetry) to generate a numerical score. This score is used **solely for matching compatibility** and is **never publicly displayed on your profile.**
       * **Profile Data:** The information you provide in your profile (e.g., bio, interests, preferences) may be used by our AI to learn your patterns and enhance match recommendations. You control the visibility of most of this data on your public profile via your settings.
       * **Learning:** Our AI learns from your interactions and profile data to continually improve its matching algorithms.
 
@@ -184,70 +201,89 @@ class _ConsentFormState extends State<ConsentForm> {
     final isDarkMode = themeController.isDarkMode;
     final textTheme = Theme.of(context).textTheme;
 
+    // Define theme-dependent colors for consistent UI (FIXED: Added these definitions)
     final Color primaryTextColor = isDarkMode ? Colors.white : Colors.black87;
     final Color secondaryTextColor = isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54;
-    final Color activeColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
     final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
-
+    final Color inputFillColor = isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05); // Added
+    // final Color inputBorderColor = secondaryTextColor.withOpacity(0.3); // Not directly used here, but good to have for consistency if needed elsewhere
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
       child: Container( // Wrap with Container for custom background/shadows
+        // Apply the beautiful background, border, shadow, and gradient
         decoration: BoxDecoration(
-          color: cardColor, // Background of the form panel
-          borderRadius: BorderRadius.circular(24),
+          color: cardColor, // Base background color for the form panel
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge), // Rounded corners
           boxShadow: [
             BoxShadow(
-              color: activeColor.withOpacity(0.2),
+              color: activeColor.withOpacity(0.2), // Subtle glow effect
               blurRadius: 20,
               spreadRadius: 5,
               offset: const Offset(0, 8),
             ),
           ],
-          gradient: LinearGradient( // Subtle gradient for vibrancy
+          gradient: LinearGradient( // Elegant gradient for depth
             colors: [
-              cardColor.withOpacity(0.9),
+              cardColor.withOpacity(0.9), // Slightly transparent to show background
               cardColor.withOpacity(0.7),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          border: Border.all( // Subtle border for definition
+            color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.3),
+            width: 1.5,
+          ),
         ),
-        padding: const EdgeInsets.all(24.0), // Inner padding for content
+        padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
         child: Form(
           key: widget.formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header Row with Title and App Name/Icon
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align items to space between
                 children: [
                   Expanded(
                     child: Text(
                       'Agreements & Consent',
-                      style: textTheme.headlineSmall?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
+                        fontSize: AppConstants.fontSizeExtraLarge,
+                      ),
                     ),
                   ),
-                  // "Blind AI Dating" title
-                  Text(
-                    'Blind AI Dating',
-                    style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
-                  ),
-                  const SizedBox(width: 8), // Small space between text and icon
-                  SvgPicture.asset(
-                    'assets/svg/DrawKit Vector Illustration Love & Dating (9).svg', // Example SVG for Consent/Security
-                    height: 50,
-                    semanticsLabel: 'Consent Icon',
-                    colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                  // App Name and Icon for branding
+                  Row(
+                    children: [
+                      Text(
+                        'Blind AI Dating',
+                        style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                      ),
+                      const SizedBox(width: AppConstants.spacingSmall),
+                      SvgPicture.asset(
+                        'assets/svg/DrawKit Vector Illustration Love & Dating (9).svg', // Example SVG for Consent/Security
+                        height: 40, // Adjust size
+                        semanticsLabel: 'Consent Icon',
+                        colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn), // Themed color
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingSmall),
               Text(
                 'To use BliindAIDating and ensure a safe community for all, please review and agree to the following important documents:',
                 style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingLarge), // Increased spacing
+
+              // Terms of Service & Privacy Policy Checkbox
               FormField<bool>(
                 initialValue: widget.agreedToTerms,
                 validator: (value) {
@@ -271,6 +307,7 @@ class _ConsentFormState extends State<ConsentForm> {
                                 style: TextStyle(
                                   color: activeColor,
                                   decoration: TextDecoration.underline,
+                                  fontWeight: FontWeight.bold, // Make links stand out
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
@@ -291,6 +328,7 @@ class _ConsentFormState extends State<ConsentForm> {
                                 style: TextStyle(
                                   color: activeColor,
                                   decoration: TextDecoration.underline,
+                                  fontWeight: FontWeight.bold, // Make links stand out
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
@@ -316,20 +354,25 @@ class _ConsentFormState extends State<ConsentForm> {
                         controlAffinity: ListTileControlAffinity.leading,
                         activeColor: activeColor,
                         checkColor: isDarkMode ? Colors.black : Colors.white,
+                        tileColor: inputFillColor.withOpacity(0.5), // Subtle background for the tile
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadius)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall, vertical: AppConstants.paddingExtraSmall),
                       ),
                       if (state.hasError)
                         Padding(
-                          padding: const EdgeInsets.only(left: 16.0, top: 0.0),
+                          padding: const EdgeInsets.only(left: AppConstants.paddingMedium, top: AppConstants.spacingExtraSmall),
                           child: Text(
                             state.errorText!,
-                            style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                            style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error, fontFamily: 'Inter'),
                           ),
                         ),
                     ],
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Community Guidelines Checkbox
               FormField<bool>(
                 initialValue: widget.agreedToCommunityGuidelines,
                 validator: (value) {
@@ -355,25 +398,29 @@ class _ConsentFormState extends State<ConsentForm> {
                         controlAffinity: ListTileControlAffinity.leading,
                         activeColor: activeColor,
                         checkColor: isDarkMode ? Colors.black : Colors.white,
+                        tileColor: inputFillColor.withOpacity(0.5), // Subtle background for the tile
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadius)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall, vertical: AppConstants.paddingExtraSmall),
                       ),
                       if (state.hasError)
                         Padding(
-                          padding: const EdgeInsets.only(left: 16.0, top: 0.0),
+                          padding: const EdgeInsets.only(left: AppConstants.paddingMedium, top: AppConstants.spacingExtraSmall),
                           child: Text(
                             state.errorText!,
-                            style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
+                            style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error, fontFamily: 'Inter'),
                           ),
                         ),
                     ],
                   );
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppConstants.spacingLarge),
               Text(
-                'By completing this profile, you confirm that all information provided is accurate and truthful.',
+                'By completing this profile, you confirm that all information provided is accurate and truthful. We are committed to fostering a safe and genuine community.',
                 style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', fontStyle: FontStyle.italic, color: secondaryTextColor.withOpacity(0.6)),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: AppConstants.paddingSmall), // Final spacing
             ],
           ),
         ),

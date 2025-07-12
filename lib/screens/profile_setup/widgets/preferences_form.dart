@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // For SVG assets
 
-// Helper widget for a category of interests (remains similar)
+// Helper widget for a category of interests
 class _InterestCategorySection extends StatelessWidget {
   final String title;
   final List<String> interests;
@@ -17,7 +17,8 @@ class _InterestCategorySection extends StatelessWidget {
   final TextTheme textTheme;
   final Color activeColor;
   final Color widgetBackgroundColor;
-  final Color primaryTextColor; // Added for internal use
+  final Color primaryTextColor;
+  final Color secondaryTextColor;
 
   const _InterestCategorySection({
     required this.title,
@@ -30,12 +31,11 @@ class _InterestCategorySection extends StatelessWidget {
     required this.activeColor,
     required this.widgetBackgroundColor,
     required this.primaryTextColor,
+    required this.secondaryTextColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final Color secondaryTextColor = isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,14 +43,20 @@ class _InterestCategorySection extends StatelessWidget {
           title,
           style: textTheme.titleMedium?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppConstants.spacingSmall),
         Wrap(
-          spacing: 8.0,
-          runSpacing: 4.0,
+          spacing: AppConstants.spacingSmall,
+          runSpacing: AppConstants.spacingExtraSmall,
           children: interests.map((interest) {
             final isSelected = selectedInterests.contains(interest);
             return FilterChip(
-              label: Text(interest, style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: isSelected ? (isDarkMode ? Colors.black : Colors.white) : primaryTextColor)),
+              label: Text(
+                interest,
+                style: textTheme.bodyMedium?.copyWith(
+                  fontFamily: 'Inter',
+                  color: isSelected ? (isDarkMode ? Colors.black : Colors.white) : primaryTextColor,
+                ),
+              ),
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
@@ -63,13 +69,13 @@ class _InterestCategorySection extends StatelessWidget {
               checkmarkColor: isDarkMode ? Colors.black : Colors.white,
               backgroundColor: widgetBackgroundColor,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                 side: BorderSide(color: isSelected ? activeColor : secondaryTextColor.withOpacity(0.5)),
               ),
             );
           }).toList(),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppConstants.spacingMedium),
       ],
     );
   }
@@ -85,6 +91,11 @@ class PreferencesForm extends StatefulWidget {
   final String? lookingFor;
   final List<String> selectedInterests;
   final GlobalKey<FormState> formKey;
+  final String? maritalStatus; // New parameter
+  final Function(String?) onMaritalStatusChanged; // New parameter
+  final String? ethnicity; // New parameter
+  final Function(String?) onEthnicityChanged; // New parameter
+
 
   const PreferencesForm({
     super.key,
@@ -97,6 +108,10 @@ class PreferencesForm extends StatefulWidget {
     this.lookingFor,
     required this.selectedInterests,
     required this.formKey,
+    this.maritalStatus, // Initialize here
+    required this.onMaritalStatusChanged, // Initialize here
+    this.ethnicity, // Initialize here
+    required this.onEthnicityChanged, // Initialize here
   });
 
   @override
@@ -114,6 +129,12 @@ class _PreferencesFormState extends State<PreferencesForm> {
     'Long-term relationship', 'Short-term dating', 'Casual dating',
     'Friendship', 'Networking', 'Marriage', 'Something casual',
     'Still figuring it out'
+  ];
+  final List<String> _maritalStatusOptions = [ // New options
+    'Single', 'Married', 'Divorced', 'Widowed', 'Separated', 'In a relationship', 'It\'s complicated', 'Prefer not to say'
+  ];
+  final List<String> _ethnicityOptions = [ // New options
+    'Asian', 'Black', 'Hispanic', 'White', 'Indigenous', 'Mixed', 'Other', 'Prefer not to say'
   ];
 
   // Categorized Interests
@@ -147,95 +168,146 @@ class _PreferencesFormState extends State<PreferencesForm> {
     final isDarkMode = themeController.isDarkMode;
     final textTheme = Theme.of(context).textTheme;
 
+    // Define theme-dependent colors for consistent UI
     final Color primaryTextColor = isDarkMode ? Colors.white : Colors.black87;
     final Color secondaryTextColor = isDarkMode ? Colors.white.withOpacity(0.7) : Colors.black54;
-    final Color activeColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
+    final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
     final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
-
+    final Color inputFillColor = isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05);
+    final Color inputBorderColor = secondaryTextColor.withOpacity(0.3);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
       child: Container( // Wrap with Container for custom background/shadows
+        // Apply the beautiful background, border, shadow, and gradient
         decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(24),
+          color: cardColor, // Base background color for the form panel
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge), // Rounded corners
           boxShadow: [
             BoxShadow(
-              color: activeColor.withOpacity(0.2),
+              color: activeColor.withOpacity(0.2), // Subtle glow effect
               blurRadius: 20,
               spreadRadius: 5,
               offset: const Offset(0, 8),
             ),
           ],
-          gradient: LinearGradient(
+          gradient: LinearGradient( // Elegant gradient for depth
             colors: [
-              cardColor.withOpacity(0.9),
+              cardColor.withOpacity(0.9), // Slightly transparent to show background
               cardColor.withOpacity(0.7),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          border: Border.all( // Subtle border for definition
+            color: (isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor).withOpacity(0.3),
+            width: 1.5,
+          ),
         ),
-        padding: const EdgeInsets.all(24.0), // Inner padding
+        padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
         child: Form(
           key: widget.formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header Row with Title and App Name/Icon
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Align items to space between
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(
-                      'Your Preferences',
-                      style: textTheme.headlineSmall?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
+                      'Preferences & More', // Updated title
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
+                        fontSize: AppConstants.fontSizeExtraLarge,
+                      ),
                     ),
                   ),
-                  // "Blind AI Dating" title
-                  Text(
-                    'Blind AI Dating',
-                    style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
-                  ),
-                  const SizedBox(width: 8), // Small space between text and icon
-                  SvgPicture.asset(
-                    'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg', // Example SVG for Preferences
-                    height: 50,
-                    semanticsLabel: 'Preferences Icon',
-                    colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                  // App Name and Icon for branding
+                  Row(
+                    children: [
+                      Text(
+                        'Blind AI Dating',
+                        style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                      ),
+                      const SizedBox(width: AppConstants.spacingSmall),
+                      SvgPicture.asset(
+                        'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg', // Example SVG for Preferences
+                        height: 40,
+                        semanticsLabel: 'Preferences Icon',
+                        colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppConstants.spacingSmall),
               Text(
-                'Tell us about your preferences for dating and relationships. This helps us find the best matches for you. Your selections here will influence who you see and who sees you.',
-                style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.8)),
+                'Help us understand your preferences and personality. This helps us find the best matches for you.',
+                style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
               ),
-              const SizedBox(height: 24),
-              DropdownButtonFormField<String>(
-                value: widget.sexualOrientation,
+              const SizedBox(height: AppConstants.spacingLarge), // Increased spacing
+
+              // About Me (Bio) Input Field
+              TextFormField(
+                controller: widget.bioController,
+                style: TextStyle(color: primaryTextColor, fontFamily: 'Inter'),
                 decoration: InputDecoration(
-                  labelText: 'Sexual Orientation',
-                  labelStyle: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                  labelText: 'About Me (Bio)',
+                  labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
                   filled: true,
-                  fillColor: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+                  alignLabelWithHint: true,
+                  fillColor: inputFillColor,
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppConstants.borderRadiusMedium))),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: secondaryTextColor.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: inputBorderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                     borderSide: BorderSide(color: activeColor, width: 2),
                   ),
-                  prefixIcon: Icon(Icons.diversity_3, color: secondaryTextColor),
+                  prefixIcon: Icon(Icons.description, color: secondaryTextColor),
+                  hintText: 'Share something interesting about yourself...',
                   hintStyle: TextStyle(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.7)),
                 ),
-                dropdownColor: cardColor, // Ensure dropdown is themed
-                style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor),
-                items: _sexualOrientations.map((String option) {
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please write a short bio.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Sexual Orientation Dropdown
+              DropdownButtonFormField<String>(
+                value: widget.sexualOrientation,
+                style: TextStyle(color: primaryTextColor, fontFamily: 'Inter'),
+                dropdownColor: cardColor, // Dropdown menu background
+                decoration: InputDecoration(
+                  labelText: 'Sexual Orientation',
+                  labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                  filled: true,
+                  fillColor: inputFillColor,
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppConstants.borderRadiusMedium))),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: inputBorderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: activeColor, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.favorite, color: secondaryTextColor),
+                ),
+                items: _sexualOrientations.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
-                    value: option,
-                    child: Text(option, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor)),
+                    value: value,
+                    child: Text(value, style: TextStyle(color: primaryTextColor, fontFamily: 'Inter')),
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
@@ -248,32 +320,33 @@ class _PreferencesFormState extends State<PreferencesForm> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Looking For Dropdown
               DropdownButtonFormField<String>(
                 value: widget.lookingFor,
+                style: TextStyle(color: primaryTextColor, fontFamily: 'Inter'),
+                dropdownColor: cardColor, // Dropdown menu background
                 decoration: InputDecoration(
                   labelText: 'Looking For',
-                  labelStyle: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                  labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
                   filled: true,
-                  fillColor: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+                  fillColor: inputFillColor,
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppConstants.borderRadiusMedium))),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: secondaryTextColor.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: inputBorderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                     borderSide: BorderSide(color: activeColor, width: 2),
                   ),
-                  prefixIcon: Icon(Icons.favorite, color: secondaryTextColor),
-                  hintStyle: TextStyle(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.7)),
+                  prefixIcon: Icon(Icons.search, color: secondaryTextColor),
                 ),
-                dropdownColor: cardColor, // Ensure dropdown is themed
-                style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor),
-                items: _lookingForOptions.map((String option) {
+                items: _lookingForOptions.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
-                    value: option,
-                    child: Text(option, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: primaryTextColor)),
+                    value: value,
+                    child: Text(value, style: TextStyle(color: primaryTextColor, fontFamily: 'Inter')),
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
@@ -281,55 +354,104 @@ class _PreferencesFormState extends State<PreferencesForm> {
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please select what you\'re looking for.';
+                    return 'Please select what you are looking for.';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: widget.bioController,
-                maxLength: 2000,
-                maxLines: 4,
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Marital Status Dropdown (NEW)
+              DropdownButtonFormField<String>(
+                value: widget.maritalStatus,
                 style: TextStyle(color: primaryTextColor, fontFamily: 'Inter'),
+                dropdownColor: cardColor, // Dropdown menu background
                 decoration: InputDecoration(
-                  labelText: 'About Me (Bio)',
-                  alignLabelWithHint: true,
+                  labelText: 'Marital Status',
+                  labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
                   filled: true,
-                  fillColor: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+                  fillColor: inputFillColor,
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppConstants.borderRadiusMedium))),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: secondaryTextColor.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: inputBorderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                     borderSide: BorderSide(color: activeColor, width: 2),
                   ),
-                  prefixIcon: Icon(Icons.description, color: secondaryTextColor),
-                  hintText: 'Tell us a bit about yourself (max 2000 characters)...',
-                  hintStyle: TextStyle(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.7)),
+                  prefixIcon: Icon(Icons.people_alt, color: secondaryTextColor),
                 ),
+                items: _maritalStatusOptions.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value, style: TextStyle(color: primaryTextColor, fontFamily: 'Inter')),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  widget.onMaritalStatusChanged(newValue);
+                },
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please write a short bio.';
+                  if (value == null || value.isEmpty) {
+                    return 'Please select your marital status.';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 8),
-              Text(
-                'The more honest and extensive your bio, the easier it is for our AI to learn about you and find truly compatible matches. Your bio will only be public on your profile card if you choose to make it so in Settings.',
-                style: textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: secondaryTextColor.withOpacity(0.8)),
-                textAlign: TextAlign.justify,
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Ethnicity Dropdown (NEW)
+              DropdownButtonFormField<String>(
+                value: widget.ethnicity,
+                style: TextStyle(color: primaryTextColor, fontFamily: 'Inter'),
+                dropdownColor: cardColor, // Dropdown menu background
+                decoration: InputDecoration(
+                  labelText: 'Ethnicity',
+                  labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+                  filled: true,
+                  fillColor: inputFillColor,
+                  border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(AppConstants.borderRadiusMedium))),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: inputBorderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    borderSide: BorderSide(color: activeColor, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.diversity_3, color: secondaryTextColor),
+                ),
+                items: _ethnicityOptions.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value, style: TextStyle(color: primaryTextColor, fontFamily: 'Inter')),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  widget.onEthnicityChanged(newValue);
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select your ethnicity.';
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppConstants.spacingLarge),
+
+              // Interests Section Header
               Text(
-                'Select Your Interests:',
+                'Your Interests',
                 style: textTheme.titleLarge?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: primaryTextColor),
               ),
-              const SizedBox(height: 8),
-              // Primary Interests
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'Select hobbies and interests that describe you. You can select multiple.',
+                style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: secondaryTextColor),
+              ),
+              const SizedBox(height: AppConstants.spacingMedium),
+
+              // Popular Interests Section
               _InterestCategorySection(
                 title: 'Popular Interests',
                 interests: _primaryInterests,
@@ -339,73 +461,50 @@ class _PreferencesFormState extends State<PreferencesForm> {
                 isDarkMode: isDarkMode,
                 textTheme: textTheme,
                 activeColor: activeColor,
-                widgetBackgroundColor: cardColor,
+                widgetBackgroundColor: inputFillColor,
                 primaryTextColor: primaryTextColor,
+                secondaryTextColor: secondaryTextColor,
               ),
-              // "More Options" button
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showMoreInterests = !_showMoreInterests;
-                    });
-                  },
-                  icon: Icon(_showMoreInterests ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
-                  label: Text(_showMoreInterests ? 'Hide More Interests' : 'Show More Interests'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: activeColor.withOpacity(0.1),
-                    foregroundColor: activeColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              
+              // "Show More Interests" Button
+              if (!_showMoreInterests)
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showMoreInterests = true;
+                      });
+                    },
+                    icon: Icon(Icons.add_circle_outline, color: activeColor),
+                    label: Text(
+                      'Show More Interests',
+                      style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter', color: activeColor, fontWeight: FontWeight.bold),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadius)),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              // Collapsible section for more interests
-              AnimatedCrossFade(
-                duration: const Duration(milliseconds: 300),
-                crossFadeState: _showMoreInterests ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                firstChild: const SizedBox.shrink(),
-                secondChild: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _interestCategories.entries.where((entry) => !_primaryInterests.any((p) => entry.value.contains(p))).map((entry) {
-                    return _InterestCategorySection(
-                      title: entry.key,
-                      interests: entry.value,
-                      selectedInterests: widget.selectedInterests,
-                      onInterestSelected: widget.onInterestSelected,
-                      onInterestDeselected: widget.onInterestDeselected,
-                      isDarkMode: isDarkMode,
-                      textTheme: textTheme,
-                      activeColor: activeColor,
-                      widgetBackgroundColor: cardColor,
-                      primaryTextColor: primaryTextColor,
-                    );
-                  }).toList(),
-                ),
-              ),
-              // Validator for interests
-              FormField<List<String>>(
-                initialValue: widget.selectedInterests,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select at least one interest.';
-                  }
-                  return null;
-                },
-                builder: (FormFieldState<List<String>> state) {
-                  if (state.hasError) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        state.errorText!,
-                        style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error),
-                      ),
-                    );
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
+
+              // Dynamically show all categories if "More Options" is toggled
+              if (_showMoreInterests)
+                ..._interestCategories.entries.map((entry) {
+                  return _InterestCategorySection(
+                    title: entry.key,
+                    interests: entry.value,
+                    selectedInterests: widget.selectedInterests,
+                    onInterestSelected: widget.onInterestSelected,
+                    onInterestDeselected: widget.onInterestDeselected,
+                    isDarkMode: isDarkMode,
+                    textTheme: textTheme,
+                    activeColor: activeColor,
+                    widgetBackgroundColor: inputFillColor,
+                    primaryTextColor: primaryTextColor,
+                    secondaryTextColor: secondaryTextColor,
+                  );
+                }).toList(),
+              const SizedBox(height: AppConstants.paddingSmall), // Final spacing
             ],
           ),
         ),
