@@ -20,7 +20,7 @@ import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 // NEW: Dashboard Shell Component Imports (These files now exist as per tree output)
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart'; // FIX: Corrected import path
+import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switcher.dart';
 
 // NEW: Tab Content Screen Imports (These placeholder files now exist as per tree output)
@@ -29,6 +29,9 @@ import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // From 
 import 'package:bliindaidating/screens/discovery/discovery_screen.dart'; // Existing screen, likely in screens/discovery
 import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart';
 import 'package:bliindaidating/screens/matches/matches_list_screen.dart'; // Existing screen, likely in screens/matches
+
+// NEW: Import the new Phase2SetupScreen
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // ADDED THIS IMPORT
 
 // Assuming AnimatedOrbBackground is in landing_page/widgets as per tree
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
@@ -211,8 +214,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       const NewsfeedScreen(),
       const MatchesListScreen(),
       const DiscoveryScreen(),
-      const QuestionnaireScreen(), // Assuming this is always index 3
-      const Placeholder(), // FIX: Added Placeholder for index 4 (Phase 2 Questions) to prevent out-of-bounds
+      const QuestionnaireScreen(), // This is the main questionnaire screen (index 3)
+      const Phase2SetupScreen(), // REPLACED Placeholder with Phase2SetupScreen (index 4)
     ];
 
     return Scaffold(
@@ -289,7 +292,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                   fontFamily: 'Inter',
                                 ),
                               ),
-                              const SizedBox(height: AppConstants.paddingSmall),
+                              const SizedBox(height: AppConstants.spacingSmall),
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
