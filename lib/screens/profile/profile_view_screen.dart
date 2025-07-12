@@ -181,12 +181,13 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   '${_userProfile!.heightCm!.toStringAsFixed(0)} cm',
                                   isDarkMode,
                                 ),
-                              if (_userProfile!.locationCity != null && _userProfile!.locationState != null)
+                              // Corrected: Use locationZipCode instead of locationCity/locationState
+                              if (_userProfile!.locationZipCode != null && _userProfile!.locationZipCode!.isNotEmpty)
                                 _buildDetailRow(
                                   context,
                                   Icons.location_on,
                                   'Location',
-                                  '${_userProfile!.locationCity}, ${_userProfile!.locationState}',
+                                  _userProfile!.locationZipCode!,
                                   isDarkMode,
                                 ),
                             ],
@@ -194,7 +195,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                           const SizedBox(height: AppConstants.spacingMedium),
 
                           // Interests Section
-                          if ((_userProfile!.hobbiesAndInterests ?? []).isNotEmpty || (_userProfile!.interests ?? []).isNotEmpty) // Corrected null check
+                          if ((_userProfile!.hobbiesAndInterests ?? []).isNotEmpty || (_userProfile!.interests ?? []).isNotEmpty)
                             _buildProfileDetailCard(
                               context,
                               isDarkMode,
@@ -204,7 +205,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   context,
                                   Icons.interests,
                                   'Hobbies',
-                                  // Corrected: Use ?? [] before join
+                                  // Prefer hobbiesAndInterests, fallback to interests, then empty list
                                   (_userProfile!.hobbiesAndInterests ?? _userProfile!.interests ?? []).join(', '),
                                   isDarkMode,
                                 ),
@@ -266,12 +267,12 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   _userProfile!.relationshipGoals!,
                                   isDarkMode,
                                 ),
-                              if ((_userProfile!.dealbreakers ?? []).isNotEmpty) // Corrected null check
+                              if ((_userProfile!.dealbreakers ?? []).isNotEmpty)
                                 _buildDetailRow(
                                   context,
                                   Icons.block,
                                   'Dealbreakers',
-                                  (_userProfile!.dealbreakers ?? []).join(', '), // Corrected null check
+                                  (_userProfile!.dealbreakers ?? []).join(', '),
                                   isDarkMode,
                                 ),
                               if (_userProfile!.monogamyVsPolyamoryPreferences != null)
@@ -292,12 +293,12 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                             isDarkMode,
                             'Lifestyle & Values',
                             [
-                              if ((_userProfile!.languagesSpoken ?? []).isNotEmpty) // Corrected null check
+                              if ((_userProfile!.languagesSpoken ?? []).isNotEmpty)
                                 _buildDetailRow(
                                   context,
                                   Icons.language,
                                   'Languages',
-                                  (_userProfile!.languagesSpoken ?? []).join(', '), // Corrected null check
+                                  (_userProfile!.languagesSpoken ?? []).join(', '),
                                   isDarkMode,
                                 ),
                               if (_userProfile!.ethnicity != null)
@@ -364,12 +365,12 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   _userProfile!.sleepSchedule!,
                                   isDarkMode,
                                 ),
-                              if ((_userProfile!.personalityTraits ?? []).isNotEmpty) // Corrected null check
+                              if ((_userProfile!.personalityTraits ?? []).isNotEmpty)
                                 _buildDetailRow(
                                   context,
                                   Icons.psychology,
                                   'Personality',
-                                  (_userProfile!.personalityTraits ?? []).join(', '), // Corrected null check
+                                  (_userProfile!.personalityTraits ?? []).join(', '),
                                   isDarkMode,
                                 ),
                               if (_userProfile!.willingToRelocate != null)

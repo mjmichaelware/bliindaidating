@@ -1,158 +1,161 @@
 // lib/services/profile_service.dart
 
-import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
+import 'dart:io'; // Required for File on native platforms
+import 'dart:typed_data'; // Required for Uint8List
+import 'package:flutter/foundation.dart' show kIsWeb; // Import kIsWeb
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:image_picker/image_picker.dart'; // For XFile type
-import 'package:bliindaidating/models/user_profile.dart'; // Ensure this model is correctly defined
+import 'package:bliindaidating/models/user_profile.dart';
+import 'package:image_picker/image_picker.dart'; // Import XFile
 
-/// A service class to handle user profile data operations,
-/// including fetching, updating, creating, and providing real-time updates.
 class ProfileService extends ChangeNotifier {
-  final SupabaseClient _supabaseClient = Supabase.instance.client;
-
+  final SupabaseClient _supabase = Supabase.instance.client;
   UserProfile? _userProfile;
-  bool _isLoading = false;
 
   UserProfile? get userProfile => _userProfile;
-  bool get isLoading => _isLoading;
 
   ProfileService() {
-    // No initial fetch here; it's handled by main.dart's redirect or MainDashboardScreen.
-    // This constructor primarily sets up the service for use with Provider.
+    _supabase.auth.onAuthStateChange.listen((data) async {
+      if (data.session?.user != null) {
+        await fetchUserProfile(data.session!.user!.id);
+      } else {
+        clearProfile();
+      }
+    });
+    final currentUser = _supabase.auth.currentUser;
+    if (currentUser != null) {
+      fetchUserProfile(currentUser.id);
+    }
   }
 
-  /// Fetches the user profile from Supabase.
   Future<UserProfile?> fetchUserProfile(String userId) async {
-    _isLoading = true;
-    notifyListeners(); // Notify listeners that loading has started
     try {
-      final response = await _supabaseClient
+      debugPrint('Fetching profile for userId: $userId');
+      final response = await _supabase
           .from('profiles')
           .select()
-          .eq('id', userId)
+          .eq('user_id', userId)
           .single();
 
       if (response != null) {
         _userProfile = UserProfile.fromJson(response);
-        debugPrint('ProfileService: Fetched profile for user ID: $userId');
+        debugPrint('Profile fetched: ${_userProfile?.toJson()}');
       } else {
         _userProfile = null;
-        debugPrint('ProfileService: No profile found for user ID: $userId');
+        debugPrint('No profile found for userId: $userId');
       }
+      notifyListeners();
       return _userProfile;
     } on PostgrestException catch (e) {
-      debugPrint('ProfileService: Error fetching profile for $userId: ${e.message}');
-      _userProfile = null; // Clear profile on error
-      rethrow; // Re-throw to be handled by the caller
-    } finally {
-      _isLoading = false;
-      notifyListeners(); // Notify listeners that loading has finished
-    }
-  }
-
-  /// Uploads an analysis photo to Supabase storage.
-  /// Returns the public URL of the uploaded photo.
-  Future<String> uploadAnalysisPhoto(String userId, XFile imageFile) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final String path = 'public/analysis_photos/$userId/${imageFile.name}';
-      final Uint8List fileBytes = await imageFile.readAsBytes();
-
-      await _supabaseClient.storage.from('profile_photos').uploadBinary(
-            path,
-            fileBytes,
-            fileOptions: const FileOptions(
-              upsert: true, // Overwrite if file exists
-              contentType: 'image/jpeg', // Assuming JPEG, adjust as needed
-            ),
-          );
-
-      final String publicUrl = _supabaseClient.storage.from('profile_photos').getPublicUrl(path);
-      debugPrint('ProfileService: Uploaded analysis photo for $userId to: $publicUrl');
-      return publicUrl;
-    } on StorageException catch (e) {
-      debugPrint('ProfileService: Error uploading analysis photo for $userId: ${e.message}');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Creates a new user profile or updates an existing one in Supabase.
-  Future<void> createOrUpdateProfile({required UserProfile profile}) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      // Supabase's upsert functionality is useful here.
-      // It will insert if the ID doesn't exist, or update if it does.
-      final response = await _supabaseClient
-          .from('profiles')
-          .upsert(profile.toJson()) // Convert UserProfile object to JSON map
-          .eq('id', profile.userId) // Condition for update
-          .select(); // Select the updated/inserted row to get fresh data
-
-      if (response != null && response.isNotEmpty) {
-        _userProfile = UserProfile.fromJson(response.first); // Update local state with fresh data
-        debugPrint('ProfileService: Profile created/updated for user ID: ${profile.userId}');
-      } else {
-        debugPrint('ProfileService: Profile upsert operation returned empty response for user ID: ${profile.userId}');
+      debugPrint('PostgrestException fetching profile: ${e.message}');
+      if (e.code == 'PGRST116') {
+        _userProfile = null;
+        notifyListeners();
+        return null;
       }
-    } on PostgrestException catch (e) {
-      debugPrint('ProfileService: Error creating/updating profile for ${profile.userId}: ${e.message}');
       rethrow;
-    } finally {
-      _isLoading = false;
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+      _userProfile = null;
       notifyListeners();
+      return null;
     }
   }
 
-  /// Updates specific fields of the user profile in Supabase.
-  /// This is a more general update method, similar to the one already present.
+  // MODIFIED: Accepts XFile instead of File
+  Future<String?> uploadAnalysisPhoto(String userId, XFile imageFile) async {
+    try {
+      final String path = 'avatars/$userId/${imageFile.name}'; // Use XFile.name for a better filename
+
+      if (kIsWeb) {
+        // For web, read as bytes
+        final Uint8List bytes = await imageFile.readAsBytes();
+        final response = await _supabase.storage.from('avatars').uploadBinary(
+              path,
+              bytes,
+              fileOptions: FileOptions(
+                upsert: true,
+                contentType: imageFile.mimeType, // Use mimeType from XFile
+              ),
+            );
+        return _supabase.storage.from('avatars').getPublicUrl(path); // Get public URL
+      } else {
+        // For native platforms, use File from dart:io
+        final File file = File(imageFile.path); // Convert XFile to File using its path
+        final response = await _supabase.storage.from('avatars').upload(
+              path,
+              file,
+              fileOptions: FileOptions(
+                upsert: true,
+                contentType: imageFile.mimeType, // Use mimeType from XFile
+              ),
+            );
+        return _supabase.storage.from('avatars').getPublicUrl(path); // Get public URL
+      }
+    } catch (e) {
+      debugPrint('Error uploading analysis photo: $e');
+      return null;
+    }
+  }
+
+  Future<void> createOrUpdateProfile({required UserProfile profile}) async {
+    debugPrint('Placeholder: createOrUpdateProfile called for ${profile.userId}');
+    debugPrint('Profile data received: ${profile.toJson()}');
+    _userProfile = profile;
+    notifyListeners();
+  }
+
+  void clearProfile() {
+    _userProfile = null;
+    notifyListeners();
+    debugPrint('Profile data cleared.');
+  }
+
   Future<void> updateProfile({
-    required String userId,
-    String? fullName,
+    String? fullLegalName,
     String? displayName,
-    String? profilePictureUrl,
+    bool? agreedToTerms,
+    bool? agreedToCommunityGuidelines,
     bool? isPhase1Complete,
     bool? isPhase2Complete,
-    // Add other fields you might want to update here as well
   }) async {
-    _isLoading = true;
-    notifyListeners();
+    if (_userProfile == null) {
+      debugPrint('ProfileService: Cannot update profile, no user profile loaded.');
+      return;
+    }
+
+    final Map<String, dynamic> updates = {};
+    if (fullLegalName != null) updates['full_legal_name'] = fullLegalName;
+    if (displayName != null) updates['display_name'] = displayName;
+    if (agreedToTerms != null) updates['agreed_to_terms'] = agreedToTerms;
+    if (agreedToCommunityGuidelines != null) updates['agreed_to_community_guidelines'] = agreedToCommunityGuidelines;
+    if (isPhase1Complete != null) updates['is_phase1_complete'] = isPhase1Complete;
+    if (isPhase2Complete != null) updates['is_phase2_complete'] = isPhase2Complete;
+
+    if (updates.isEmpty) {
+      debugPrint('ProfileService: No updates provided.');
+      return;
+    }
+
     try {
-      final Map<String, dynamic> updates = {};
-      if (fullName != null) updates['full_name'] = fullName;
-      if (displayName != null) updates['display_name'] = displayName;
-      if (profilePictureUrl != null) updates['profile_picture_url'] = profilePictureUrl;
-      if (isPhase1Complete != null) updates['is_phase1_complete'] = isPhase1Complete;
-      if (isPhase2Complete != null) updates['is_phase2_complete'] = isPhase2Complete;
+      await _supabase
+          .from('profiles')
+          .update(updates)
+          .eq('user_id', _userProfile!.userId);
 
-      if (updates.isNotEmpty) {
-        await _supabaseClient
-            .from('profiles')
-            .update(updates)
-            .eq('id', userId);
-
-        // Update local state after successful update
-        if (_userProfile != null) {
-          _userProfile = _userProfile!.copyWith(
-            fullName: fullName,
-            displayName: displayName,
-            profilePictureUrl: profilePictureUrl,
-            isPhase1Complete: isPhase1Complete,
-            isPhase2Complete: isPhase2Complete,
-          );
-        }
-        debugPrint('ProfileService: Profile updated for user ID: $userId');
-      }
-    } on PostgrestException catch (e) {
-      debugPrint('ProfileService: Error updating profile for $userId: ${e.message}');
-      rethrow;
-    } finally {
-      _isLoading = false;
+      _userProfile = _userProfile!.copyWith(
+        fullLegalName: fullLegalName,
+        displayName: displayName,
+        agreedToTerms: agreedToTerms,
+        agreedToCommunityGuidelines: agreedToCommunityGuidelines,
+        isPhase1Complete: isPhase1Complete,
+        isPhase2Complete: isPhase2Complete,
+      );
       notifyListeners();
+      debugPrint('ProfileService: User profile updated successfully.');
+    } catch (e) {
+      debugPrint('ProfileService: Error updating user profile: $e');
+      rethrow;
     }
   }
 }

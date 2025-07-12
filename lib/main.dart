@@ -20,10 +20,8 @@ import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 
-// Corrected import paths for profile setup screens based on your tree
+// Existing profile setup screens from your tree
 import 'package:bliindaidating/profile/profile_setup_screen.dart'; // This is Phase 1 setup
-// These screens are imported because they are used in GoRouter routes,
-// even if they don't have const constructors yet.
 import 'package:bliindaidating/profile/profile_tabs_screen.dart';
 import 'package:bliindaidating/profile/about_me_screen.dart';
 import 'package:bliindaidating/profile/availability_screen.dart';
@@ -43,7 +41,7 @@ import 'package:bliindaidating/screens/feedback_report/feedback_screen.dart';
 import 'package:bliindaidating/screens/feedback_report/report_screen.dart';
 import 'package:bliindaidating/screens/admin/admin_dashboard_screen.dart';
 
-// NEW IMPORTS for screens (ENSURE THESE ARE CORRECT)
+// Existing NEW IMPORTS for screens (ENSURE THESE ARE CORRECT)
 import 'package:bliindaidating/screens/notifications/notifications_screen.dart';
 import 'package:bliindaidating/screens/profile/profile_view_screen.dart'; // For /profile/:userId dynamic route
 import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // ADDED: For /my-profile static route
@@ -51,15 +49,13 @@ import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; 
 
 
 // Define the environment variables at the top level using const String.fromEnvironment
-// These values will be set at compile time by the --dart-define or --dart-define-from-file flags.
-// Provide empty strings as default values, then assert their presence for release builds.
 const String _supabaseUrl = String.fromEnvironment(
   'SUPABASE_URL',
-  defaultValue: '', // Important: Provide a default empty string
+  defaultValue: '',
 );
 const String _supabaseAnonKey = String.fromEnvironment(
   'SUPABASE_ANON_KEY',
-  defaultValue: '', // Important: Provide a default empty string
+  defaultValue: '',
 );
 
 // A simple Not Found screen for GoRouter's errorBuilder
@@ -88,14 +84,11 @@ class NotFoundScreen extends StatelessWidget {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // --- Add these debug prints to verify the values at startup ---
   debugPrint('>>> Build Mode: ${const bool.fromEnvironment('dart.vm.product') ? 'RELEASE' : 'DEBUG'}');
   debugPrint('>>> Supabase URL from env: $_supabaseUrl');
   debugPrint('>>> Supabase Anon Key from env: $_supabaseAnonKey');
-  // -----------------------------------------------------------
 
   try {
-    // Check if in product (release) mode and if keys are missing
     if (const bool.fromEnvironment('dart.vm.product')) {
       if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
         throw Exception('Supabase credentials (URL or Anon Key) are missing in RELEASE build. '
@@ -103,11 +96,9 @@ Future<void> main() async {
       }
     }
 
-    // Initialize Supabase directly here using the constants
     await Supabase.initialize(
       url: _supabaseUrl,
       anonKey: _supabaseAnonKey,
-      // Turn off debug logging for Supabase in release builds automatically
       debug: !const bool.fromEnvironment('dart.vm.product'),
     );
 
@@ -115,8 +106,8 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => ThemeController()),
-          ChangeNotifierProvider(create: (context) => AuthService()), // AuthService now extends ChangeNotifier
-          ChangeNotifierProvider(create: (context) => ProfileService()), // ProfileService now extends ChangeNotifier
+          ChangeNotifierProvider(create: (context) => AuthService()),
+          ChangeNotifierProvider(create: (context) => ProfileService()),
         ],
         child: const BlindAIDatingApp(),
       ),
@@ -160,27 +151,44 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/portal_hub', builder: (context, state) => const PortalPage()),
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
         GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
+
+        // Main Dashboard and Profile Setup Routes
         GoRoute(path: '/home', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()), // Phase 1 setup
-        GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()), // NEW: Phase 2 setup
-        GoRoute(path: '/my-profile', builder: (context, state) => const MyProfileScreen()), // NEW: Direct route to current user's profile
-        // Removed 'const' from these constructors as they likely don't have them
+        GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()), // Phase 2 setup
+        GoRoute(path: '/my-profile', builder: (context, state) => const MyProfileScreen()), // Current user's profile view/edit
+
+        // Profile Editing/Setup Sub-screens (assuming these are used within ProfileTabsScreen or similar)
+        // Removed 'const' for now as they might not have them, add if they do.
         GoRoute(path: '/edit_profile', builder: (context, state) => ProfileTabsScreen()),
         GoRoute(path: '/about_me', builder: (context, state) => AboutMeScreen()),
         GoRoute(path: '/availability', builder: (context, state) => AvailabilityScreen()),
         GoRoute(path: '/interests', builder: (context, state) => InterestsScreen()),
-        GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])),
+
+        // Friends & Events
+        GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])), // Existing local events screen
+        // Removed: '/friends/match' as FriendsMatchScreen does not exist in your tree.
+
+        // Matching & Penalties
         GoRoute(path: '/penalties', builder: (context, state) => const PenaltyDisplayScreen()),
-        GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
-        GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
-        GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
+        // Removed: '/matching/compatibility_insights', '/matching/date_proposal', '/dashboard/compatibility_results', '/favorites/list'
+        // as their respective screens do not exist in your tree.
+
+        // Discovery Routes
         GoRoute(path: '/discovery', builder: (context, state) => const DiscoveryScreen()),
+        // Removed: '/discovery/people' as PeopleDiscoveryScreen does not exist in your tree.
+
+        // Matches Routes
         GoRoute(path: '/matches', builder: (context, state) => const MatchesListScreen()),
+
+        // Settings, Feedback, Admin, Notifications
         GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
         GoRoute(path: '/feedback', builder: (context, state) => const FeedbackScreen()),
         GoRoute(path: '/report', builder: (context, state) => const ReportScreen()),
         GoRoute(path: '/admin', builder: (context, state) => const AdminDashboardScreen()),
         GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
+
+        // Dynamic Profile View
         GoRoute(
           path: '/profile/:userId',
           builder: (context, state) {
@@ -189,40 +197,65 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
             return ProfileViewScreen(userId: userId);
           },
         ),
+
+        // Public Info Screens (Privacy Policy, Terms, About Us) - always visible
+        GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
+        GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
+        GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
+
+        // Removed: '/daily/prompts', '/dashboard/daily_personality_question' as their screens don't exist.
+        // Removed: '/newsfeed' as NewsfeedScreen does not exist.
+        // Removed: Premium routes as their screens don't exist.
+        // Removed: '/info/safety_tips', '/info/guided_tour', '/info/activity_feed', '/info/user_progress' as their screens don't exist.
       ],
-      // Redirect logic - RE-ENABLED AND CORRECTED
       redirect: (context, state) async {
-        // Access services via Provider
         final authService = Provider.of<AuthService>(context, listen: false);
         final profileService = Provider.of<ProfileService>(context, listen: false);
 
-        final User? currentUser = authService.currentUser; // Use AuthService's getter
+        final User? currentUser = authService.currentUser;
         final bool loggedIn = currentUser != null;
         final String currentPath = state.matchedLocation;
 
         final bool isAuthPath = currentPath == '/login' || currentPath == '/signup';
         final bool isOnPublicInitialPage = currentPath == '/' || currentPath == '/portal_hub';
+
         final bool goingToProfileSetup = currentPath == '/profile_setup';
         final bool goingToPhase2Setup = currentPath == '/questionnaire-phase2';
-        final bool goingToMyProfile = currentPath == '/my-profile';
         final bool goingToDashboard = currentPath == '/home';
 
-        debugPrint('GoRouter Redirect:');
+        // Define public info paths that don't require login or profile completion
+        final List<String> publicInfoPaths = [
+          '/about-us',
+          '/privacy',
+          '/terms',
+        ];
+        final bool isOnPublicInfoPath = publicInfoPaths.contains(currentPath);
+
+        debugPrint('GoRouter Redirect Status:');
         debugPrint('  Current Path: $currentPath');
         debugPrint('  Logged In: $loggedIn');
+        debugPrint('  Is Auth Path: $isAuthPath');
+        debugPrint('  Is On Public Initial Page: $isOnPublicInitialPage');
+        debugPrint('  Is On Public Info Path: $isOnPublicInfoPath');
 
-        // 1. If not logged in, redirect to landing or auth pages
+
+        // ALLOW PUBLIC INFO PATHS WITHOUT REDIRECTION, REGARDLESS OF LOGIN OR PROFILE COMPLETION
+        if (isOnPublicInfoPath) {
+          debugPrint('  Redirect decision: On public info path. Allowing navigation.');
+          return null;
+        }
+
+        // 1. If not logged in, redirect to landing or auth pages (unless already there)
         if (!loggedIn) {
           if (!isAuthPath && !isOnPublicInitialPage) {
             debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /');
             return '/';
           }
           debugPrint('  Redirect decision: Not logged in but on auth/public path. Allowing navigation.');
-          return null; // Allow navigation to login/signup/landing/portal_hub
+          return null;
         }
 
         // 2. If logged in, fetch profile if not already loaded (or if it's stale/different user)
-        // Ensure profileService.userProfile is up-to-date for the current user.
         if (profileService.userProfile == null || profileService.userProfile!.userId != currentUser.id) {
           debugPrint('  Fetching user profile for redirect logic...');
           await profileService.fetchUserProfile(currentUser.id);
@@ -240,17 +273,18 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
             return '/profile_setup';
           }
           debugPrint('  Redirect decision: Logged in, Phase 1 NOT complete, on /profile_setup. Allowing.');
-          return null; // Allow navigation to /profile_setup
+          return null;
         }
 
         // 4. If logged in, Phase 1 complete, but Phase 2 is not complete, redirect to /questionnaire-phase2
         if (isPhase1Complete && !isPhase2Complete) {
-          if (!goingToPhase2Setup && !goingToDashboard) { // Allow dashboard to show banner
+          // Allow dashboard to show banner, but redirect other attempts
+          if (!goingToPhase2Setup && !goingToDashboard) {
             debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete. Redirecting to /questionnaire-phase2');
             return '/questionnaire-phase2';
           }
           debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /questionnaire-phase2 or /home. Allowing.');
-          return null; // Allow navigation to /questionnaire-phase2 or /home
+          return null;
         }
 
         // 5. If logged in AND both phases are complete:
@@ -263,7 +297,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         }
 
         debugPrint('  Redirect decision: No specific redirection needed. Allowing current path.');
-        return null; // Allow navigation to any other path
+        return null;
       },
       errorBuilder: (context, state) => const NotFoundScreen(),
     );
@@ -271,10 +305,8 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   void dispose() {
-    // Services are managed by Provider, no manual dispose here.
     super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +324,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription<AuthState> _subscription;
 
   GoRouterRefreshStream(Stream<AuthState> stream) {
-    notifyListeners(); // Notify immediately to check initial state
+    notifyListeners();
     _subscription = stream.asBroadcastStream().listen(
           (AuthState event) => notifyListeners(),
         );

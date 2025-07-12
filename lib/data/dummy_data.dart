@@ -1,7 +1,7 @@
 // lib/data/dummy_data.dart
 
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
-import 'package:bliindaidating/models/questionnaire/question.dart'; // Ensure this path is correct and file exists
+import 'package:bliindaidating/models/questionnaire/question.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:uuid/uuid.dart'; // For generating unique IDs
 
@@ -136,40 +136,35 @@ List<UserProfile> dummyDiscoveryProfiles = [
   UserProfile(
     userId: _uuid.v4(),
     email: 'user1@example.com',
-    fullLegalName: 'Alice Wonderland', // New field, explicitly setting
+    fullLegalName: 'Alice Wonderland',
     displayName: 'WonderAlice',
     profilePictureUrl: 'https://picsum.photos/id/1005/200/300',
     bio: 'An avid reader and aspiring writer, always looking for new stories and adventures. Loves deep conversations and exploring hidden cafes.',
     lookingFor: 'Long-term relationship',
-    // NEW REQUIRED FIELDS:
     agreedToTerms: true,
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
     isPhase2Complete: true,
-    genderIdentity: 'Female', // RENAMED from 'gender'
+    genderIdentity: 'Female',
     dateOfBirth: DateTime(1995, 3, 15),
     phoneNumber: '+15551234567',
-    locationCity: 'Salt Lake City', // Added for completeness, inferred from zip
-    locationState: 'UT', // Added for completeness, inferred from zip
-    locationZipCode: '84101', // RENAMED from 'addressZip'
-    hobbiesAndInterests: ['Books', 'Writing', 'Coffee', 'Philosophy', 'Hiking'], // Corrected to List<String>
+    locationZipCode: '84101',
+    hobbiesAndInterests: ['Books', 'Writing', 'Coffee', 'Philosophy', 'Hiking'],
     sexualOrientation: 'Straight',
-    heightCm: 165.0, // RENAMED from 'height'
-    // New Phase 2 fields (example values)
+    heightCm: 165.0,
     governmentIdFrontUrl: 'https://example.com/id_alice_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_alice_back.jpg',
     ethnicity: 'Caucasian',
-    languagesSpoken: ['English', 'Spanish'], // Corrected to List<String>
+    languagesSpoken: ['English', 'Spanish'],
     desiredOccupation: 'Writer',
     educationLevel: 'Master\'s Degree',
-    loveLanguages: ['Quality Time', 'Words of Affirmation'], // Corrected to List<String>
-    favoriteMedia: ['Dune', 'The Witcher', 'Studio Ghibli films'], // Corrected to List<String>
+    loveLanguages: ['Quality Time', 'Words of Affirmation'],
+    favoriteMedia: ['Dune', 'The Witcher', 'Studio Ghibli films'],
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: true,
     relationshipGoals: 'Build a family and travel the world',
-    dealbreakers: ['Dishonesty', 'lack of ambition'], // Corrected to List<String>
-    // Phase 3 fields (example values)
+    dealbreakers: ['Dishonesty', 'lack of ambition'],
     religionOrSpiritualBeliefs: 'Spiritual but not religious',
     politicalViews: 'Liberal',
     diet: 'Vegetarian',
@@ -177,7 +172,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Socially',
     exerciseFrequencyOrFitnessLevel: '3 times a week',
     sleepSchedule: 'Early bird',
-    personalityTraits: ['Introverted', 'empathetic', 'curious'], // Corrected to List<String>
+    personalityTraits: ['Introverted', 'empathetic', 'curious'],
     willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Pisces',
@@ -186,16 +181,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'Dog owner',
     travelFrequencyOrFavoriteDestinations: 'Quarterly, prefer Asia',
-    profileVisibilityPreferences: 'Public',
+    // CORRECTED: Changed 'Public' string to a Map<String, bool>
+    profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
-
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
     updatedAt: DateTime.now().subtract(const Duration(days: 5)),
     // Keeping deprecated fields for compatibility.
     fullName: 'Alice Wonderland',
     gender: 'Female',
     addressZip: '84101',
-    interests: ['Books', 'Writing'], // Corrected to List<String>
+    interests: ['Books', 'Writing'],
     height: 165.0,
   ),
   // Profile 2
@@ -207,7 +202,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     profilePictureUrl: 'https://picsum.photos/id/1006/200/300',
     bio: 'Passionate about building things, from software to furniture. Enjoys problem-solving and a good challenge. Loves indie music and quiet evenings.',
     lookingFor: 'Friendship',
-    // NEW REQUIRED FIELDS:
     agreedToTerms: true,
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
@@ -215,27 +209,23 @@ List<UserProfile> dummyDiscoveryProfiles = [
     genderIdentity: 'Male',
     dateOfBirth: DateTime(1990, 7, 22),
     phoneNumber: '+15552345678',
-    locationCity: 'Salt Lake City',
-    locationState: 'UT',
     locationZipCode: '84102',
-    hobbiesAndInterests: ['Coding', 'Woodworking', 'Indie Music', 'Gaming', 'Cooking'], // Corrected to List<String>
+    hobbiesAndInterests: ['Coding', 'Woodworking', 'Indie Music', 'Gaming', 'Cooking'],
     sexualOrientation: 'Straight',
     heightCm: 180.0,
-    // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_bob_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_bob_back.jpg',
     ethnicity: 'Asian',
-    languagesSpoken: ['English', 'Japanese'], // Corrected to List<String>
+    languagesSpoken: ['English', 'Japanese'],
     desiredOccupation: 'Software Engineer',
     educationLevel: 'Bachelor\'s Degree',
-    loveLanguages: ['Acts of Service', 'Physical Touch'], // Corrected to List<String>
-    favoriteMedia: ['Sci-fi movies', 'rock music'], // Corrected to List<String>
+    loveLanguages: ['Acts of Service', 'Physical Touch'],
+    favoriteMedia: ['Sci-fi movies', 'rock music'],
     maritalStatus: 'Divorced',
     hasChildren: true,
     wantsChildren: false,
     relationshipGoals: 'Meaningful connections',
-    dealbreakers: ['Lack of humor', 'dishonesty'], // Corrected to List<String>
-    // Phase 3 fields (example values)
+    dealbreakers: ['Lack of humor', 'dishonesty'],
     religionOrSpiritualBeliefs: 'None',
     politicalViews: 'Centrist',
     diet: 'Omnivore',
@@ -243,7 +233,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Often',
     exerciseFrequencyOrFitnessLevel: 'Daily',
     sleepSchedule: 'Night owl',
-    personalityTraits: ['Extroverted', 'logical', 'adventurous'], // Corrected to List<String>
+    personalityTraits: ['Extroverted', 'logical', 'adventurous'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Cancer',
@@ -252,16 +242,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Rarely, prefer US',
-    profileVisibilityPreferences: 'Public',
+    // CORRECTED: Changed 'Public' string to a Map<String, bool>
+    profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': false, 'events': true},
-
     createdAt: DateTime.now().subtract(const Duration(days: 45)),
     updatedAt: DateTime.now().subtract(const Duration(days: 10)),
     // Keeping deprecated fields for compatibility
     fullName: 'Bob The Builder',
     gender: 'Male',
     addressZip: '84102',
-    interests: ['Coding', 'Woodworking'], // Corrected to List<String>
+    interests: ['Coding', 'Woodworking'],
     height: 180.0,
   ),
   // Profile 3
@@ -273,7 +263,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     profilePictureUrl: 'https://picsum.photos/id/1008/200/300',
     bio: 'Old soul with a love for classic cinema and jazz. Enjoys long walks, photography, and exploring historical sites. Values authenticity.',
     lookingFor: 'Something open',
-    // NEW REQUIRED FIELDS:
     agreedToTerms: true,
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
@@ -281,27 +270,23 @@ List<UserProfile> dummyDiscoveryProfiles = [
     genderIdentity: 'Male',
     dateOfBirth: DateTime(1988, 11, 30),
     phoneNumber: '+15553456789',
-    locationCity: 'Salt Lake City',
-    locationState: 'UT',
     locationZipCode: '84103',
-    hobbiesAndInterests: ['Movies', 'Jazz Music', 'Photography', 'History', 'Walking'], // Corrected to List<String>
+    hobbiesAndInterests: ['Movies', 'Jazz Music', 'Photography', 'History', 'Walking'],
     sexualOrientation: 'Bisexual',
     heightCm: 175.0,
-    // New Phase 2 fields (example values)
     governmentIdFrontUrl: 'https://example.com/id_charlie_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_charlie_back.jpg',
     ethnicity: 'Hispanic',
-    languagesSpoken: ['English', 'French'], // Corrected to List<String>
+    languagesSpoken: ['English', 'French'],
     desiredOccupation: 'Historian',
     educationLevel: 'Ph.D.',
-    loveLanguages: ['Physical Touch', 'Quality Time'], // Corrected to List<String>
-    favoriteMedia: ['Classic films', 'Jazz'], // Corrected to List<String>
+    loveLanguages: ['Physical Touch', 'Quality Time'],
+    favoriteMedia: ['Classic films', 'Jazz'],
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Meaningful connection and intellectual companionship',
-    dealbreakers: ['Superficiality'], // Corrected to List<String>
-    // Phase 3 fields (example values)
+    dealbreakers: ['Superficiality'],
     religionOrSpiritualBeliefs: 'Christian',
     politicalViews: 'Moderate',
     diet: 'Pescatarian',
@@ -309,7 +294,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Walking daily',
     sleepSchedule: 'Flexible',
-    personalityTraits: ['Calm', 'thoughtful', 'artistic'], // Corrected to List<String>
+    personalityTraits: ['Calm', 'thoughtful', 'artistic'],
     willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Sagittarius',
@@ -318,16 +303,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Annually, prefer Europe',
-    profileVisibilityPreferences: 'Friends Only',
+    // CORRECTED: Changed 'Friends Only' string to a Map<String, bool>
+    profileVisibilityPreferences: {'public': false, 'friendsOnly': true, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
-
     createdAt: DateTime.now().subtract(const Duration(days: 60)),
     updatedAt: DateTime.now().subtract(const Duration(days: 15)),
     // Keeping deprecated fields for compatibility
     fullName: 'Charlie Chaplin',
     gender: 'Male',
     addressZip: '84103',
-    interests: ['Movies', 'Jazz Music'], // Corrected to List<String>
+    interests: ['Movies', 'Jazz Music'],
     height: 175.0,
   ),
   // Profile 4
@@ -339,7 +324,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     profilePictureUrl: 'https://picsum.photos/id/1011/200/300',
     bio: 'Fitness enthusiast and outdoor adventurer. Loves hiking, climbing, and anything that gets the adrenaline pumping. Seeks a partner in crime for life\'s adventures.',
     lookingFor: 'Long-term relationship',
-    // NEW REQUIRED FIELDS:
     agreedToTerms: true,
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
@@ -347,27 +331,23 @@ List<UserProfile> dummyDiscoveryProfiles = [
     genderIdentity: 'Female',
     dateOfBirth: DateTime(1992, 9, 1),
     phoneNumber: '+15554567890',
-    locationCity: 'Salt Lake City',
-    locationState: 'UT',
     locationZipCode: '84104',
-    hobbiesAndInterests: ['Fitness', 'Hiking', 'Climbing', 'Travel', 'Healthy Eating'], // Corrected to List<String>
+    hobbiesAndInterests: ['Fitness', 'Hiking', 'Climbing', 'Travel', 'Healthy Eating'],
     sexualOrientation: 'Straight',
     heightCm: 170.0,
-    // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_diana_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_diana_back.jpg',
     ethnicity: 'Mixed',
-    languagesSpoken: ['English'], // Corrected to List<String>
+    languagesSpoken: ['English'],
     desiredOccupation: 'Personal Trainer',
     educationLevel: 'Associate Degree',
-    loveLanguages: ['Acts of Service', 'Physical Touch'], // Corrected to List<String>
-    favoriteMedia: ['Action movies', 'pop music'], // Corrected to List<String>
+    loveLanguages: ['Acts of Service', 'Physical Touch'],
+    favoriteMedia: ['Action movies', 'pop music'],
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: true,
     relationshipGoals: 'Active partnership and adventure',
-    dealbreakers: ['Laziness', 'negativity'], // Corrected to List<String>
-    // Phase 3 fields
+    dealbreakers: ['Laziness', 'negativity'],
     religionOrSpiritualBeliefs: 'Atheist',
     politicalViews: 'Independent',
     diet: 'Keto',
@@ -375,7 +355,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Daily',
     sleepSchedule: 'Consistent',
-    personalityTraits: ['Energetic', 'confident', 'direct'], // Corrected to List<String>
+    personalityTraits: ['Energetic', 'confident', 'direct'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Virgo',
@@ -384,16 +364,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'Dog owner',
     travelFrequencyOrFavoriteDestinations: 'Annually, prefer mountains',
-    profileVisibilityPreferences: 'Public',
+    // CORRECTED: Changed 'Public' string to a Map<String, bool>
+    profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
-
     createdAt: DateTime.now().subtract(const Duration(days: 25)),
     updatedAt: DateTime.now().subtract(const Duration(days: 2)),
     // Keeping deprecated fields for compatibility
     fullName: 'Diana Prince',
     gender: 'Female',
     addressZip: '84104',
-    interests: ['Fitness', 'Hiking'], // Corrected to List<String>
+    interests: ['Fitness', 'Hiking'],
     height: 170.0,
   ),
   // Profile 5
@@ -405,7 +385,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     profilePictureUrl: 'https://picsum.photos/id/1012/200/300',
     bio: 'Gardener by day, stargazer by night. Finds beauty in nature\'s smallest details. Loves quiet evenings, classical music, and a good cup of tea.',
     lookingFor: 'Friendship',
-    // NEW REQUIRED FIELDS:
     agreedToTerms: true,
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
@@ -413,27 +392,23 @@ List<UserProfile> dummyDiscoveryProfiles = [
     genderIdentity: 'Female',
     dateOfBirth: DateTime(1985, 4, 20),
     phoneNumber: '+15555678901',
-    locationCity: 'Salt Lake City',
-    locationState: 'UT',
     locationZipCode: '84105',
-    hobbiesAndInterests: ['Gardening', 'Astronomy', 'Classical Music', 'Tea', 'Nature'], // Corrected to List<String>
+    hobbiesAndInterests: ['Gardening', 'Astronomy', 'Classical Music', 'Tea', 'Nature'],
     sexualOrientation: 'Bisexual',
     heightCm: 160.0,
-    // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_eve_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_eve_back.jpg',
     ethnicity: 'Caucasian',
-    languagesSpoken: ['English'], // Corrected to List<String>
+    languagesSpoken: ['English'],
     desiredOccupation: 'Botanist',
     educationLevel: 'Bachelor\'s Degree',
-    loveLanguages: ['Quality Time', 'Gifts'], // Corrected to List<String>
-    favoriteMedia: ['Documentaries', 'instrumental music'], // Corrected to List<String>
+    loveLanguages: ['Quality Time', 'Gifts'],
+    favoriteMedia: ['Documentaries', 'instrumental music'],
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Deep, intellectual connection',
-    dealbreakers: ['Loud environments', 'superficiality'], // Corrected to List<String>
-    // Phase 3 fields
+    dealbreakers: ['Loud environments', 'superficiality'],
     religionOrSpiritualBeliefs: 'Spiritual',
     politicalViews: 'Liberal',
     diet: 'Vegan',
@@ -441,7 +416,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Yoga',
     sleepSchedule: 'Early to bed',
-    personalityTraits: ['Calm', 'observant', 'creative'], // Corrected to List<String>
+    personalityTraits: ['Calm', 'observant', 'creative'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Taurus',
@@ -450,16 +425,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'Cat owner',
     travelFrequencyOrFavoriteDestinations: 'Rarely, prefer local parks',
-    profileVisibilityPreferences: 'Public',
+    // CORRECTED: Changed 'Public' string to a Map<String, bool>
+    profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
-
     createdAt: DateTime.now().subtract(const Duration(days: 50)),
     updatedAt: DateTime.now().subtract(const Duration(days: 7)),
     // Keeping deprecated fields for compatibility
     fullName: 'Eve Adams',
     gender: 'Female',
     addressZip: '84105',
-    interests: ['Gardening', 'Astronomy'], // Corrected to List<String>
+    interests: ['Gardening', 'Astronomy'],
     height: 160.0,
   ),
   // Profile 6
@@ -471,7 +446,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     profilePictureUrl: 'https://picsum.photos/id/1015/200/300',
     bio: 'Musician and a free spirit. Loves spending time by the ocean, composing melodies, and exploring new cultures through food. Looking for someone to share creative journeys with.',
     lookingFor: 'Casual dating',
-    // NEW REQUIRED FIELDS:
     agreedToTerms: true,
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
@@ -479,27 +453,23 @@ List<UserProfile> dummyDiscoveryProfiles = [
     genderIdentity: 'Male',
     dateOfBirth: DateTime(1993, 8, 10),
     phoneNumber: '+15556789012',
-    locationCity: 'Salt Lake City',
-    locationState: 'UT',
     locationZipCode: '84106',
-    hobbiesAndInterests: ['Music', 'Travel', 'Cooking', 'Beach', 'Culture'], // Corrected to List<String>
+    hobbiesAndInterests: ['Music', 'Travel', 'Cooking', 'Beach', 'Culture'],
     sexualOrientation: 'Gay',
     heightCm: 178.0,
-    // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_frank_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_frank_back.jpg',
     ethnicity: 'African American',
-    languagesSpoken: ['English', 'Portuguese'], // Corrected to List<String>
+    languagesSpoken: ['English', 'Portuguese'],
     desiredOccupation: 'Musician',
     educationLevel: 'Some College',
-    loveLanguages: ['Acts of Service', 'Words of Affirmation'], // Corrected to List<String>
-    favoriteMedia: ['Soul music', 'documentaries'], // Corrected to List<String>
+    loveLanguages: ['Acts of Service', 'Words of Affirmation'],
+    favoriteMedia: ['Soul music', 'documentaries'],
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Creative partnership',
-    dealbreakers: ['Close-mindedness', 'negativity'], // Corrected to List<String>
-    // Phase 3 fields
+    dealbreakers: ['Close-mindedness', 'negativity'],
     religionOrSpiritualBeliefs: 'None',
     politicalViews: 'Liberal',
     diet: 'Omnivore',
@@ -507,7 +477,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Socially',
     exerciseFrequencyOrFitnessLevel: 'Occasionally',
     sleepSchedule: 'Flexible',
-    personalityTraits: ['Creative', 'laid-back', 'empathetic'], // Corrected to List<String>
+    personalityTraits: ['Creative', 'laid-back', 'empathetic'],
     willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Open Relationship',
     astrologicalSign: 'Leo',
@@ -516,16 +486,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'Anxiety',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Frequent, prefer South America',
-    profileVisibilityPreferences: 'Public',
+    // CORRECTED: Changed 'Public' string to a Map<String, bool>
+    profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
-
     createdAt: DateTime.now().subtract(const Duration(days: 35)),
     updatedAt: DateTime.now().subtract(const Duration(days: 3)),
     // Keeping deprecated fields for compatibility
     fullName: 'Frank Ocean',
     gender: 'Male',
     addressZip: '84106',
-    interests: ['Music', 'Travel'], // Corrected to List<String>
+    interests: ['Music', 'Travel'],
     height: 178.0,
   ),
   // Profile 7
@@ -537,7 +507,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     profilePictureUrl: 'https://picsum.photos/id/1018/200/300',
     bio: 'Software engineer passionate about clean code and innovative solutions. Enjoys sci-fi, hiking, and a good cup of coffee. Always learning.',
     lookingFor: 'Long-term relationship',
-    // NEW REQUIRED FIELDS:
     agreedToTerms: true,
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
@@ -545,27 +514,23 @@ List<UserProfile> dummyDiscoveryProfiles = [
     genderIdentity: 'Female',
     dateOfBirth: DateTime(1991, 1, 25),
     phoneNumber: '+15557890123',
-    locationCity: 'Salt Lake City',
-    locationState: 'UT',
     locationZipCode: '84107',
-    hobbiesAndInterests: ['Technology', 'Coding', 'Sci-Fi', 'Hiking', 'Coffee'], // Corrected to List<String>
+    hobbiesAndInterests: ['Technology', 'Coding', 'Sci-Fi', 'Hiking', 'Coffee'],
     sexualOrientation: 'Straight',
     heightCm: 168.0,
-    // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_grace_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_grace_back.jpg',
     ethnicity: 'Asian',
-    languagesSpoken: ['English', 'Mandarin'], // Corrected to List<String>
+    languagesSpoken: ['English', 'Mandarin'],
     desiredOccupation: 'Data Scientist',
     educationLevel: 'Master\'s Degree',
-    loveLanguages: ['Acts of Service', 'Quality Time'], // Corrected to List<String>
-    favoriteMedia: ['Sci-fi series', 'electronic music'], // Corrected to List<String>
+    loveLanguages: ['Acts of Service', 'Quality Time'],
+    favoriteMedia: ['Sci-fi series', 'electronic music'],
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Intellectual partnership and shared growth',
-    dealbreakers: ['Resistance to learning', 'dishonesty'], // Corrected to List<String>
-    // Phase 3 fields
+    dealbreakers: ['Resistance to learning', 'dishonesty'],
     religionOrSpiritualBeliefs: 'Agnostic',
     politicalViews: 'Liberal',
     diet: 'Omnivore',
@@ -573,7 +538,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Occasionally',
     sleepSchedule: 'Late to bed',
-    personalityTraits: ['Analytical', 'curious', 'introverted'], // Corrected to List<String>
+    personalityTraits: ['Analytical', 'curious', 'introverted'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Aquarius',
@@ -582,16 +547,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Rarely, prefer quiet getaways',
-    profileVisibilityPreferences: 'Public',
+    // CORRECTED: Changed 'Public' string to a Map<String, bool>
+    profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
-
     createdAt: DateTime.now().subtract(const Duration(days: 20)),
     updatedAt: DateTime.now().subtract(const Duration(days: 1)),
     // Keeping deprecated fields for compatibility
     fullName: 'Grace Hopper',
     gender: 'Female',
     addressZip: '84107',
-    interests: ['Technology', 'Coding'], // Corrected to List<String>
+    interests: ['Technology', 'Coding'],
     height: 168.0,
   ),
   // Add more dummy users as needed, ensuring all required fields are provided

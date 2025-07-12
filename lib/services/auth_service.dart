@@ -1,7 +1,9 @@
 // lib/services/auth_service.dart
 
-import 'package:flutter/foundation.dart'; // For ChangeNotifier
+import 'package:flutter/material.dart'; // <--- ADD THIS LINE
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/services/profile_service.dart';
 
 /// A service class to handle user authentication (login, signup, logout)
 /// and provide access to the current authenticated user.
@@ -15,13 +17,11 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   AuthService() {
-    // Listen to auth state changes and update _currentUser
     _supabaseClient.auth.onAuthStateChange.listen((data) {
       _currentUser = data.session?.user;
-      notifyListeners(); // Notify listeners when auth state changes
+      notifyListeners();
       debugPrint('AuthService: Auth state changed. Current user: ${_currentUser?.email}');
     });
-    // Initialize current user on startup
     _currentUser = _supabaseClient.auth.currentUser;
     debugPrint('AuthService: Initial user: ${_currentUser?.email}');
   }
@@ -38,7 +38,7 @@ class AuthService extends ChangeNotifier {
       debugPrint('AuthService: User signed in: ${_currentUser?.email}');
     } on AuthException catch (e) {
       debugPrint('AuthService: Sign in error: ${e.message}');
-      rethrow; // Re-throw to be caught by UI
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -57,30 +57,34 @@ class AuthService extends ChangeNotifier {
       debugPrint('AuthService: User signed up: ${_currentUser?.email}');
     } on AuthException catch (e) {
       debugPrint('AuthService: Sign up error: ${e.message}');
-      rethrow; // Re-throw to be caught by UI
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> signOut() async {
+  Future<void> signOut({BuildContext? context}) async {
     _isLoading = true;
     notifyListeners();
     try {
       await _supabaseClient.auth.signOut();
       _currentUser = null;
       debugPrint('AuthService: User signed out.');
+
+      if (context != null) {
+        Provider.of<ProfileService>(context, listen: false).clearProfile();
+      }
+
     } on AuthException catch (e) {
       debugPrint('AuthService: Sign out error: ${e.message}');
-      rethrow; // Re-throw to be caught by UI
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Method to get the current user directly, useful for non-reactive contexts
   User? getCurrentUserSync() {
     return _supabaseClient.auth.currentUser;
   }

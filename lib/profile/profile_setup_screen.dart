@@ -1,5 +1,3 @@
-// lib/profile/profile_setup_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -216,7 +214,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _displayNameController.text = userProfile.displayName ?? '';
         _heightController.text = userProfile.heightCm?.toString() ?? userProfile.height?.toString() ?? '';
         _phoneNumberController.text = userProfile.phoneNumber ?? '';
-        _addressZipController.text = userProfile.locationZipCode ?? userProfile.addressZip ?? ''; // Prioritize new field
+        // Only use locationZipCode, as locationCity/State are not desired
+        _addressZipController.text = userProfile.locationZipCode ?? userProfile.addressZip ?? '';
         _bioController.text = userProfile.bio ?? '';
 
         _dateOfBirth = userProfile.dateOfBirth;
@@ -360,8 +359,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         profilePictureUrl: uploadedPhotoPath, // This is for analysis photo, map to correct field
         dateOfBirth: _dateOfBirth,
         phoneNumber: _phoneNumberController.text.trim(),
-        locationCity: existingProfile?.locationCity, // Not collected in this screen
-        locationState: existingProfile?.locationState, // Not collected in this screen
+        // REMOVED: locationCity: existingProfile?.locationCity,
+        // REMOVED: locationState: existingProfile?.locationState,
         locationZipCode: _addressZipController.text.trim(), // Map addressZip to new field
         genderIdentity: _gender, // Map gender to new field
         sexualOrientation: _sexualOrientation,
