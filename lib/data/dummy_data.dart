@@ -181,17 +181,16 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'Dog owner',
     travelFrequencyOrFavoriteDestinations: 'Quarterly, prefer Asia',
-    // CORRECTED: Changed 'Public' string to a Map<String, bool>
     profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
     updatedAt: DateTime.now().subtract(const Duration(days: 5)),
     // Keeping deprecated fields for compatibility.
-    fullName: 'Alice Wonderland',
-    gender: 'Female',
-    addressZip: '84101',
-    interests: ['Books', 'Writing'],
-    height: 165.0,
+    fullName: 'Alice Wonderland', // Deprecated - new code should use fullLegalName
+    gender: 'Female', // Deprecated - new code should use genderIdentity
+    addressZip: '84101', // Deprecated - new code should use locationZipCode
+    interests: 'Books, Writing', // Deprecated - new code should use hobbiesAndInterests (List<String>)
+    height: 165.0, // Deprecated - new code should use heightCm
   ),
   // Profile 2
   UserProfile(
@@ -242,7 +241,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Rarely, prefer US',
-    // CORRECTED: Changed 'Public' string to a Map<String, bool>
     profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': false, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 45)),
@@ -251,7 +249,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     fullName: 'Bob The Builder',
     gender: 'Male',
     addressZip: '84102',
-    interests: ['Coding', 'Woodworking'],
+    interests: 'Coding, Woodworking',
     height: 180.0,
   ),
   // Profile 3
@@ -303,7 +301,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Annually, prefer Europe',
-    // CORRECTED: Changed 'Friends Only' string to a Map<String, bool>
     profileVisibilityPreferences: {'public': false, 'friendsOnly': true, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 60)),
@@ -312,7 +309,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     fullName: 'Charlie Chaplin',
     gender: 'Male',
     addressZip: '84103',
-    interests: ['Movies', 'Jazz Music'],
+    interests: 'Movies, Jazz Music',
     height: 175.0,
   ),
   // Profile 4
@@ -364,7 +361,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'Dog owner',
     travelFrequencyOrFavoriteDestinations: 'Annually, prefer mountains',
-    // CORRECTED: Changed 'Public' string to a Map<String, bool>
     profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
     createdAt: DateTime.now().subtract(const Duration(days: 25)),
@@ -373,7 +369,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     fullName: 'Diana Prince',
     gender: 'Female',
     addressZip: '84104',
-    interests: ['Fitness', 'Hiking'],
+    interests: 'Fitness, Hiking',
     height: 170.0,
   ),
   // Profile 5
@@ -425,7 +421,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'Cat owner',
     travelFrequencyOrFavoriteDestinations: 'Rarely, prefer local parks',
-    // CORRECTED: Changed 'Public' string to a Map<String, bool>
     profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 50)),
@@ -434,7 +429,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     fullName: 'Eve Adams',
     gender: 'Female',
     addressZip: '84105',
-    interests: ['Gardening', 'Astronomy'],
+    interests: 'Gardening, Astronomy',
     height: 160.0,
   ),
   // Profile 6
@@ -486,7 +481,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'Anxiety',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Frequent, prefer South America',
-    // CORRECTED: Changed 'Public' string to a Map<String, bool>
     profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 35)),
@@ -495,7 +489,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     fullName: 'Frank Ocean',
     gender: 'Male',
     addressZip: '84106',
-    interests: ['Music', 'Travel'],
+    interests: 'Music, Travel',
     height: 178.0,
   ),
   // Profile 7
@@ -547,7 +541,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     mentalHealthDisclosures: 'None',
     petOwnership: 'None',
     travelFrequencyOrFavoriteDestinations: 'Rarely, prefer quiet getaways',
-    // CORRECTED: Changed 'Public' string to a Map<String, bool>
     profileVisibilityPreferences: {'public': true, 'friendsOnly': false, 'private': false},
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 20)),
@@ -556,7 +549,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     fullName: 'Grace Hopper',
     gender: 'Female',
     addressZip: '84107',
-    interests: ['Technology', 'Coding'],
+    interests: 'Technology, Coding',
     height: 168.0,
   ),
   // Add more dummy users as needed, ensuring all required fields are provided

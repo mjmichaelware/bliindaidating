@@ -223,8 +223,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _gender = userProfile.genderIdentity ?? userProfile.gender; // Prioritize new field
         _sexualOrientation = userProfile.sexualOrientation;
         _lookingFor = userProfile.lookingFor;
-        // Corrected: Ensure List.from receives a non-null Iterable
-        _selectedInterests = List.from(userProfile.hobbiesAndInterests ?? userProfile.interests ?? []);
+        // FIXED: Directly use hobbiesAndInterests as it's the List<String> field
+        _selectedInterests = List.from(userProfile.hobbiesAndInterests);
         _agreedToTerms = userProfile.agreedToTerms;
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
         _imagePreviewPath = userProfile.profilePictureUrl;
@@ -241,22 +241,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showBio = userProfile.bio != null;
         _showSexualOrientation = userProfile.sexualOrientation != null;
         _showHeight = userProfile.heightCm != null || userProfile.height != null;
-        // Corrected: Use ?? [] for isNotEmpty check
-        _showInterests = (userProfile.hobbiesAndInterests ?? []).isNotEmpty || (userProfile.interests ?? []).isNotEmpty;
+        // FIXED: Check hobbiesAndInterests.isNotEmpty OR interests string is not empty
+        _showInterests = userProfile.hobbiesAndInterests.isNotEmpty || (userProfile.interests?.isNotEmpty ?? false);
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.locationZipCode != null || userProfile.addressZip != null;
         _showEthnicity = userProfile.ethnicity != null; // NEW: check for ethnicity
-        _showLanguagesSpoken = (userProfile.languagesSpoken ?? []).isNotEmpty; // Corrected
+        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty;
         _showEducationLevel = userProfile.educationLevel != null; // NEW
         _showDesiredOccupation = userProfile.desiredOccupation != null; // NEW
-        _showLoveLanguages = (userProfile.loveLanguages ?? []).isNotEmpty; // Corrected
-        _showFavoriteMedia = (userProfile.favoriteMedia ?? []).isNotEmpty; // Corrected
+        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        _showLoveLanguages = userProfile.loveLanguages.isNotEmpty;
+        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        _showFavoriteMedia = userProfile.favoriteMedia.isNotEmpty;
         _showMaritalStatus = userProfile.maritalStatus != null; // NEW
         _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null; // NEW
         _showWillingToRelocate = userProfile.willingToRelocate != null; // NEW
         _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null; // NEW
         _showLoveRelationshipGoals = userProfile.relationshipGoals != null; // NEW
-        _showDealbreakersBoundaries = (userProfile.dealbreakers ?? []).isNotEmpty; // Corrected
+        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        _showDealbreakersBoundaries = userProfile.dealbreakers.isNotEmpty;
         _showAstrologicalSign = userProfile.astrologicalSign != null; // NEW
         _showAttachmentStyle = userProfile.attachmentStyle != null; // NEW
         _showCommunicationStyle = userProfile.communicationStyle != null; // NEW
@@ -270,7 +274,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showDrinkingHabits = userProfile.drinkingHabits != null; // NEW
         _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null; // NEW
         _showSleepSchedule = userProfile.sleepSchedule != null; // NEW
-        _showPersonalityTraits = (userProfile.personalityTraits ?? []).isNotEmpty; // Corrected
+        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        _showPersonalityTraits = userProfile.personalityTraits.isNotEmpty;
 
       }
       debugPrint('ProfileSetupScreen: Preferences loaded.');

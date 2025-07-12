@@ -154,7 +154,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
       debugPrint('AI Generated Dummy Profiles:');
       for (var profile in dummyProfiles) {
-        debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${(profile.interests ?? []).join(', ')}');
+        // FIXED: Use profile.hobbiesAndInterests which is List<String>
+        debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${profile.hobbiesAndInterests.join(', ')}');
       }
 
       final List<NewsfeedItem> newsfeedItems = await _openAIService.generateNewsfeedItems(

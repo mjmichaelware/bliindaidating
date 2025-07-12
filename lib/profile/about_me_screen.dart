@@ -114,7 +114,8 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
           _sexualOrientation = profile.sexualOrientation;
           _lookingFor = profile.lookingFor;
           _selectedInterests.clear();
-          _selectedInterests.addAll(profile.hobbiesAndInterests ?? profile.interests ?? []);
+          // FIXED: Use profile.hobbiesAndInterests directly as it's already a List<String>
+          _selectedInterests.addAll(profile.hobbiesAndInterests);
           _profilePictureUrl = profile.profilePictureUrl;
           _newPickedImage = null; // Clear any previously picked image on load
           _newPickedImageBytes = null; // Clear any cached bytes

@@ -73,9 +73,9 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     return _discoverableProfiles.where((profile) {
       // Search by display name, full name, or interests
       final displayName = profile.displayName?.toLowerCase() ?? '';
-      final fullName = profile.fullName?.toLowerCase() ?? '';
-      // Corrected: Use ?? [] before calling map and join
-      final interests = (profile.interests ?? []).map((i) => i.toLowerCase()).join(' ');
+      final fullName = profile.fullLegalName?.toLowerCase() ?? ''; // Changed to fullLegalName as fullName is less certain for search
+      // Corrected: Use hobbiesAndInterests directly as it's a List<String>
+      final interests = profile.hobbiesAndInterests.map((i) => i.toLowerCase()).join(' ');
       return displayName.contains(queryLower) ||
              fullName.contains(queryLower) ||
              interests.contains(queryLower);
@@ -84,7 +84,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
 
   void _onLikeProfile(UserProfile profile) {
     // TODO: Implement actual like logic (e.g., store in a local list, send to backend later)
-    debugPrint('Liked profile: ${profile.displayName ?? profile.fullName}');
+    debugPrint('Liked profile: ${profile.displayName ?? profile.fullLegalName}'); // Changed to fullLegalName
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('You liked ${profile.displayName ?? "this user"}! (Dummy)')),
     );

@@ -17,8 +17,9 @@ class ProfileDiscoveryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ensure interests is a non-nullable list for display purposes
-    final List<String> interestsToDisplay = profile.hobbiesAndInterests ?? profile.interests ?? [];
+    // Corrected: Directly use profile.hobbiesAndInterests as it's already a List<String>.
+    // It's initialized as const [] in UserProfile, so it will never be null.
+    final List<String> interestsToDisplay = profile.hobbiesAndInterests;
 
     return GestureDetector(
       onTap: () {
@@ -86,7 +87,7 @@ class ProfileDiscoveryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          profile.displayName ?? profile.fullName ?? 'Unnamed User',
+                          profile.displayName ?? profile.fullLegalName ?? 'Unnamed User', // Corrected: Used fullLegalName
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.bold,

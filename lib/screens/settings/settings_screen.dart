@@ -9,7 +9,7 @@ import 'package:bliindaidating/controllers/theme_controller.dart';
 
 import 'package:bliindaidating/screens/settings/widgets/dating_preferences_form.dart';
 import 'package:bliindaidating/screens/settings/widgets/profile_visibility_settings.dart';
-import 'package:bliindaidating/screens/settings/widgets/account_settings_form.dart'; // CORRECTED: Added .dart
+import 'package:bliindaidating/screens/settings/widgets/account_settings_form.dart';
 import 'package:bliindaidating/screens/settings/widgets/notification_settings.dart';
 import 'package:bliindaidating/screens/settings/widgets/privacy_data_settings.dart';
 
@@ -113,43 +113,42 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         _maxDistance = 50;
 
         // Mock loading visibility settings (assuming they would be stored in UserProfile or a separate settings model)
-        _showFullName = userProfile.fullName != null;
+        _showFullName = userProfile.fullLegalName != null; // Corrected: Use fullLegalName
         _showDisplayName = userProfile.displayName != null;
         _showAge = userProfile.dateOfBirth != null;
-        _showGender = userProfile.gender != null;
+        _showGender = userProfile.genderIdentity != null; // Corrected: Use genderIdentity
         _showBio = userProfile.bio != null;
         _showSexualOrientation = userProfile.sexualOrientation != null;
-        _showHeight = userProfile.height != null;
-        // Corrected: Use ?? [] for isNotEmpty check
-        _showInterests = (userProfile.interests ?? []).isNotEmpty;
+        _showHeight = userProfile.heightCm != null; // Corrected: Use heightCm
+        _showInterests = userProfile.hobbiesAndInterests.isNotEmpty; // Corrected: Use hobbiesAndInterests (List<String>)
         _showLookingFor = userProfile.lookingFor != null;
-        _showLocation = userProfile.addressZip != null;
-        _showEthnicity = userProfile.ethnicity != null; // Corrected
-        _showLanguagesSpoken = (userProfile.languagesSpoken ?? []).isNotEmpty; // Corrected
-        _showEducationLevel = userProfile.educationLevel != null; // Corrected
-        _showDesiredOccupation = userProfile.desiredOccupation != null; // Corrected
-        _showLoveLanguages = (userProfile.loveLanguages ?? []).isNotEmpty; // Corrected
-        _showFavoriteMedia = (userProfile.favoriteMedia ?? []).isNotEmpty; // Corrected
-        _showMaritalStatus = userProfile.maritalStatus != null; // Corrected
-        _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null; // Corrected
-        _showWillingToRelocate = userProfile.willingToRelocate != null; // Corrected
-        _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null; // Corrected
-        _showLoveRelationshipGoals = userProfile.relationshipGoals != null; // Corrected
-        _showDealbreakersBoundaries = (userProfile.dealbreakers ?? []).isNotEmpty; // Corrected
-        _showAstrologicalSign = userProfile.astrologicalSign != null; // Corrected
-        _showAttachmentStyle = userProfile.attachmentStyle != null; // Corrected
-        _showCommunicationStyle = userProfile.communicationStyle != null; // Corrected
-        _showMentalHealthDisclosures = userProfile.mentalHealthDisclosures != null; // Corrected
-        _showPetOwnership = userProfile.petOwnership != null; // Corrected
-        _showTravelFrequencyDestinations = userProfile.travelFrequencyOrFavoriteDestinations != null; // Corrected
-        _showPoliticalViews = userProfile.politicalViews != null; // Corrected
-        _showReligionBeliefs = userProfile.religionOrSpiritualBeliefs != null; // Corrected
-        _showDiet = userProfile.diet != null; // Corrected
-        _showSmokingHabits = userProfile.smokingHabits != null; // Corrected
-        _showDrinkingHabits = userProfile.drinkingHabits != null; // Corrected
-        _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null; // Corrected
-        _showSleepSchedule = userProfile.sleepSchedule != null; // Corrected
-        _showPersonalityTraits = (userProfile.personalityTraits ?? []).isNotEmpty; // Corrected
+        _showLocation = userProfile.locationZipCode != null; // Corrected: Use locationZipCode
+        _showEthnicity = userProfile.ethnicity != null;
+        _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty; // Removed redundant ?? []
+        _showEducationLevel = userProfile.educationLevel != null;
+        _showDesiredOccupation = userProfile.desiredOccupation != null;
+        _showLoveLanguages = userProfile.loveLanguages.isNotEmpty; // Removed redundant ?? []
+        _showFavoriteMedia = userProfile.favoriteMedia.isNotEmpty; // Removed redundant ?? []
+        _showMaritalStatus = userProfile.maritalStatus != null;
+        _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null;
+        _showWillingToRelocate = userProfile.willingToRelocate != null;
+        _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null;
+        _showLoveRelationshipGoals = userProfile.relationshipGoals != null;
+        _showDealbreakersBoundaries = userProfile.dealbreakers.isNotEmpty; // Removed redundant ?? []
+        _showAstrologicalSign = userProfile.astrologicalSign != null;
+        _showAttachmentStyle = userProfile.attachmentStyle != null;
+        _showCommunicationStyle = userProfile.communicationStyle != null;
+        _showMentalHealthDisclosures = userProfile.mentalHealthDisclosures != null;
+        _showPetOwnership = userProfile.petOwnership != null;
+        _showTravelFrequencyDestinations = userProfile.travelFrequencyOrFavoriteDestinations != null;
+        _showPoliticalViews = userProfile.politicalViews != null;
+        _showReligionBeliefs = userProfile.religionOrSpiritualBeliefs != null;
+        _showDiet = userProfile.diet != null;
+        _showSmokingHabits = userProfile.smokingHabits != null;
+        _showDrinkingHabits = userProfile.drinkingHabits != null;
+        _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null;
+        _showSleepSchedule = userProfile.sleepSchedule != null;
+        _showPersonalityTraits = userProfile.personalityTraits.isNotEmpty; // Removed redundant ?? []
       }
       debugPrint('SettingsScreen: Preferences loaded (mock/initial)');
     } catch (e) {

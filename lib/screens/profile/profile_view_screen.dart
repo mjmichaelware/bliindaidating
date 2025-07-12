@@ -71,7 +71,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _userProfile?.displayName ?? _userProfile?.fullName ?? 'Profile',
+          _userProfile?.displayName ?? _userProfile?.fullLegalName ?? 'Profile', // Corrected: Used fullLegalName
           style: TextStyle(
             fontFamily: 'Inter',
             fontWeight: FontWeight.bold,
@@ -157,7 +157,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                             isDarkMode,
                             'Basic Information',
                             [
-                              if (_userProfile!.genderIdentity != null)
+                              if (_userProfile!.genderIdentity != null) // Corrected: Used genderIdentity
                                 _buildDetailRow(
                                   context,
                                   Icons.transgender,
@@ -173,7 +173,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   '${(DateTime.now().year - _userProfile!.dateOfBirth!.year)} years old',
                                   isDarkMode,
                                 ),
-                              if (_userProfile!.heightCm != null)
+                              if (_userProfile!.heightCm != null) // Corrected: Used heightCm
                                 _buildDetailRow(
                                   context,
                                   Icons.height,
@@ -181,8 +181,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   '${_userProfile!.heightCm!.toStringAsFixed(0)} cm',
                                   isDarkMode,
                                 ),
-                              // Corrected: Use locationZipCode instead of locationCity/locationState
-                              if (_userProfile!.locationZipCode != null && _userProfile!.locationZipCode!.isNotEmpty)
+                              if (_userProfile!.locationZipCode != null && _userProfile!.locationZipCode!.isNotEmpty) // Corrected: Used locationZipCode
                                 _buildDetailRow(
                                   context,
                                   Icons.location_on,
@@ -195,7 +194,8 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                           const SizedBox(height: AppConstants.spacingMedium),
 
                           // Interests Section
-                          if ((_userProfile!.hobbiesAndInterests ?? []).isNotEmpty || (_userProfile!.interests ?? []).isNotEmpty)
+                          // Corrected: Prioritize hobbiesAndInterests (List)
+                          if (_userProfile!.hobbiesAndInterests.isNotEmpty)
                             _buildProfileDetailCard(
                               context,
                               isDarkMode,
@@ -205,8 +205,7 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   context,
                                   Icons.interests,
                                   'Hobbies',
-                                  // Prefer hobbiesAndInterests, fallback to interests, then empty list
-                                  (_userProfile!.hobbiesAndInterests ?? _userProfile!.interests ?? []).join(', '),
+                                  _userProfile!.hobbiesAndInterests.join(', '), // Corrected: Used hobbiesAndInterests
                                   isDarkMode,
                                 ),
                               ],
@@ -267,12 +266,12 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   _userProfile!.relationshipGoals!,
                                   isDarkMode,
                                 ),
-                              if ((_userProfile!.dealbreakers ?? []).isNotEmpty)
+                              if (_userProfile!.dealbreakers.isNotEmpty) // Removed redundant ?? []
                                 _buildDetailRow(
                                   context,
                                   Icons.block,
                                   'Dealbreakers',
-                                  (_userProfile!.dealbreakers ?? []).join(', '),
+                                  _userProfile!.dealbreakers.join(', '), // Removed redundant ?? []
                                   isDarkMode,
                                 ),
                               if (_userProfile!.monogamyVsPolyamoryPreferences != null)
@@ -293,12 +292,12 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                             isDarkMode,
                             'Lifestyle & Values',
                             [
-                              if ((_userProfile!.languagesSpoken ?? []).isNotEmpty)
+                              if (_userProfile!.languagesSpoken.isNotEmpty) // Removed redundant ?? []
                                 _buildDetailRow(
                                   context,
                                   Icons.language,
                                   'Languages',
-                                  (_userProfile!.languagesSpoken ?? []).join(', '),
+                                  _userProfile!.languagesSpoken.join(', '), // Removed redundant ?? []
                                   isDarkMode,
                                 ),
                               if (_userProfile!.ethnicity != null)
@@ -365,12 +364,12 @@ class _ProfileViewScreenState extends State<ProfileViewScreen> {
                                   _userProfile!.sleepSchedule!,
                                   isDarkMode,
                                 ),
-                              if ((_userProfile!.personalityTraits ?? []).isNotEmpty)
+                              if (_userProfile!.personalityTraits.isNotEmpty) // Removed redundant ?? []
                                 _buildDetailRow(
                                   context,
                                   Icons.psychology,
                                   'Personality',
-                                  (_userProfile!.personalityTraits ?? []).join(', '),
+                                  _userProfile!.personalityTraits.join(', '), // Removed redundant ?? []
                                   isDarkMode,
                                 ),
                               if (_userProfile!.willingToRelocate != null)

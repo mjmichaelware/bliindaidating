@@ -1,12 +1,13 @@
 // lib/services/profile_service.dart
-import 'dart:io'; // Needed for File class, though XFile is often used
+import 'dart:io';
 import 'dart:typed_data';
+import 'dart:convert'; // Import for json.encode and json.decode
 
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart'; // For kIsWeb
-import 'package:path/path.dart' as p; // For path.extension
-import 'package:image_picker/image_picker.dart'; // <--- ADD THIS IMPORT FOR XFile
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:image_picker/image_picker.dart';
 
 class ProfileService with ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -25,21 +26,23 @@ class ProfileService with ChangeNotifier {
   Future<UserProfile?> fetchUserProfile(String userId) async {
     try {
       final response = await _supabase
-          .from('user_profiles')
+          .from('user_profiles') // Confirmed: Using 'user_profiles'
           .select()
-          .eq('user_id', userId)
+          .eq('id', userId)
           .single();
 
       if (response != null) {
         _userProfile = UserProfile.fromJson(response);
         notifyListeners();
+        debugPrint('Profile fetched successfully for user: $userId. Phase1: ${_userProfile?.isPhase1Complete}, Phase2: ${_userProfile?.isPhase2Complete}');
         return _userProfile;
       }
     } on PostgrestException catch (e) {
-      if (e.message.contains('rows not found')) {
-        debugPrint('No profile found for user $userId. This is expected for new users.');
+      // Supabase returns specific code 'PGRST116' and message '0 rows returned' for .single() when no rows are found
+      if (e.code == 'PGRST116' || e.message.contains('0 rows returned')) {
+        debugPrint('No profile found for user $userId. This is expected for new users or if profile creation is separate.');
         _userProfile = null; // Ensure cached profile is null if not found
-        notifyListeners();
+        notifyListeners(); // Notify even if profile is not found
         return null;
       }
       debugPrint('Error fetching user profile: ${e.message}');
@@ -51,7 +54,6 @@ class ProfileService with ChangeNotifier {
     return null;
   }
 
-  // New method for inserting a new profile
   Future<void> insertProfile({
     required String userId,
     required String email,
@@ -64,25 +66,24 @@ class ProfileService with ChangeNotifier {
     String? genderIdentity,
     String? sexualOrientation,
     double? heightCm,
-    List<String>? hobbiesAndInterests,
+    List<String>? hobbiesAndInterests, // This is a List<String>
     String? lookingFor,
     bool isPhase1Complete = false,
     bool isPhase2Complete = false,
     bool agreedToTerms = false,
     bool agreedToCommunityGuidelines = false,
-    // Add other fields relevant for initial insert here, ensuring they are nullable
     String? bio,
     String? ethnicity,
-    List<String>? languagesSpoken,
+    List<String>? languagesSpoken, // This is a List<String>
     String? desiredOccupation,
     String? educationLevel,
-    List<String>? loveLanguages,
-    List<String>? favoriteMedia,
+    List<String>? loveLanguages, // This is a List<String>
+    List<String>? favoriteMedia, // This is a List<String>
     String? maritalStatus,
     bool? hasChildren,
     bool? wantsChildren,
     String? relationshipGoals,
-    List<String>? dealbreakers,
+    List<String>? dealbreakers, // This is a List<String>
     String? religionOrSpiritualBeliefs,
     String? politicalViews,
     String? diet,
@@ -90,9 +91,9 @@ class ProfileService with ChangeNotifier {
     String? drinkingHabits,
     String? exerciseFrequencyOrFitnessLevel,
     String? sleepSchedule,
-    List<String>? personalityTraits,
-    Map<String, dynamic>? questionnaireAnswers,
-    Map<String, dynamic>? personalityAssessmentResults,
+    List<String>? personalityTraits, // This is a List<String>
+    Map<String, dynamic>? questionnaireAnswers, // This is a Map
+    Map<String, dynamic>? personalityAssessmentResults, // This is a Map
     bool? willingToRelocate,
     String? monogamyVsPolyamoryPreferences,
     String? astrologicalSign,
@@ -101,12 +102,12 @@ class ProfileService with ChangeNotifier {
     String? mentalHealthDisclosures,
     String? petOwnership,
     String? travelFrequencyOrFavoriteDestinations,
-    Map<String, bool>? profileVisibilityPreferences,
-    Map<String, bool>? pushNotificationPreferences,
+    Map<String, bool>? profileVisibilityPreferences, // This is a Map
+    Map<String, bool>? pushNotificationPreferences, // This is a Map
   }) async {
     final now = DateTime.now();
     final profileData = {
-      'user_id': userId,
+      'id': userId,
       'email': email,
       'full_legal_name': fullLegalName,
       'display_name': displayName,
@@ -117,7 +118,8 @@ class ProfileService with ChangeNotifier {
       'gender_identity': genderIdentity,
       'sexual_orientation': sexualOrientation,
       'height_cm': heightCm,
-      'hobbies_and_interests': hobbiesAndInterests,
+      // CRITICAL FIX: JSON encode lists before sending to text columns
+      'hobbies_and_interests': hobbiesAndInterests != null ? json.encode(hobbiesAndInterests) : null,
       'looking_for': lookingFor,
       'is_phase_1_complete': isPhase1Complete,
       'is_phase_2_complete': isPhase2Complete,
@@ -125,19 +127,18 @@ class ProfileService with ChangeNotifier {
       'agreed_to_community_guidelines': agreedToCommunityGuidelines,
       'created_at': now.toIso8601String(),
       'updated_at': now.toIso8601String(),
-      // Include other fields if they are part of the initial insert flow
       'bio': bio,
       'ethnicity': ethnicity,
-      'languages_spoken': languagesSpoken,
+      'languages_spoken': languagesSpoken != null ? json.encode(languagesSpoken) : null,
       'desired_occupation': desiredOccupation,
       'education_level': educationLevel,
-      'love_languages': loveLanguages,
-      'favorite_media': favoriteMedia,
+      'love_languages': loveLanguages != null ? json.encode(loveLanguages) : null,
+      'favorite_media': favoriteMedia != null ? json.encode(favoriteMedia) : null,
       'marital_status': maritalStatus,
       'has_children': hasChildren,
       'wants_children': wantsChildren,
       'relationship_goals': relationshipGoals,
-      'dealbreakers': dealbreakers,
+      'dealbreakers': dealbreakers != null ? json.encode(dealbreakers) : null,
       'religion_or_spiritual_beliefs': religionOrSpiritualBeliefs,
       'political_views': politicalViews,
       'diet': diet,
@@ -145,9 +146,9 @@ class ProfileService with ChangeNotifier {
       'drinking_habits': drinkingHabits,
       'exercise_frequency_or_fitness_level': exerciseFrequencyOrFitnessLevel,
       'sleep_schedule': sleepSchedule,
-      'personality_traits': personalityTraits,
-      'questionnaire_answers': questionnaireAnswers,
-      'personality_assessment_results': personalityAssessmentResults,
+      'personality_traits': personalityTraits != null ? json.encode(personalityTraits) : null,
+      'questionnaire_answers': questionnaireAnswers != null ? json.encode(questionnaireAnswers) : null,
+      'personality_assessment_results': personalityAssessmentResults != null ? json.encode(personalityAssessmentResults) : null,
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
       'astrological_sign': astrologicalSign,
@@ -156,11 +157,10 @@ class ProfileService with ChangeNotifier {
       'mental_health_disclosures': mentalHealthDisclosures,
       'pet_ownership': petOwnership,
       'travel_frequency_or_favorite_destinations': travelFrequencyOrFavoriteDestinations,
-      'profile_visibility_preferences': profileVisibilityPreferences,
-      'push_notification_preferences': pushNotificationPreferences,
+      'profile_visibility_preferences': profileVisibilityPreferences != null ? json.encode(profileVisibilityPreferences) : null,
+      'push_notification_preferences': pushNotificationPreferences != null ? json.encode(pushNotificationPreferences) : null,
     };
 
-    // Remove null values to let Supabase use column defaults if any
     profileData.removeWhere((key, value) => value == null);
 
     try {
@@ -177,7 +177,6 @@ class ProfileService with ChangeNotifier {
     }
   }
 
-  // Refactored method for updating an existing profile
   Future<void> updateProfile({
     required String userId,
     String? fullLegalName,
@@ -225,15 +224,18 @@ class ProfileService with ChangeNotifier {
     String? travelFrequencyOrFavoriteDestinations,
     Map<String, bool>? profileVisibilityPreferences,
     Map<String, bool>? pushNotificationPreferences,
-    bool? isPhase1Complete, // Allows updating this flag
-    bool? isPhase2Complete, // Allows updating this flag
-    bool? agreedToTerms, // Allows updating this flag
-    bool? agreedToCommunityGuidelines, // Allows updating this flag
+    bool? isPhase1Complete,
+    bool? isPhase2Complete,
+    bool? agreedToTerms,
+    bool? agreedToCommunityGuidelines,
   }) async {
     if (_userProfile == null) {
-      debugPrint('No cached user profile found. Cannot update.');
-      // Optionally throw an error or fetch profile if it's expected to exist
-      throw Exception('Attempted to update a non-existent profile.');
+      debugPrint('No cached user profile found. Cannot update. Attempting to fetch...');
+      await fetchUserProfile(userId);
+      if (_userProfile == null) {
+        debugPrint('Still no user profile after attempted fetch. Cannot update.');
+        throw Exception('Attempted to update a non-existent or un-fetchable profile.');
+      }
     }
 
     final Map<String, dynamic> updateData = {
@@ -249,17 +251,18 @@ class ProfileService with ChangeNotifier {
       'government_id_front_url': governmentIdFrontUrl,
       'government_id_back_url': governmentIdBackUrl,
       'ethnicity': ethnicity,
-      'languages_spoken': languagesSpoken,
+      // CRITICAL FIX: JSON encode lists before sending to text columns
+      'languages_spoken': languagesSpoken != null ? json.encode(languagesSpoken) : null,
       'desired_occupation': desiredOccupation,
       'education_level': educationLevel,
-      'hobbies_and_interests': hobbiesAndInterests,
-      'love_languages': loveLanguages,
-      'favorite_media': favoriteMedia,
+      'hobbies_and_interests': hobbiesAndInterests != null ? json.encode(hobbiesAndInterests) : null,
+      'love_languages': loveLanguages != null ? json.encode(loveLanguages) : null,
+      'favorite_media': favoriteMedia != null ? json.encode(favoriteMedia) : null,
       'marital_status': maritalStatus,
       'has_children': hasChildren,
       'wants_children': wantsChildren,
       'relationship_goals': relationshipGoals,
-      'dealbreakers': dealbreakers,
+      'dealbreakers': dealbreakers != null ? json.encode(dealbreakers) : null,
       'bio': bio,
       'looking_for': lookingFor,
       'religion_or_spiritual_beliefs': religionOrSpiritualBeliefs,
@@ -269,62 +272,56 @@ class ProfileService with ChangeNotifier {
       'drinking_habits': drinkingHabits,
       'exercise_frequency_or_fitness_level': exerciseFrequencyOrFitnessLevel,
       'sleep_schedule': sleepSchedule,
-      'personality_traits': personalityTraits,
-      'questionnaire_answers': questionnaireAnswers,
-      'personality_assessment_results': personalityAssessmentResults,
+      'personality_traits': personalityTraits != null ? json.encode(personalityTraits) : null,
+      'questionnaire_answers': questionnaireAnswers != null ? json.encode(questionnaireAnswers) : null,
+      'personality_assessment_results': personalityAssessmentResults != null ? json.encode(personalityAssessmentResults) : null,
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
       'astrological_sign': astrologicalSign,
       'attachment_style': attachmentStyle,
       'communication_style': communicationStyle,
       'mental_health_disclosures': mentalHealthDisclosures,
-      'petOwnership': petOwnership,
+      'pet_ownership': petOwnership,
       'travel_frequency_or_favorite_destinations': travelFrequencyOrFavoriteDestinations,
-      'profile_visibility_preferences': profileVisibilityPreferences,
-      'push_notification_preferences': pushNotificationPreferences,
+      'profile_visibility_preferences': profileVisibilityPreferences != null ? json.encode(profileVisibilityPreferences) : null,
+      'push_notification_preferences': pushNotificationPreferences != null ? json.encode(pushNotificationPreferences) : null,
       'is_phase_1_complete': isPhase1Complete,
       'is_phase_2_complete': isPhase2Complete,
       'agreed_to_terms': agreedToTerms,
       'agreed_to_community_guidelines': agreedToCommunityGuidelines,
-      'updated_at': DateTime.now().toIso8601String(), // Always update timestamp
+      'updated_at': DateTime.now().toIso8601String(),
     };
 
-    // Remove null values to avoid overwriting existing data with null
-    // Only include values that are explicitly provided (non-null)
     updateData.removeWhere((key, value) => value == null);
-
-    // Special handling for lists/maps if they could be *cleared* by passing an empty list/map
-    // If a list parameter is an empty list, we want to send it. `removeWhere((k,v) => v==null)` would keep it.
-    // However, if the field is defined as `List<String>?`, and the incoming value is `null`, it's removed.
-    // If the incoming value is `[]`, it's kept and sent as an empty list. This is the desired behavior.
 
     try {
       final response = await _supabase
-          .from('user_profiles')
+          .from('user_profiles') // Confirmed: Using 'user_profiles'
           .update(updateData)
-          .eq('user_id', userId)
+          .eq('id', userId)
           .select()
           .single();
 
       if (response != null) {
         _userProfile = UserProfile.fromJson(response);
         notifyListeners();
-        debugPrint('Profile updated successfully for user: $userId');
+        debugPrint('Profile updated successfully for user: $userId. Phase1: ${_userProfile?.isPhase1Complete}, Phase2: ${_userProfile?.isPhase2Complete}');
       }
     } on PostgrestException catch (e) {
       debugPrint('Error updating profile: ${e.message}');
+      notifyListeners(); // Notify even on error to ensure UI reflects potential failure or stale state
       rethrow;
     } catch (e) {
       debugPrint('An unexpected error occurred during profile update: $e');
+      notifyListeners(); // Notify even on error
       rethrow;
     }
   }
 
-  // This method remains for file uploads and can be used by other parts of the app
   Future<String?> uploadAnalysisPhoto(String userId, XFile imageFile) async {
     try {
       final bytes = await imageFile.readAsBytes();
-      final fileExtension = p.extension(imageFile.name); // Use p.extension
+      final fileExtension = p.extension(imageFile.name);
       final fileName = 'profile_analysis/$userId/${DateTime.now().millisecondsSinceEpoch}$fileExtension';
 
       final response = await _supabase.storage.from('profile_analysis_photos').uploadBinary(
