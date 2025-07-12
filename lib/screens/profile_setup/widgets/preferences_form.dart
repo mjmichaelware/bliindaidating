@@ -92,9 +92,9 @@ class PreferencesForm extends StatefulWidget {
   final List<String> selectedInterests;
   final GlobalKey<FormState> formKey;
   final String? maritalStatus; // New parameter
-  final Function(String?) onMaritalStatusChanged; // New parameter
+  final Function(String?)? onMaritalStatusChanged; // Made optional
   final String? ethnicity; // New parameter
-  final Function(String?) onEthnicityChanged; // New parameter
+  final Function(String?)? onEthnicityChanged; // Made optional
 
 
   const PreferencesForm({
@@ -109,9 +109,9 @@ class PreferencesForm extends StatefulWidget {
     required this.selectedInterests,
     required this.formKey,
     this.maritalStatus, // Initialize here
-    required this.onMaritalStatusChanged, // Initialize here
+    this.onMaritalStatusChanged, // Initialize here (now optional)
     this.ethnicity, // Initialize here
-    required this.onEthnicityChanged, // Initialize here
+    this.onEthnicityChanged, // Initialize here (now optional)
   });
 
   @override
@@ -389,7 +389,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
-                  widget.onMaritalStatusChanged(newValue);
+                  widget.onMaritalStatusChanged?.call(newValue); // Call if not null
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -428,7 +428,7 @@ class _PreferencesFormState extends State<PreferencesForm> {
                   );
                 }).toList(),
                 onChanged: (String? newValue) {
-                  widget.onEthnicityChanged(newValue);
+                  widget.onEthnicityChanged?.call(newValue); // Call if not null
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -512,3 +512,4 @@ class _PreferencesFormState extends State<PreferencesForm> {
     );
   }
 }
+

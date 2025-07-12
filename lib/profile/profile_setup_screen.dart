@@ -185,6 +185,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     });
   }
 
+  // Dummy callback for onMaritalStatusChanged to satisfy PreferencesForm requirement
+  void _onMaritalStatusChanged(String? newMaritalStatus) {
+    // This function can remain empty or log the change if needed for debugging
+    debugPrint('Marital Status changed to: $newMaritalStatus');
+    // If you ever need to store this, add a state variable like _maritalStatus
+    // setState(() { _maritalStatus = newMaritalStatus; });
+  }
+
 
   Future<void> _loadPreferences() async {
     setState(() { _isLoading = true; });
@@ -522,6 +530,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
                         sexualOrientation: _sexualOrientation,
                         lookingFor: _lookingFor,
                         selectedInterests: _selectedInterests,
+                        onMaritalStatusChanged: _onMaritalStatusChanged, // Added this line
                       ),
                       ConsentForm(
                         formKey: _formKeys[3],
