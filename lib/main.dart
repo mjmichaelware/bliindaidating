@@ -106,8 +106,11 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => ThemeController()),
-          ChangeNotifierProvider(create: (context) => AuthService()),
+          // IMPORTANT: ProfileService needs to be created before AuthService
+          // because AuthService depends on ProfileService.
           ChangeNotifierProvider(create: (context) => ProfileService()),
+          // FIX: Pass the ProfileService instance to AuthService constructor
+          ChangeNotifierProvider(create: (context) => AuthService(context.read<ProfileService>())),
         ],
         child: const BlindAIDatingApp(),
       ),
@@ -121,6 +124,7 @@ Future<void> main() async {
           body: Center(
             child: Text(
               'Failed to start app: ${e.toString()}',
+              textAlign: TextAlign.center, // Added for better display of long error messages
               style: const TextStyle(color: Colors.red, fontFamily: 'Inter'),
             ),
           ),
@@ -139,13 +143,27 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
+  // Keep references to the services that GoRouter's refreshListenable will monitor.
+  // These are initialized in initState after the context is available.
+  late final AuthService _authService;
+  late final ProfileService _profileService;
+
 
   @override
   void initState() {
     super.initState();
+    // Access the service instances from the provider tree.
+    // Use `context.read` here because we just need the instance, not to listen for rebuilds.
+    _authService = context.read<AuthService>();
+    _profileService = context.read<ProfileService>();
+
     _router = GoRouter(
       initialLocation: '/',
-      refreshListenable: GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
+      // Combine refresh listenables for both authentication and profile changes
+      refreshListenable: Listenable.merge([
+        GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
+        _profileService, // Now GoRouter also listens to ProfileService changes
+      ]),
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
         GoRoute(path: '/portal_hub', builder: (context, state) => const PortalPage()),
@@ -159,10 +177,10 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/my-profile', builder: (context, state) => const MyProfileScreen()), // Current user's profile view/edit
 
         // Profile Editing/Setup Sub-screens (assuming these are used within ProfileTabsScreen or similar)
-        GoRoute(path: '/edit_profile', builder: (context, state) => const ProfileTabsScreen()), // Added const if applicable
-        GoRoute(path: '/about_me', builder: (context, state) => const AboutMeScreen()), // Added const if applicable
-        GoRoute(path: '/availability', builder: (context, state) => const AvailabilityScreen()), // Added const if applicable
-        GoRoute(path: '/interests', builder: (context, state) => const InterestsScreen()), // Added const if applicable
+        GoRoute(path: '/edit_profile', builder: (context, state) => const ProfileTabsScreen()),
+        GoRoute(path: '/about_me', builder: (context, state) => const AboutMeScreen()),
+        GoRoute(path: '/availability', builder: (context, state) => const AvailabilityScreen()),
+        GoRoute(path: '/interests', builder: (context, state) => const InterestsScreen()),
 
         // Friends & Events
         GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])),
@@ -198,9 +216,11 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
         GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
       ],
-      redirect: (context, state) async {
-        final authService = Provider.of<AuthService>(context, listen: false);
-        final profileService = Provider.of<ProfileService>(context, listen: false);
+      redirect: (context, state) async { // Keeping it async as before, even if profile fetch is removed.
+        // Use context.read to access services in redirect, as it's a top-level callback
+        // and doesn't need to rebuild with the widget tree. The refreshListenable handles re-evaluation.
+        final authService = context.read<AuthService>();
+        final profileService = context.read<ProfileService>();
 
         final User? currentUser = authService.currentUser;
         final bool loggedIn = currentUser != null;
@@ -247,35 +267,19 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         // --- User is logged in from here ---
 
-        // 2. Fetch profile if not already loaded or if it's for a different user
-        // Ensure profileService.userProfile is up-to-date for the current user
-        if (profileService.userProfile == null || profileService.userProfile!.userId != currentUser.id) {
-          debugPrint('  Fetching user profile for redirect logic (or refreshing)...');
-          try {
-            await profileService.fetchUserProfile(currentUser.id);
-            // If profile still null after fetch, it means no profile exists in DB yet.
-            // This can happen right after a new signup.
-            if (profileService.userProfile == null) {
-              debugPrint('  No profile found after fetch. Assuming new user, redirecting to Phase 1 setup.');
-              if (!goingToProfileSetup) {
-                return '/profile_setup';
-              }
-              return null; // Already going to setup
-            }
-          } catch (e) {
-            debugPrint('  Error during profile fetch in redirect: $e. Redirecting to login or landing.');
-            // Handle cases where profile fetching itself fails badly
-            return '/'; // Fallback to landing/login
-          }
-        }
+        // IMPORTANT CHANGE: Do NOT fetch profile here.
+        // The AuthService's listener already fetches the profile and ProfileService
+        // notifies its listeners, which in turn triggers this redirect.
+        // So, profileService.userProfile should be up-to-date.
 
         final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
         final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
         debugPrint('  Is Phase 1 Complete: $isPhase1Complete');
         debugPrint('  Is Phase 2 Complete: $isPhase2Complete');
 
-        // 3. If logged in but Phase 1 is NOT complete, redirect to /profile_setup
+        // 2. If logged in but Phase 1 is NOT complete, redirect to /profile_setup
         if (!isPhase1Complete) {
+          // If we are already going to profile_setup, allow it. Otherwise, redirect.
           if (!goingToProfileSetup) {
             debugPrint('  Redirect decision: Logged in, Phase 1 NOT complete. Redirecting to /profile_setup');
             return '/profile_setup';
@@ -286,11 +290,12 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         // --- User is logged in AND Phase 1 is complete from here ---
 
-        // 4. If Phase 2 is NOT complete:
+        // 3. If Phase 2 is NOT complete:
         //    Allow navigation to /home (dashboard) and /questionnaire-phase2.
         //    Redirect from other protected paths (like auth or phase1 setup) to /home.
         if (!isPhase2Complete) {
-          // If trying to access auth paths or phase1 setup, send to home (where banner will show)
+          // If trying to access auth paths, initial public pages, or phase1 setup, send to /home.
+          // The /home screen (MainDashboardScreen) should then guide the user to Phase 2.
           if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup) {
             debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on auth/public/phase1 page. Redirecting to /home.');
             return '/home';
@@ -300,15 +305,15 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
              debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /home or /questionnaire-phase2. Allowing.');
              return null;
           }
-          // For any other non-home/non-phase2 setup protected page (e.g., /settings), allow it but implicitly
-          // you might show a banner or warning there. No explicit redirect here.
-          debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on other protected page. Allowing.');
+          // For any other authenticated but not specific setup/dashboard page (e.g., /settings, /matches),
+          // we allow it. It's assumed these pages might show a banner or warning about incomplete profile.
+          debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on other protected page. Allowing (but expect UI guidance).');
           return null;
         }
 
         // --- User is logged in AND BOTH phases are complete from here ---
 
-        // 5. If logged in AND both phases are complete:
+        // 4. If logged in AND both phases are complete:
         //    Redirect from auth/public/setup pages to /home (dashboard)
         if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup || goingToPhase2Setup) {
           debugPrint('  Redirect decision: Logged in, BOTH phases complete, on auth/public/setup page. Redirecting to /home');
@@ -325,6 +330,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   @override
   void dispose() {
     // No explicit dispose needed for GoRouter itself, its refreshListenable handles subscription.
+    // The services are managed by Provider, so their dispose methods will be called by Provider.
     super.dispose();
   }
 
@@ -344,7 +350,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription<AuthState> _subscription;
 
   GoRouterRefreshStream(Stream<AuthState> stream) {
-    notifyListeners();
+    notifyListeners(); // Notify immediately with current state
     _subscription = stream.asBroadcastStream().listen(
           (AuthState event) => notifyListeners(),
         );

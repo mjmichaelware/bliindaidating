@@ -1,82 +1,107 @@
 // lib/services/auth_service.dart
-import 'package:bliindaidating/services/profile_service.dart';
-import 'package:flutter/material.dart';
+import 'dart:async'; // <--- ADD THIS IMPORT
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:provider/provider.dart'; // Import Provider
+import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService
 
 class AuthService with ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
-
   User? _currentUser;
-  User? get currentUser => _currentUser;
+  StreamSubscription<AuthState>? _authStateSubscription;
+  final ProfileService _profileService; // Added dependency for ProfileService
 
-  AuthService() {
-    _initAuthListener();
-  }
-
-  void _initAuthListener() {
-    _supabase.auth.onAuthStateChange.listen((data) {
+  // Constructor now requires ProfileService
+  AuthService(this._profileService) {
+    // Listen to Supabase authentication state changes
+    _authStateSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
 
-      debugPrint('Auth event: $event');
+      debugPrint('AuthService: AuthChangeEvent: $event, Session: ${session?.user?.email}');
 
-      if (session != null) {
-        _currentUser = session.user;
-        debugPrint('User logged in: ${_currentUser?.id}');
-      } else {
+      if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.initialSession) {
+        _currentUser = session?.user;
+        if (_currentUser != null) {
+          // Immediately fetch or refresh profile when user signs in or session is initial
+          // This call will notify ProfileService's listeners, which GoRouter will also listen to
+          await _profileService.fetchUserProfile(_currentUser!.id);
+        }
+        notifyListeners(); // Notify AuthService listeners (e.g., any widgets directly watching AuthService)
+      } else if (event == AuthChangeEvent.signedOut) {
         _currentUser = null;
-        debugPrint('User logged out.');
-        // Optionally, clear profile data when user logs out
-        // This assumes ProfileService is accessible, e.g., via Provider in a widget tree
-        // For a service, it might be better to emit an event or have main.dart handle it.
-        // If AuthService has a direct dependency on ProfileService, it should be passed in.
-        // For simplicity and assuming Provider is available globally where this is used:
-        // You might need to pass context or use a global key/locator for this if AuthService
-        // is not created within a widget that has access to the Provider.
+        _profileService.clearProfile(); // Clear profile data on sign out
+        notifyListeners(); // Notify AuthService listeners
+      } else if (event == AuthChangeEvent.userUpdated) {
+        _currentUser = session?.user;
+        if (_currentUser != null) {
+          // Re-fetch profile if user details (e.g., email) are updated
+          await _profileService.fetchUserProfile(_currentUser!.id);
+        }
+        notifyListeners();
       }
-      notifyListeners();
+      // You can add other AuthChangeEvent handlers here if needed (e.g., passwordRecovery)
     });
+
+    // Also, fetch initial user and profile state when AuthService is created
+    // This handles cases where the app restarts and a session already exists
+    _currentUser = _supabase.auth.currentUser;
+    if (_currentUser != null) {
+      // Don't await here to avoid blocking the constructor; rely on the listener above.
+      // The listener will trigger the fetch and notify.
+      // If the app is launched and a session already exists, onAuthStateChange.listen
+      // will emit AuthChangeEvent.initialSession, triggering the profile fetch.
+    }
   }
 
-  Future<AuthResponse> signUp(String email, String password) async {
+  User? get currentUser => _currentUser;
+  bool get isLoggedIn => _currentUser != null;
+
+  // Your existing signIn, signUp, signOut methods.
+  // The onAuthStateChange listener will handle profile updates and notifications.
+  Future<AuthResponse> signIn({required String email, required String password}) async {
     try {
-      final AuthResponse response =
-          await _supabase.auth.signUp(email: email, password: password);
-      debugPrint('Sign up response: ${response.user?.email}');
+      final response = await _supabase.auth.signInWithPassword(email: email, password: password);
+      debugPrint('AuthService: Sign In successful for: ${response.user?.email}');
       return response;
+    } on AuthException catch (e) {
+      debugPrint('AuthService: Sign In error: ${e.message}');
+      rethrow;
     } catch (e) {
-      debugPrint('Sign up error: $e');
+      debugPrint('AuthService: Unexpected sign In error: $e');
       rethrow;
     }
   }
 
-  Future<AuthResponse> signIn(String email, String password) async {
+  Future<AuthResponse> signUp({required String email, required String password}) async {
     try {
-      final AuthResponse response = await _supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      debugPrint('Sign in response: ${response.user?.email}');
+      final response = await _supabase.auth.signUp(email: email, password: password);
+      debugPrint('AuthService: Sign Up successful for: ${response.user?.email}');
       return response;
+    } on AuthException catch (e) {
+      debugPrint('AuthService: Sign Up error: ${e.message}');
+      rethrow;
     } catch (e) {
-      debugPrint('Sign in error: $e');
+      debugPrint('AuthService: Unexpected sign Up error: $e');
       rethrow;
     }
   }
 
-  Future<void> signOut(BuildContext context) async { // Added BuildContext
+  Future<void> signOut() async {
     try {
       await _supabase.auth.signOut();
-      // Clear the cached user profile after signing out
-      Provider.of<ProfileService>(context, listen: false).clearProfile(); // Call the new method
-      debugPrint('Signed out successfully.');
+      debugPrint('AuthService: Sign Out successful.');
+    } on AuthException catch (e) {
+      debugPrint('AuthService: Sign Out error: ${e.message}');
+      rethrow;
     } catch (e) {
-      debugPrint('Sign out error: $e');
+      debugPrint('AuthService: Unexpected sign out error: $e');
       rethrow;
     }
   }
 
-  // Example of getting current session, might not be needed if using onAuthStateChange
-  Session? get currentSession => _supabase.auth.currentSession;
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
+  }
 }
