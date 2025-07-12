@@ -1,547 +1,673 @@
 // lib/widgets/dashboard_shell/dashboard_side_menu.dart
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'dart:math' as math;
+import 'package:go_router/go_router.dart'; // Import GoRouter
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase for logout
+
+// Import the consolidated AppTheme and AppConstants
+import 'package:bliindaidating/theme/app_theme.dart';
 import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
-import 'package:bliindaidating/services/auth_service.dart'; // Import AuthService for sign out
-import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for completion status
-
-// NO DIRECT SCREEN IMPORTS HERE. The DashboardSideMenu only needs to
-// define the menu structure and navigate using GoRouter paths.
-// The screens themselves are imported in main.dart.
 
 
-class DashboardSideMenu extends StatelessWidget {
-  final UserProfile? userProfile;
-  final String? profilePictureUrl;
-  // selectedTabIndex and onTabSelected are for internal tab views if MainDashboardScreen
-  // uses a TabBar. If not, these can be removed and navigation will be purely via GoRouter.
-  // For now, I'll keep them as they were in your provided code, assuming a potential tab integration.
-  final int selectedTabIndex;
-  final ValueChanged<int> onTabSelected;
-  final bool isPhase2Complete; // Parameter to indicate if Phase 2 is complete
+// --- Side Menu Background Painter ---
+class SideMenuGalaxyPainter extends CustomPainter {
+  final Animation<double> animation;
 
-  const DashboardSideMenu({
-    super.key,
-    this.userProfile,
-    this.profilePictureUrl,
-    required this.selectedTabIndex,
-    required this.onTabSelected,
-    this.isPhase2Complete = false, // Default to false if not provided
-  });
+  SideMenuGalaxyPainter(this.animation) : super(repaint: animation);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill;
+
+    final gradient = RadialGradient(
+      colors: [
+        AppConstants.backgroundColor.withOpacity(0.9),
+        Colors.black.withOpacity(0.95),
+      ],
+      stops: const [0.0, 1.0],
+      center: Alignment.center,
+      radius: 1.0,
+    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint..shader = gradient);
+
+    final starPaint = Paint()..color = Colors.white.withOpacity(0.8);
+    final random = math.Random(1);
+
+    for (int i = 0; i < 50; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = (random.nextDouble() * size.height + (animation.value * size.height * 0.1)) % size.height;
+      final starSize = (random.nextDouble() * 1.0 + 0.2);
+      canvas.drawCircle(Offset(x, y), starSize, starPaint);
+    }
+
+    final swirlPaint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    final swirlColor = Color.lerp(AppTheme.primaryColor.withOpacity(0.4), AppTheme.accentColor.withOpacity(0.6), animation.value)!;
+    final swirlGradient = RadialGradient(
+      colors: [swirlColor, Colors.transparent],
+      stops: const [0.0, 1.0],
+    ).createShader(Rect.fromCircle(center: Offset(size.width * 0.7, size.height * 0.9), radius: 60));
+    
+    canvas.save();
+    canvas.translate(size.width * 0.7, size.height * 0.9);
+    canvas.rotate(animation.value * 2 * math.pi);
+    canvas.drawCircle(Offset.zero, 60, swirlPaint..shader = swirlGradient);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+
+// --- Side Menu User Profile Header ---
+class SideMenuProfileHeader extends StatelessWidget {
+  final Animation<double> animation;
+
+  const SideMenuProfileHeader({super.key, required this.animation});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ThemeController>(context);
-    final isDarkMode = theme.isDarkMode;
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final profileService = Provider.of<ProfileService>(context); // Access ProfileService for profile completion
-
-    // Use profileService's state for completion checks
-    final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
-    final bool _isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false; // Use internal variable name to avoid conflict with parameter
-    final bool isProfileFullyComplete = isPhase1Complete && _isPhase2Complete;
-
-
-    // Using AppConstants for colors to make it immersive
-    final Color menuBackgroundColor = isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor;
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color selectedItemColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color dividerColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.2) : AppConstants.lightBorderColor.withOpacity(0.5);
-    final Color buttonColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
-
-    // Colors for the immersive DrawerHeader
-    final Color headerBackgroundColor = isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400; // Deep pink/light pink
-    final Color headerTextColor = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
-    final Color headerAccentColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-
-    // Determine the display name
-    final String displayName = userProfile?.displayName ?? userProfile?.fullName ?? 'User';
-
-    return Container(
-      width: AppConstants.dashboardSideMenuWidth, // Using constant for width
-      decoration: BoxDecoration(
-        color: menuBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(5, 0),
-          ),
-        ],
-      ),
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20.0, 60.0, 20.0, 20.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Immersive User Profile Header Section (Drawer Header)
-          Container(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [headerBackgroundColor, headerBackgroundColor.withOpacity(0.8)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: AppConstants.avatarRadius,
-                  backgroundColor: headerAccentColor.withOpacity(0.2), // Use an accent color
-                  backgroundImage: profilePictureUrl != null
-                      ? NetworkImage(profilePictureUrl!)
-                      : null,
-                  child: profilePictureUrl == null
-                      ? Icon(
-                          Icons.person_rounded,
-                          size: AppConstants.avatarRadius * 1.2,
-                          color: headerTextColor.withOpacity(0.7), // Lighter icon
-                        )
-                      : null,
-                ),
-                const SizedBox(height: AppConstants.spacingSmall),
-                Text(
-                  'Welcome, $displayName',
-                  style: TextStyle(
-                    color: headerTextColor, // Use header text color
-                    fontSize: AppConstants.fontSizeMedium,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Inter',
+          FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.8, end: 1.0).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutBack)),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppTheme.primaryColor.withOpacity(0.7),
+                      AppTheme.primaryColor.withOpacity(0.0),
+                    ],
+                    radius: 0.8 + 0.2 * math.sin(animation.value * math.pi * 2),
                   ),
-                  textAlign: TextAlign.center,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.accentColor.withOpacity(0.4 * animation.value),
+                      blurRadius: 15,
+                      spreadRadius: 5 * animation.value,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppConstants.spacingSmall),
-                // Directly go to My Profile screen for editing/full view
-                TextButton(
-                  onPressed: () {
-                    // This is for the user to go to their profile and make changes
-                    context.go('/my-profile'); // Correct route based on main.dart
-                  },
-                  child: Text(
-                    'Manage My Profile', // Changed text for clarity
-                    style: TextStyle(
-                      color: headerAccentColor, // Use header accent color
-                      fontSize: AppConstants.fontSizeSmall,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                      decorationColor: headerAccentColor,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: AppTheme.cardColor,
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/profile_placeholder.png',
+                      fit: BoxFit.cover,
+                      width: 100,
+                      height: 100,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.person,
+                        size: 60,
+                        color: AppConstants.textColor.withOpacity(0.7), // Correct: Use AppConstants.textColor
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          Divider(color: dividerColor, height: 1),
-
-          // Navigation Items (using ListView for scrollability)
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                // Top Level Items
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.dashboard,
-                  title: 'Dashboard Overview',
-                  routeName: '/home', // Correct route based on main.dart
-                ),
-
-                // Discovery Category
-                _buildExpansionTile(
-                  context,
-                  title: 'Discovery',
-                  icon: Icons.search,
-                  children: [
-                    _buildDrawerItem(
-                      context,
-                      title: 'Discover People',
-                      routeName: '/discovery', // Correct route for DiscoveryScreen
-                      isEnabled: isProfileFullyComplete, // Enable only if profile is complete
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Suggested Profiles',
-                      routeName: '/dashboard/suggested_profiles',
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                  ],
-                ),
-
-                // Matches & Connections Category
-                _buildExpansionTile(
-                  context,
-                  title: 'Matches & Connections',
-                  icon: Icons.favorite,
-                  children: [
-                    _buildDrawerItem(
-                      context,
-                      title: 'My Matches',
-                      routeName: '/matches', // Correct route for MatchesListScreen
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                    // Removed: 'Match Insights', 'Date Proposals' as their screens do not exist in tree
-                    _buildDrawerItem(
-                      context,
-                      title: 'Penalty Status',
-                      routeName: '/penalties', // Correct route for PenaltyDisplayScreen
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Compatibility Results',
-                      routeName: '/dashboard/compatibility_results',
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'My Favorites',
-                      routeName: '/favorites/list',
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                  ],
-                ),
-
-                // News Feed (Direct Item)
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.article_rounded,
-                  title: 'News Feed',
-                  routeName: '/newsfeed',
-                  // `onTabSelected` logic (if News Feed is a main tab in the dashboard shell)
-                  isSelected: selectedTabIndex == 0,
-                  onTap: () {
-                    context.go('/newsfeed');
-                    onTabSelected(0);
-                  },
-                  isDarkMode: isDarkMode,
-                  isEnabled: isProfileFullyComplete,
-                ),
-
-                // Daily Engagement Category
-                _buildExpansionTile(
-                  context,
-                  title: 'Daily Engagement',
-                  icon: Icons.quiz,
-                  children: [
-                    _buildDrawerItem(
-                      context,
-                      title: 'Daily Prompts',
-                      routeName: '/daily/prompts',
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Daily Personality Question',
-                      routeName: '/dashboard/daily_personality_question',
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      // The "Questionnaire" from your list maps to Phase 2 Setup
-                      title: 'Questionnaire', // Renamed from "Questions"
-                      routeName: '/questionnaire-phase2', // Correct route for Phase2SetupScreen
-                      isEnabled: isPhase1Complete, // Enable if Phase 1 is done, as this is Phase 2
-                    ),
-                  ],
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.notifications,
-                  title: 'Notifications',
-                  routeName: '/notifications',
-                  isEnabled: isProfileFullyComplete,
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.visibility_rounded, // Distinct icon for viewing profile as others see it
-                  title: 'View Profile As Guest', // More descriptive label
-                  routeName: '/profile/:userId', // Needs user ID. This is complex for a direct menu item.
-                  // For a simplified direct link, maybe link to their own public profile view.
-                  // If 'profile_view_screen.dart' is intended for *any* user's profile view,
-                  // then '/my-profile' or '/profile/${authService.currentUser!.id}' should be used.
-                  // For now, removing this direct link from side menu for simplicity, as it needs a dynamic ID.
-                  // Instead, 'Manage My Profile' (which goes to /my-profile) is sufficient.
-                  // Or we can add a placeholder like this:
-                  isEnabled: false, // Default to false as it needs a dynamic ID
-                ),
-
-                // Friends & Events Category
-                _buildExpansionTile(
-                  context,
-                  title: 'Friends & Events',
-                  icon: Icons.people,
-                  children: [
-                    // Removed 'Friends Match' as friends_match_screen.dart does not exist
-                    _buildDrawerItem(
-                      context,
-                      title: 'Local Events',
-                      routeName: '/events', // Correct route for LocalEventsScreen
-                      isEnabled: isProfileFullyComplete,
-                    ),
-                  ],
-                ),
-
-                // Premium Category
-                _buildExpansionTile(
-                  context,
-                  title: 'Premium',
-                  icon: Icons.star,
-                  children: [
-                    // Removed 'Premium Membership' as premium_membership_screen.dart does not exist
-                    _buildDrawerItem(
-                      context,
-                      title: 'Referral Program',
-                      routeName: '/premium/referral',
-                      isEnabled: true, // Generally accessible
-                    ),
-                  ],
-                ),
-
-                // Help & Support Category
-                _buildExpansionTile(
-                  context,
-                  title: 'Help & Support',
-                  icon: Icons.help,
-                  children: [
-                    _buildDrawerItem(
-                      context,
-                      title: 'Send Feedback',
-                      routeName: '/feedback', // Correct route
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Report User',
-                      routeName: '/report', // Correct route
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Safety Tips',
-                      routeName: '/info/safety_tips',
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Guided Tour',
-                      routeName: '/info/guided_tour',
-                    ),
-                  ],
-                ),
-
-                // Information Category
-                _buildExpansionTile(
-                  context,
-                  title: 'Information',
-                  icon: Icons.info,
-                  children: [
-                    _buildDrawerItem(
-                      context,
-                      title: 'About Us',
-                      routeName: '/about-us', // Correct route
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Terms & Conditions',
-                      routeName: '/terms', // Correct route
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Privacy Policy',
-                      routeName: '/privacy', // Correct route
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Date Ideas',
-                      routeName: '/info/date_ideas',
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'Activity Feed',
-                      routeName: '/info/activity_feed',
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      title: 'User Progress',
-                      routeName: '/info/user_progress',
-                    ),
-                  ],
-                ),
-
-                // Settings (Direct Link to hub screen)
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  routeName: '/settings', // Correct route
-                ),
-
-                // REMOVED: Conditional Admin Dashboard button - as requested.
-                // If you need admin functionality, it should be placed in a screen accessible only
-                // after verifying admin status within that screen's logic or router guard.
-              ],
-            ),
-          ),
-
-          // Logout Button
-          Padding(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                // No need to pass context here
-                await authService.signOut(); // <--- CORRECTED THIS LINE
-                if (context.mounted) {
-                  // Ensure context is still valid before navigating
-                  context.go('/login'); // Redirect to login after sign out
-                }
-              },
-              icon: Icon(Icons.logout_rounded, color: textColor),
-              label: Text(
-                'Logout',
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: AppConstants.fontSizeMedium,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: buttonColor,
-                foregroundColor: textColor,
-                minimumSize: const Size(double.infinity, 50), // Full width button
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-                ),
-                elevation: 5,
-                shadowColor: buttonColor.withOpacity(0.5),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // Helper method for building a regular ListTile menu item
-  Widget _buildDrawerItem(
-    BuildContext context, {
-    required String title,
-    IconData? icon,
-    required String routeName,
-    bool isEnabled = true, // Default to enabled
-    bool isSelected = false, // Default to not selected
-    VoidCallback? onTap, // Optional onTap for specific actions (like tab selection)
-    bool isDarkMode = false, // Pass dark mode for consistent styling
-  }) {
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color selectedItemColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color disabledColor = isDarkMode ? AppConstants.textLowEmphasis.withOpacity(0.3) : AppConstants.lightTextLowEmphasis.withOpacity(0.3);
-
-    return AnimatedContainer(
-      duration: AppConstants.animationDurationShort,
-      curve: Curves.easeInOut,
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppConstants.paddingSmall,
-        vertical: AppConstants.paddingExtraSmall,
-      ),
-      decoration: BoxDecoration(
-        color: isSelected && isEnabled // Only apply selected color if enabled
-            ? selectedItemColor.withOpacity(0.2)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-        border: isSelected && isEnabled
-            ? Border.all(color: selectedItemColor.withOpacity(0.5), width: 1.0)
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isEnabled
-              ? () {
-                  Navigator.of(context).pop(); // Close the drawer
-                  if (onTap != null) {
-                    onTap(); // Call specific onTap if provided (e.g., for tab change)
-                  } else {
-                    context.go(routeName); // Default navigation via go_router
-                  }
-                }
-              : null, // Disable tap if not enabled
-          borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.paddingMedium,
-              vertical: AppConstants.paddingSmall,
+          const SizedBox(height: 20),
+          SlideTransition(
+            position: Tween<Offset>(begin: const Offset(-0.2, 0), end: Offset.zero).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
             ),
+            child: FadeTransition(
+              opacity: animation,
+              child: Text(
+                'Astro Explorer',
+                style: theme.textTheme.displaySmall?.copyWith(color: AppTheme.accentColor),
+              ),
+            ),
+          ),
+          const SizedBox(height: 5),
+          FadeTransition(
+            opacity: animation,
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  color: isEnabled
-                      ? (isSelected ? selectedItemColor : unselectedItemColor)
-                      : disabledColor,
-                  size: AppConstants.fontSizeExtraLarge,
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                  duration: const Duration(seconds: 1),
+                  builder: (context, value, child) {
+                    return Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: AppTheme.successColor.withOpacity(value),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.successColor.withOpacity(value * 0.6),
+                            blurRadius: 8 * value,
+                            spreadRadius: 2 * value,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(width: AppConstants.spacingMedium),
+                const SizedBox(width: 8),
                 Text(
-                  title,
-                  style: TextStyle(
-                    color: isEnabled
-                        ? (isSelected ? textColor : unselectedItemColor)
-                        : disabledColor,
-                    fontSize: AppConstants.fontSizeMedium,
-                    fontFamily: 'Inter',
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
+                  'Online & Ready to Connect',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.successColor),
                 ),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  // Helper method for building an ExpansionTile menu item
-  Widget _buildExpansionTile(BuildContext context,
-      {required String title, IconData? icon, required List<Widget> children}) {
-    // Determine the text and icon colors based on the theme
-    final theme = Provider.of<ThemeController>(context);
-    final isDarkMode = theme.isDarkMode;
-    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-
-    return Theme( // Use Theme to override ListTileThemeData for ExpansionTile
-      data: Theme.of(context).copyWith(
-        dividerColor: Colors.transparent, // Remove default ExpansionTile divider
-        listTileTheme: ListTileThemeData(
-          iconColor: unselectedItemColor, // Default icon color for expansion tile header
-          textColor: textColor, // Default text color for expansion tile header
-          selectedColor: AppConstants.secondaryColor, // Color when expanded/selected
-          minLeadingWidth: AppConstants.fontSizeExtraLarge, // Align leading icon size
-        ),
-      ),
-      child: ExpansionTile(
-        leading: icon != null ? Icon(icon) : null,
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: AppConstants.fontSizeMedium,
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.normal,
-            color: textColor,
-          ),
-        ),
-        children: children,
+          const SizedBox(height: 20),
+          const Divider(color: Colors.white12, thickness: 1.0),
+        ],
       ),
     );
   }
 }
+
+// --- Side Menu Navigation Item ---
+class SideMenuItem extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool isSelected;
+  final bool hasNotification;
+  final Animation<double> parentAnimation;
+
+  const SideMenuItem({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.isSelected = false,
+    this.hasNotification = false,
+    required this.parentAnimation,
+  });
+
+  @override
+  State<SideMenuItem> createState() => _SideMenuItemState();
+}
+
+class _SideMenuItemState extends State<SideMenuItem> with SingleTickerProviderStateMixin {
+  late AnimationController _hoverController;
+  late Animation<double> _hoverAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _hoverController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _hoverAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _hoverController, curve: Curves.easeOutCubic),
+    );
+  }
+
+  @override
+  void dispose() {
+    _hoverController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final itemColor = widget.isSelected ? AppTheme.accentColor : AppConstants.textColor.withOpacity(0.8); // Correct: Use AppConstants.textColor
+    final backgroundColor = widget.isSelected ? AppTheme.primaryColor.withOpacity(0.3) : Colors.transparent;
+
+    return AnimatedBuilder(
+      animation: widget.parentAnimation,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: widget.parentAnimation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset(-0.3 + (widget.parentAnimation.value * 0.1), 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: widget.parentAnimation, curve: Curves.easeOutCubic)),
+            child: MouseRegion(
+              onEnter: (_) => _hoverController.forward(),
+              onExit: (_) => _hoverController.reverse(),
+              child: GestureDetector(
+                onTap: widget.onTap,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: widget.isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.accentColor.withOpacity(0.2),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ]
+                        : [],
+                  ),
+                  margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 15.0),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 15.0),
+                  child: Row(
+                    children: [
+                      Icon(widget.icon, color: itemColor.withOpacity(0.8 + _hoverAnimation.value * 0.2), size: 28),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: itemColor.withOpacity(0.8 + _hoverAnimation.value * 0.2),
+                            fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      if (widget.hasNotification)
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0.8, end: 1.1),
+                          duration: const Duration(milliseconds: 600),
+                          curve: Curves.elasticOut,
+                          builder: (context, scale, child) {
+                            return Transform.scale(
+                              scale: scale,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.dangerColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Text(
+                                  '!',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// --- Dynamic Theme Switcher Widget ---
+class GalaxyThemeSwitcher extends StatefulWidget {
+  final Animation<double> parentAnimation;
+  const GalaxyThemeSwitcher({super.key, required this.parentAnimation});
+
+  @override
+  State<GalaxyThemeSwitcher> createState() => _GalaxyThemeSwitcherState();
+}
+
+class _GalaxyThemeSwitcherState extends State<GalaxyThemeSwitcher> {
+  int _selectedThemeIndex = 0;
+
+  final List<Map<String, dynamic>> _themes = [
+    {'name': 'Default Galaxy', 'icon': Icons.brightness_auto, 'color': AppTheme.accentColor},
+    {'name': 'Nebula Bloom', 'icon': Icons.flare, 'color': AppTheme.primaryColor},
+    {'name': 'Deep Void', 'icon': Icons.dark_mode, 'color': Colors.grey},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FadeTransition(
+      opacity: widget.parentAnimation,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(-0.3, 0), end: Offset.zero).animate(
+          CurvedAnimation(parent: widget.parentAnimation, curve: Curves.easeOutCubic),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Galaxy Themes', style: theme.textTheme.headlineMedium?.copyWith(color: AppConstants.textColor)), // Correct: Use AppConstants.textColor
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.cardColor.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: AppTheme.accentColor.withOpacity(0.3)),
+                ),
+                padding: const EdgeInsets.all(10.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: _themes.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final themeData = entry.value;
+                    final isSelected = index == _selectedThemeIndex;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedThemeIndex = index;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Switched to ${themeData['name']}!'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        decoration: BoxDecoration(
+                          color: isSelected ? themeData['color'].withOpacity(0.3) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isSelected ? themeData['color'] : Colors.transparent,
+                            width: isSelected ? 2.0 : 0.0,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: themeData['color'].withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          children: [
+                            Icon(themeData['icon'], size: 30, color: themeData['color']),
+                            const SizedBox(height: 5),
+                            Text(
+                              themeData['name'],
+                              style: theme.textTheme.bodySmall?.copyWith(color: themeData['color']),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- Cosmic Credits Widget ---
+class CosmicCreditsWidget extends StatelessWidget {
+  final Animation<double> parentAnimation;
+  const CosmicCreditsWidget({super.key, required this.parentAnimation});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FadeTransition(
+      opacity: parentAnimation,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(-0.3, 0), end: Offset.zero).animate(
+          CurvedAnimation(parent: parentAnimation, curve: Curves.easeOutCubic),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: theme.cardColor.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: AppTheme.successColor.withOpacity(0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.successColor.withOpacity(0.1),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(15.0),
+            child: Row(
+              children: [
+                Icon(Icons.monetization_on, size: 40, color: AppTheme.successColor),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Cosmic Credits', style: theme.textTheme.headlineSmall?.copyWith(color: AppTheme.successColor)),
+                      TweenAnimationBuilder<int>(
+                        tween: IntTween(begin: 0, end: 15423),
+                        duration: const Duration(seconds: 2),
+                        builder: (context, value, child) {
+                          return Text(
+                            '$value CC',
+                            style: theme.textTheme.titleLarge?.copyWith(color: AppTheme.successColor, fontWeight: FontWeight.bold),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add_circle, color: AppTheme.successColor, size: 30),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Adding credits... (simulated)')),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+// --- Main Side Menu Widget ---
+class DashboardSideMenu extends StatefulWidget {
+  final Animation<double> parentAnimation;
+
+  const DashboardSideMenu({super.key, required this.parentAnimation});
+
+  @override
+  State<DashboardSideMenu> createState() => _DashboardSideMenuState();
+}
+
+class _DashboardSideMenuState extends State<DashboardSideMenu> { // Removed TickerProviderStateMixin
+  int _selectedIndex = 0;
+
+  // No initState needed to initialize _drawerAnimationController
+
+  // Removed didChangeDependencies and dispose logic related to ModalRoute listeners
+  // Removed _handleRouteChanged method
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    Navigator.of(context).pop(); // Close the drawer
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Navigated to ${[
+        'Dashboard', 'Messages', 'Connections', 'Events', 'Profile', 'Settings'
+      ][_selectedIndex]}')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final width = MediaQuery.of(context).size.width * 0.75;
+
+    return Theme(
+      data: AppTheme.galaxyTheme,
+      child: Drawer(
+        width: width,
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: widget.parentAnimation, // Correct: Use widget.parentAnimation
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: SideMenuGalaxyPainter(widget.parentAnimation), // Correct: Use widget.parentAnimation
+                    child: Container(),
+                  );
+                },
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppConstants.backgroundColor.withOpacity(0.85),
+                      AppConstants.backgroundColor.withOpacity(0.95),
+                      Colors.black.withOpacity(0.98),
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            ListView(
+              padding: EdgeInsets.zero,
+              children: <Widget>[
+                SideMenuProfileHeader(animation: widget.parentAnimation), // Correct: Use widget.parentAnimation
+                SideMenuItem(
+                  icon: Icons.dashboard,
+                  title: 'Dashboard',
+                  onTap: () => _onItemTapped(0),
+                  isSelected: _selectedIndex == 0,
+                  parentAnimation: widget.parentAnimation,
+                ),
+                SideMenuItem(
+                  icon: Icons.message,
+                  title: 'Messages',
+                  onTap: () => _onItemTapped(1),
+                  isSelected: _selectedIndex == 1,
+                  hasNotification: true,
+                  parentAnimation: widget.parentAnimation,
+                ),
+                SideMenuItem(
+                  icon: Icons.group,
+                  title: 'Connections',
+                  onTap: () => _onItemTapped(2),
+                  isSelected: _selectedIndex == 2,
+                  parentAnimation: widget.parentAnimation,
+                ),
+                SideMenuItem(
+                  icon: Icons.event,
+                  title: 'Cosmic Events',
+                  onTap: () => _onItemTapped(3),
+                  isSelected: _selectedIndex == 3,
+                  parentAnimation: widget.parentAnimation,
+                ),
+                SideMenuItem(
+                  icon: Icons.person,
+                  title: 'My Profile',
+                  onTap: () => _onItemTapped(4),
+                  isSelected: _selectedIndex == 4,
+                  parentAnimation: widget.parentAnimation,
+                ),
+                const Divider(color: Colors.white12, thickness: 1.0, indent: 15, endIndent: 15),
+                GalaxyThemeSwitcher(parentAnimation: widget.parentAnimation), // Correct: Use widget.parentAnimation
+                CosmicCreditsWidget(parentAnimation: widget.parentAnimation), // Correct: Use widget.parentAnimation
+                SideMenuItem(
+                  icon: Icons.settings,
+                  title: 'Settings',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Navigating to Settings...')),
+                    );
+                  },
+                  isSelected: _selectedIndex == 5,
+                  parentAnimation: widget.parentAnimation,
+                ),
+                SideMenuItem(
+                  icon: Icons.help_center,
+                  title: 'Help & Support',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Opening Help Center...')),
+                    );
+                  },
+                  isSelected: _selectedIndex == 6,
+                  parentAnimation: widget.parentAnimation,
+                ),
+                const Divider(color: Colors.white12, thickness: 1.0, indent: 15, endIndent: 15),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20.0),
+                  child: AnimatedBuilder(
+                    animation: widget.parentAnimation, // Correct: Use widget.parentAnimation
+                    builder: (context, child) {
+                      return FadeTransition(
+                        opacity: widget.parentAnimation, // Correct: Use widget.parentAnimation
+                        child: SlideTransition(
+                          position: Tween<Offset>(begin: const Offset(0.2, 0), end: Offset.zero).animate(
+                            CurvedAnimation(parent: widget.parentAnimation, curve: Curves.easeOutCubic), // Correct: Use widget.parentAnimation
+                          ),
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            label: Text('Logout', style: theme.textTheme.labelLarge),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Logging out... (simulated)')),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.dangerColor.withOpacity(0.8),
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              elevation: 5,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20.0, top: 10.0),
+                  child: Text(
+                    'Version 1.0.0 (Galactic Core)',
+                    style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

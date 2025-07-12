@@ -1,9 +1,13 @@
 // lib/app_constants.dart
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // IMPORTANT: Add this import
+import 'package:intl/intl.dart';
 
 class AppConstants {
+  // Private constructor to prevent instantiation
+  AppConstants._();
+
+  // Application Name
   static const String appName = 'Blind AI Dating';
   static const String appNamePrivacyPolicy = 'BliindAI Dating';
 
@@ -11,7 +15,7 @@ class AppConstants {
   static const String landingHeadline1 = 'Tired of loneliness? Craving real connection?';
   static const String landingHeadline2 = 'Your journey to belonging begins here.';
   static const String landingTapPrompt = 'Tap the light to reveal your destiny';
-  static const String landingTagline = 'Find your connection in the stars'; // New tagline
+  static const String landingTagline = 'Find your connection in the stars';
 
   // Access Portal Screen Content
   static const String portalIntroTitle = 'Your Journey to Authentic Connection';
@@ -20,18 +24,17 @@ class AppConstants {
   static const String aiPowerTitle = 'The Precision of AI Matchmaking';
   static const String aiPowerBody = 'Our advanced AI analyzes your core personality, values, and communication style, not just superficial traits. The more open and truthful you are in your profile and questionnaires, the more accurately our algorithms can match you with someone truly compatible. This commitment to honesty ensures more successful and meaningful connections.';
 
-  static const String dateAutomationTitle = 'Your Perfect Date, Effortlessly Arranged';
+  static const String dateAutomationTitle = 'Your Perfect Date, Effortlessly Arraged';
   static const String dateAutomationBody = 'Once our AI finds your ideal match, Blind AI Dating removes the stress of planning. We automatically propose a date, time, and a thoughtfully chosen public venue based on both your availabilities and locations. All you need to do is show up and connect with confidence, knowing every detail is handled for you.';
 
   static const String privacyPromiseTitle = 'Privacy & Security: Our Unwavering Commitment';
   static const String privacyPromiseBody = 'Your trust is our foundation. We employ robust security measures and strict privacy protocols to protect your personal information. Our blind matching feature ensures first impressions are built on genuine conversation, providing a safe and respectful environment for every interaction.';
 
-  // Paths to your SVG assets (match these to your filenames exactly)
+  // Paths to your SVG assets
   static const String svgAiCompatibility = 'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg';
   static const String svgHonesty = 'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg';
   static const String svgDatePlanning = 'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg';
   static const String svgPrivacyShield = 'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg';
-  // All listed SVG assets for InsightCrystal
   static const String svgLoveAndDating1 = 'assets/svg/DrawKit Vector Illustration Love & Dating (1).svg';
   static const String svgLoveAndDating2 = 'assets/svg/DrawKit Vector Illustration Love & Dating (2).svg';
   static const String svgLoveAndDating3 = 'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg';
@@ -45,15 +48,14 @@ class AppConstants {
   static const String svgLoveAndDating11 = 'assets/svg/DrawKit Vector Illustration Love & Dating (11).svg';
   static const String svgLoveAndDating12 = 'assets/svg/DrawKit Vector Illustration Love & Dating (12).svg';
 
-
   // General UI text
   static const String loginButtonText = 'Log In';
   static const String signupButtonText = 'Sign Up';
 
-  // --- Theme Constants ---
-  // Primary and Secondary colors (keeping your original definitions from your main.dart theme)
-  static const Color primaryColor = Color(0xFFE91E63); // Pink/Red from main.dart
-  static const Color secondaryColor = Color(0xFF2196F3); // Blue/Cyan from main.dart
+  // --- Theme Colors (Comprehensive) ---
+  // Primary and Secondary colors
+  static const Color primaryColor = Color(0xFFE91E63); // Pink/Red
+  static const Color secondaryColor = Color(0xFF2196F3); // Blue/Cyan
 
   // Explicit shades for primary and secondary colors (dark theme)
   static const Color primaryColorShade900 = Color(0xFF880E4F); // Deepest shade of primary
@@ -66,8 +68,7 @@ class AppConstants {
 
   // Accent colors for AppBar, mapping to secondary colors
   static const Color accentColor = secondaryColor;
-  static const Color lightAccentColor = lightSecondaryColor;
-
+  static const Color lightAccentColor = lightSecondaryColor; // Defined below
 
   // New colors to expand the palette based on the cosmic theme suggestion
   static const Color tertiaryColor = Color(0xFF8E24AA); // A deep purple
@@ -86,15 +87,16 @@ class AppConstants {
   static const Color dialogBackgroundColor = Color(0xFF2A2A2A); // Background for modals/dialogs
 
   // Text colors for dark theme
-  static const Color textColor = Colors.white; // Changed from white70 for better visibility as per original landing page
+  static const Color textColor = Colors.white; // Changed from white70 for better visibility
   static const Color textHighEmphasis = Colors.white; // For important text
   static const Color textMediumEmphasis = Colors.white70;
   static const Color textLowEmphasis = Colors.white54;
   static const Color iconColor = Colors.white; // A general color for icons
   static const Color borderColor = Colors.white; // For borders on elements
   static const Color errorColor = Color(0xFFCF6679); // Error red
+  static const Color successColor = Color(0xFF4CAF50); // Green for success
 
-  // Light Theme Colors (for theme toggle)
+  // Light Theme Colors
   static const Color lightBackgroundColor = Color(0xFFF0F2F5);
   static const Color lightSurfaceColor = Color(0xFFFFFFFF);
   static const Color lightCardColor = Color(0xFFF8F8F8);
@@ -117,21 +119,18 @@ class AppConstants {
   static const Color lightSecondaryColorShade700 = Color(0xFF1976D2);
   static const Color lightSecondaryColorShade400 = Color(0xFF42A5F5);
 
-  // NEW: Colors for the Phase 2 Completion Banner
+  // Colors for the Phase 2 Completion Banner
   static const Color bannerBackgroundColorDark = Color(0xFF4A148C); // Deep Purple
   static const Color bannerBackgroundColorLight = Color(0xFFD1C4E9); // Lighter purple for light theme
-
   static const Color bannerTextColorDark = Colors.white;
   static const Color bannerTextColorLight = Colors.black87;
-
   static const Color bannerButtonColorDark = Color(0xFF0D47A1); // Galaxy Blue (Darker Secondary)
   static const Color bannerButtonColorLight = Color(0xFFBBDEFB); // Lighter blue
-
   static const Color bannerButtonTextColorDark = Colors.white;
   static const Color bannerButtonTextColorLight = Colors.black87;
 
 
-  // Spacing
+  // --- Spacing ---
   static const double spacingExtraSmall = 4.0;
   static const double spacingSmall = 8.0;
   static const double spacingMedium = 16.0;
@@ -141,24 +140,22 @@ class AppConstants {
   static const double spacingXXXL = 64.0;
   static const double spacingXXXXL = 96.0;
 
-
-  // Padding
+  // --- Padding ---
   static const double paddingExtraSmall = 4.0;
   static const double paddingSmall = 8.0;
   static const double paddingMedium = 16.0;
   static const double paddingLarge = 24.0;
   static const double paddingExtraLarge = 32.0;
 
-  // Border Radius
+  // --- Border Radius ---
   static const double borderRadiusSmall = 4.0;
   static const double borderRadiusMedium = 8.0;
   static const double borderRadiusLarge = 16.0;
   static const double borderRadiusExtraLarge = 25.0;
   static const double borderRadiusCircular = 1000.0;
-  static const double borderRadius = 16.0;
+  static const double borderRadius = 16.0; // General default radius
 
-
-  // Font Sizes
+  // --- Font Sizes ---
   static const double fontSizeSmall = 12.0;
   static const double fontSizeMedium = 16.0;
   static const double fontSizeLarge = 20.0;
@@ -167,18 +164,16 @@ class AppConstants {
   static const double fontSizeHeadline = 28.0;
   static const double fontSizeBody = 16.0;
 
-  // Animation Durations
+  // --- Animation Durations (as Duration objects) ---
   static const Duration animationDurationShort = Duration(milliseconds: 200);
   static const Duration animationDurationMedium = Duration(milliseconds: 500);
+  static const Duration animationDurationNormal = Duration(milliseconds: 500); // Added for clarity, same as medium
   static const Duration animationDurationLong = Duration(seconds: 1);
   static const Duration animationDurationExtraLong = Duration(seconds: 2);
 
-  // Avatar Radius
+  // Other specific constants
   static const double avatarRadius = 40.0;
-
-  // Date Formatter (NEWLY ADDED)
   static final DateFormat dateFormatter = DateFormat('yyyy-MM-dd'); // Formats date as YYYY-MM-DD
-
-  // NEW: Dashboard Side Menu Width
   static const double dashboardSideMenuWidth = 280.0;
 }
+

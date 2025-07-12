@@ -1,45 +1,599 @@
 // lib/screens/main/main_dashboard_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:async';
-import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart'; // For debugPrint
-import 'dart:ui'; // Import for ImageFilter
+import 'dart:math' as math;
+import 'package:vector_math/vector_math.dart' show radians; // Keep if actually used, otherwise can be removed
 
-// Local imports for core project components
+// Import the consolidated AppTheme and AppConstants
+import 'package:bliindaidating/theme/app_theme.dart';
 import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/user_profile.dart';
-import 'package:bliindaidating/services/profile_service.dart';
+// FIX: Corrected import path for dashboard_side_menu.dart based on file tree
+import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart'; // Import the side menu
 
-// OpenAI Integration Imports (already confirmed to exist and be populated)
-import 'package:bliindaidating/services/openai_service.dart';
-import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
-import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
+// Re-creating an enhanced GalaxyBackgroundPainter
+class GalaxyBackgroundPainter extends CustomPainter {
+  final Animation<double> animation;
 
-// NEW: Dashboard Shell Component Imports (These files now exist as per tree output)
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switcher.dart';
+  GalaxyBackgroundPainter(this.animation) : super(repaint: animation);
 
-// NEW: Tab Content Screen Imports (These placeholder files now exist as per tree output)
-import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
-import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
-import 'package:bliindaidating/screens/discovery/discovery_screen.dart';
-import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart'; // This is tab index 3
-import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.fill;
 
-// NEW: Import the new Phase2SetupScreen
-import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // This is tab index 4
+    final gradient = RadialGradient(
+      colors: [
+        AppConstants.backgroundColor.withOpacity(0.8),
+        AppConstants.backgroundColor.withOpacity(1.0),
+        Colors.black.withOpacity(0.9),
+      ],
+      stops: const [0.0, 0.5, 1.0],
+      center: Alignment.center,
+      radius: 0.8,
+    ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint..shader = gradient);
 
-// Assuming AnimatedOrbBackground is in landing_page/widgets as per tree
-import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
+    final starPaint = Paint()..color = Colors.white;
+    final random = math.Random(0);
 
+    for (int i = 0; i < 200; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final starSize = (random.nextDouble() * 1.5 + 0.5) * animation.value;
+      canvas.drawCircle(Offset(x, y), starSize, starPaint);
+    }
+
+    final nebulaPaint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    
+    final nebulaColor1 = Color.lerp(AppTheme.primaryColor.withOpacity(0.3), AppTheme.accentColor.withOpacity(0.5), animation.value)!;
+    final nebulaColor2 = Color.lerp(AppTheme.accentColor.withOpacity(0.2), AppTheme.primaryColor.withOpacity(0.4), 1.0 - animation.value)!;
+
+    final nebulaGradient = RadialGradient(
+      colors: [nebulaColor1, nebulaColor2, Colors.transparent],
+      stops: const [0.0, 0.6, 1.0],
+    ).createShader(Rect.fromCircle(center: Offset(size.width * 0.2, size.height * 0.1), radius: 150 + 50 * animation.value));
+    canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.1), 150 + 50 * animation.value, nebulaPaint..shader = nebulaGradient);
+
+    final nebulaGradient2 = RadialGradient(
+      colors: [nebulaColor2, nebulaColor1, Colors.transparent],
+      stops: const [0.0, 0.6, 1.0],
+    ).createShader(Rect.fromCircle(center: Offset(size.width * 0.8, size.height * 0.9), radius: 120 + 40 * (1.0 - animation.value)));
+    canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.9), 120 + 40 * (1.0 - animation.value), nebulaPaint..shader = nebulaGradient2);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+// A more complex App Bar with dynamic elements
+class CustomAppBarGalaxy extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final VoidCallback onMenuPressed;
+  final double scrollOffset;
+
+  const CustomAppBarGalaxy({
+    super.key,
+    required this.title,
+    required this.onMenuPressed,
+    this.scrollOffset = 0.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final opacity = (1.0 - (scrollOffset / 200).clamp(0.0, 1.0));
+
+    return AppBar(
+      backgroundColor: theme.appBarTheme.backgroundColor?.withOpacity(0.8 - (scrollOffset / 300).clamp(0.0, 0.8)),
+      elevation: 0,
+      leading: AnimatedOpacity(
+        opacity: opacity,
+        duration: AppConstants.animationDurationNormal, // Correct: AppConstants.animationDurationNormal is a Duration
+        child: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: onMenuPressed,
+          color: theme.iconTheme.color,
+        ),
+      ),
+      title: Transform.translate(
+        offset: Offset(0, -scrollOffset * 0.5),
+        child: AnimatedOpacity(
+          opacity: opacity,
+          duration: AppConstants.animationDurationNormal, // Correct: AppConstants.animationDurationNormal is a Duration
+          child: Text(
+            title,
+            style: theme.appBarTheme.titleTextStyle,
+          ),
+        ),
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16.0),
+          child: IconButton(
+            icon: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(Icons.notifications, color: theme.iconTheme.color),
+                if (true)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.5, end: 1.2),
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.elasticOut,
+                      builder: (context, scale, child) {
+                        return Transform.scale(
+                          scale: scale,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: AppTheme.dangerColor,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.dangerColor.withOpacity(0.5),
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: const Text(
+                              '3',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+            onPressed: () {
+              // Handle notifications
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: IconButton(
+            icon: Icon(Icons.search, color: theme.iconTheme.color),
+            onPressed: () {
+              // Handle search
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+
+// --- Complex Dashboard Widgets (Simulated) ---
+
+class AnimatedCardWrapper extends StatefulWidget {
+  final Widget child;
+  final Duration animationDuration;
+  final Curve animationCurve;
+  final double initialDelay;
+
+  const AnimatedCardWrapper({
+    super.key,
+    required this.child,
+    this.animationDuration = const Duration(milliseconds: 600),
+    this.animationCurve = Curves.easeOutCubic,
+    this.initialDelay = 0.0,
+  });
+
+  @override
+  State<AnimatedCardWrapper> createState() => _AnimatedCardWrapperState();
+}
+
+class _AnimatedCardWrapperState extends State<AnimatedCardWrapper> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.animationDuration,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: widget.animationCurve),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: widget.animationCurve),
+    );
+
+    Future.delayed(Duration(milliseconds: (widget.initialDelay * 1000).toInt()), () {
+      if (mounted) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+
+class MatchCarouselWidget extends StatelessWidget {
+  const MatchCarouselWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedCardWrapper(
+      initialDelay: 0.1,
+      child: Card(
+        color: theme.cardColor.withOpacity(0.7),
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Orbital Matches', style: theme.textTheme.titleLarge?.copyWith(color: AppTheme.accentColor)),
+              const SizedBox(height: 15),
+              SizedBox(
+                height: 180,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: 5,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 15.0),
+                      child: Container(
+                        width: 150,
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.5), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withOpacity(0.2),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleAvatar(
+                              radius: 40,
+                              backgroundColor: AppTheme.accentColor.withOpacity(0.2),
+                              child: Icon(Icons.person, size: 50, color: AppTheme.accentColor.withOpacity(0.7)),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Star Seeker ${index + 1}',
+                              style: theme.textTheme.headlineSmall,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 5),
+                            LinearProgressIndicator(
+                              value: (index + 3) * 0.1,
+                              backgroundColor: AppTheme.cardColor.withOpacity(0.5),
+                              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.successColor),
+                            ),
+                            Text(
+                              '${((index + 3) * 10)}% Match',
+                              style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10),
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 15),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    'View All Matches >',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.accentColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ActivityFeedWidget extends StatelessWidget {
+  const ActivityFeedWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedCardWrapper(
+      initialDelay: 0.2,
+      child: Card(
+        color: theme.cardColor.withOpacity(0.7),
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Cosmic Activity Feed', style: theme.textTheme.titleLarge?.copyWith(color: AppTheme.accentColor)),
+              const SizedBox(height: 15),
+              Expanded(
+                child: ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 4,
+                  itemBuilder: (context, index) {
+                    IconData icon;
+                    String activityText;
+                    Color iconColor;
+
+                    if (index == 0) {
+                      icon = Icons.message;
+                      activityText = 'New message from AstroGirl22!';
+                      iconColor = AppTheme.successColor;
+                    } else if (index == 1) {
+                      icon = Icons.group_add;
+                      activityText = 'You connected with GalaxyNavigator.';
+                      iconColor = AppTheme.primaryColor;
+                    } else if (index == 2) {
+                      icon = Icons.visibility;
+                      activityText = 'Your profile was viewed by 5 new explorers.';
+                      iconColor = AppTheme.accentColor;
+                    } else {
+                      icon = Icons.event;
+                      activityText = 'Upcoming event: "Nebula Nexus Meetup" tonight!';
+                      iconColor = AppTheme.dangerColor;
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Icon(icon, color: iconColor, size: 28),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Text(
+                              activityText,
+                              style: theme.textTheme.bodyMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    'View Full Activity Log >',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.accentColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PersonalizedInsightsCard extends StatelessWidget {
+  const PersonalizedInsightsCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedCardWrapper(
+      initialDelay: 0.3,
+      child: Card(
+        color: theme.cardColor.withOpacity(0.7),
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Your Cosmic Insights', style: theme.textTheme.titleLarge?.copyWith(color: AppTheme.accentColor)),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildInsightMetric(context, 'Connections', '125', Icons.people_alt, AppTheme.successColor),
+                  _buildInsightMetric(context, 'Engagements', '8.7K', Icons.star, AppTheme.primaryColor),
+                  _buildInsightMetric(context, 'Profile Views', '450', Icons.remove_red_eye, AppTheme.accentColor),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Tip: Your recent engagement is up by 15% this week! Keep exploring new galaxies to find more connections.',
+                style: theme.textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    'Dive DAppConstants.textColoreeper >',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.accentColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInsightMetric(BuildContext context, String title, String value, IconData icon, Color color) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        Icon(icon, size: 40, color: color),
+        const SizedBox(height: 5),
+        Text(value, style: theme.textTheme.displaySmall?.copyWith(color: color)),
+        Text(title, style: theme.textTheme.bodyMedium),
+      ],
+    );
+  }
+}
+
+class TrendingCosmicEvents extends StatelessWidget {
+  const TrendingCosmicEvents({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedCardWrapper(
+      initialDelay: 0.4,
+      child: Card(
+        color: theme.cardColor.withOpacity(0.7),
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Trending Cosmic Events', style: theme.textTheme.titleLarge?.copyWith(color: AppTheme.accentColor)),
+              const SizedBox(height: 15),
+              Expanded(
+                child: ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: 3,
+                  itemBuilder: (context, index) {
+                    String eventName;
+                    String eventDate;
+                    String location;
+                    Color color;
+                    IconData icon; // FIX: Declare icon here and initialize it
+
+                    if (index == 0) {
+                      eventName = 'Meteor Shower Watch Party';
+                      eventDate = 'July 25, 2025';
+                      location = 'Virtual Galaxy Meetup';
+                      color = AppTheme.successColor;
+                      icon = Icons.star; // Example icon
+                    } else if (index == 1) {
+                      eventName = 'Planetary Alignment Seminar';
+                      eventDate = 'August 1, 2025';
+                      location = 'Cosmic Convention Center';
+                      color = AppTheme.primaryColor;
+                      icon = Icons.public; // Example icon
+                    } else {
+                      eventName = 'Black Hole Physics Lecture';
+                      eventDate = 'August 10, 2025';
+                      location = 'Online Webinar';
+                      color = AppTheme.dangerColor;
+                      icon = Icons.school; // Example icon
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Icon(icon, color: color, size: 28), // FIX: Use the local 'icon' variable
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(eventName, style: theme.textTheme.headlineSmall),
+                                Text('$eventDate - $location', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: color.withOpacity(0.7),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              textStyle: const TextStyle(fontSize: 12),
+                            ),
+                            child: const Text('RSVP'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    'Explore More Events >',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: AppTheme.accentColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- Main Dashboard Screen ---
 
 class MainDashboardScreen extends StatefulWidget {
+  // Constructor is correct, no changes needed here.
   const MainDashboardScreen({super.key});
 
   @override
@@ -47,335 +601,148 @@ class MainDashboardScreen extends StatefulWidget {
 }
 
 class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerProviderStateMixin {
-  UserProfile? _userProfile;
-  String? _profilePictureDisplayUrl;
-  bool _isLoadingProfile = true;
-  StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
-  int _selectedTabIndex = 0; // Default to Newsfeed (index 0)
-
-  // Obtain ProfileService via Provider in initState or build, not instantiate directly
-  // The ProfileService is provided at the root of the app.
-  // final ProfileService _profileService = ProfileService(); // REMOVE: Don't instantiate here
-  final OpenAIService _openAIService = OpenAIService(); // Instantiate OpenAIService
-
+  late AnimationController _galaxyAnimationController;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0.0;
 
   @override
   void initState() {
     super.initState();
-    // No need to instantiate ProfileService here if it's already provided by MultiProvider
-    // Access it using Provider.of in _loadUserProfileAndSubscribe
-    _loadUserProfileAndSubscribe();
-    _fetchAIDummyData();
-  }
+    _galaxyAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    )..repeat(reverse: true);
 
-  // Moved profile service access to the method, as context is available
-  Future<void> _loadUserProfileAndSubscribe() async {
-    final profileService = Provider.of<ProfileService>(context, listen: false);
-    final User? currentUser = Supabase.instance.client.auth.currentUser;
-
-    if (currentUser == null) {
-      setState(() { _isLoadingProfile = false; });
-      debugPrint('MainDashboardScreen: No current user for profile load. Redirecting to login.');
-      if (mounted) context.go('/login');
-      return;
-    }
-
-    try {
-      final UserProfile? fetchedProfile = await profileService.fetchUserProfile(currentUser.id);
-      if (fetchedProfile != null) {
-        setState(() {
-          _userProfile = fetchedProfile;
-          _isLoadingProfile = false;
-        });
-        if (fetchedProfile.profilePictureUrl != null) {
-          setState(() {
-            _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
-          });
-        }
-        // Redirect if Phase 1 is incomplete (handled by main.dart's redirect primarily, but good fallback here)
-        if (!fetchedProfile.isPhase1Complete) {
-           debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
-           if (mounted) context.go('/profile_setup');
-           return;
-        }
-      } else {
-        setState(() { _isLoadingProfile = false; });
-        debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
-        if (mounted) {
-          context.go('/profile_setup'); // Ensure Phase 1 setup handles new profile creation
-        }
-      }
-
-      // Realtime subscription setup
-      // Use profileService.userProfileStream if ProfileService exposes one,
-      // or set up a direct Supabase stream here as before.
-      // The current direct stream is fine.
-      _profileSubscription = Supabase.instance.client
-          .from('profiles')
-          .stream(primaryKey: ['id'])
-          .eq('id', currentUser.id)
-          .listen((List<Map<String, dynamic>> data) async {
-        if (data.isNotEmpty) {
-          final UserProfile updatedProfile = UserProfile.fromJson(data.first);
-          setState(() {
-            _userProfile = updatedProfile;
-            if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
-              _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
-            }
-          });
-          debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
-          // If profile completion status changes, this setState will trigger a rebuild,
-          // and the UI (blur, banner) will react accordingly.
-        }
+    _scrollController.addListener(() {
+      setState(() {
+        _scrollOffset = _scrollController.offset;
       });
-    } on PostgrestException catch (e) {
-      debugPrint('MainDashboardScreen: Supabase Postgrest Error loading profile or setting up Realtime: ${e.message}');
-      setState(() { _isLoadingProfile = false; });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load profile: ${e.message}')),
-        );
-      }
-    } catch (e) {
-      debugPrint('MainDashboardScreen: General Error loading profile or setting up Realtime: $e');
-      setState(() { _isLoadingProfile = false; });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
-
-  Future<void> _fetchAIDummyData() async {
-    debugPrint('--- Fetching AI Dummy Data (from MainDashboardScreen) ---');
-    try {
-      final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
-      debugPrint('AI Generated Dummy Profiles:');
-      for (var profile in dummyProfiles) {
-        // FIXED: Use profile.hobbiesAndInterests which is List<String>
-        debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${profile.hobbiesAndInterests.join(', ')}');
-      }
-
-      final List<NewsfeedItem> newsfeedItems = await _openAIService.generateNewsfeedItems(
-        5,
-        userLocation: 'Snyderville, Utah',
-        userRadius: 50,
-      );
-      debugPrint('AI Generated Newsfeed Items:');
-      for (var item in newsfeedItems) {
-        debugPrint('  - [${item.type.name}] ${item.username ?? ''}: ${item.content}');
-      }
-
-      final List<AIEngagementPrompt> aiPrompts = await _openAIService.generateAIEngagementPrompts(3);
-      debugPrint('AI Generated Engagement Prompts:');
-      for (var prompt in aiPrompts) {
-        debugPrint('  - ${prompt.tip}');
-      }
-
-      if (dummyProfiles.isNotEmpty) {
-        final List<Map<String, dynamic>> dummyMatches = await _openAIService.generateDummyMatches(2, dummyProfiles);
-        debugPrint('AI Generated Dummy Matches:');
-        for (var match in dummyMatches) {
-          debugPrint('  - Match between ${match['user1Id']} and ${match['user2Id']} - Score: ${match['compatibilityScore']}, Reason: ${match['reason']}');
-        }
-      }
-      debugPrint('--- AI Dummy Data Fetch Complete ---');
-    } catch (e) {
-      debugPrint('Error fetching AI dummy data: $e');
-      if (kDebugMode) {
-        print('Detailed AI Dummy Data Error: ${e.toString()}');
-      }
-    }
-  }
-
-  void _onTabSelected(int index) {
-    setState(() {
-      _selectedTabIndex = index;
     });
   }
 
   @override
   void dispose() {
-    _profileSubscription?.cancel();
+    _galaxyAnimationController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
+  void _openEndDrawer() {
+    _scaffoldKey.currentState?.openEndDrawer();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ThemeController>(context);
-    final isDarkMode = theme.isDarkMode;
-
-    // Check Phase 2 completion status from the service's current profile
-    // It's crucial to listen to ProfileService here if you want immediate UI reactions
-    // to changes in isPhase2Complete without relying solely on _profileSubscription.
-    // However, _profileSubscription already updates _userProfile, so that's effective.
-    final profileService = Provider.of<ProfileService>(context); // Listen to ProfileService
-    final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
-
-
-    // Define the index for the Phase 2 setup screen in your _dashboardScreens list.
-    // IMPORTANT: Ensure this matches the actual index of Phase2SetupScreen in the list below.
-    const int phase2SetupTabIndex = 4; // Phase2SetupScreen is at index 4
-
-    // Determine if the content should be blurred and absorbed (interactions blocked)
-    // Content is absorbed if profile is still loading OR if Phase 2 is incomplete
-    // AND the current tab is NOT the Phase 2 setup tab.
-    final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete && _selectedTabIndex != phase2SetupTabIndex);
-
-
-    // List of screens for the DashboardContentSwitcher
-    final List<Widget> _dashboardScreens = const [
-      NewsfeedScreen(),           // Index 0
-      MatchesListScreen(),        // Index 1
-      DiscoveryScreen(),          // Index 2
-      QuestionnaireScreen(),      // Index 3 (Assuming this is a general questionnaire, not Phase 2 setup)
-      Phase2SetupScreen(),        // Index 4 (This is the dedicated Phase 2 Setup with sub-tabs)
-      // Add other main dashboard screens as needed
-    ];
-
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: DashboardAppBar(
-        showProfileCompletion: !isPhase2Complete, // Pass status to app bar for potential indicator
-      ),
-      body: Stack(
-        children: [
-          const Positioned.fill(child: AnimatedOrbBackground()), // Reuse background
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    isDarkMode ? Colors.deepPurple.shade900.withOpacity(0.7) : Colors.blue.shade100.withOpacity(0.7),
-                    isDarkMode ? Colors.black : Colors.white.withOpacity(0.85),
-                  ],
-                  center: Alignment.topLeft,
-                  radius: 1.5,
+    return Theme(
+      data: AppTheme.galaxyTheme,
+      child: Scaffold(
+        key: _scaffoldKey,
+        extendBodyBehindAppBar: true,
+        // Correct: Pass the animation controller to DashboardSideMenu
+        endDrawer: DashboardSideMenu(parentAnimation: _galaxyAnimationController),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _galaxyAnimationController,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: GalaxyBackgroundPainter(_galaxyAnimationController),
+                    child: Container(),
+                  );
+                },
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppConstants.backgroundColor.withOpacity(0.7),
+                      AppConstants.backgroundColor.withOpacity(0.9),
+                      Colors.black.withOpacity(0.95),
+                    ],
+                    stops: const [0.0, 0.4, 1.0],
+                  ),
                 ),
               ),
             ),
-          ),
-          SafeArea(
-            child: Row(
-              children: [
-                // Left Side Menu - pass isPhase2Complete to control enabled tabs
-                DashboardSideMenu(
-                  userProfile: _userProfile,
-                  profilePictureUrl: _profilePictureDisplayUrl,
-                  selectedTabIndex: _selectedTabIndex,
-                  onTabSelected: _onTabSelected,
-                  isPhase2Complete: isPhase2Complete, // Pass Phase 2 status
-                ),
-                // Main Content Area
-                Expanded(
-                  child: Column(
-                    children: [
-                      // Phase 2 Completion Banner
-                      if (!isPhase2Complete && !_isLoadingProfile) // Only show if not loading and Phase 2 incomplete
-                        Container(
-                          padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                          margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
-                          decoration: BoxDecoration(
-                            color: isDarkMode ? AppConstants.bannerBackgroundColorDark.withOpacity(0.95) : AppConstants.bannerBackgroundColorLight.withOpacity(0.95),
-                            borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Action Required: Complete Your Profile Phase 2!',
-                                style: TextStyle(
-                                  color: isDarkMode ? AppConstants.bannerTextColorDark : AppConstants.bannerTextColorLight,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: AppConstants.fontSizeMedium,
-                                  fontFamily: 'Inter',
+            CustomAppBarGalaxy(
+              title: 'Cosmic Connect',
+              onMenuPressed: _openEndDrawer,
+              scrollOffset: _scrollOffset,
+            ),
+            Positioned.fill(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight,
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (scrollNotification) {
+                  return false;
+                },
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Container(
+                        height: 80.0 + _scrollOffset * 0.1,
+                        child: Center(
+                          child: Opacity(
+                            opacity: (1.0 - (_scrollOffset / 100).clamp(0.0, 1.0)),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Welcome, Stellar Traveler!',
+                                  style: Theme.of(context).textTheme.displayMedium,
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                              const SizedBox(height: AppConstants.spacingSmall),
-                              Text(
-                                'Unlock matches, news feed, and discovery by finishing the AI-driven questionnaire. It takes just a few minutes!',
-                                style: TextStyle(
-                                  color: isDarkMode ? AppConstants.bannerTextColorDark.withOpacity(0.8) : AppConstants.bannerTextColorLight.withOpacity(0.8),
-                                  fontSize: AppConstants.fontSizeSmall,
-                                  fontFamily: 'Inter',
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Explore the cosmos and connect with kindred spirits.',
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
-                              const SizedBox(height: AppConstants.spacingSmall),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () {
-                                    // Navigate to the Phase 2 Setup screen if not already there
-                                    if (_selectedTabIndex != phase2SetupTabIndex) {
-                                      _onTabSelected(phase2SetupTabIndex); // Programmatically select the Phase 2 setup tab
-                                    }
-                                  },
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: isDarkMode ? AppConstants.bannerButtonColorDark : AppConstants.bannerButtonColorLight,
-                                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Start Phase 2 Now!',
-                                    style: TextStyle(
-                                      color: isDarkMode ? AppConstants.bannerButtonTextColorDark : AppConstants.bannerButtonTextColorLight,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Inter',
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      // Loading indicator or content area
-                      _isLoadingProfile
-                          ? Expanded(
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                    color: Theme.of(context).colorScheme.secondary),
-                              ),
-                            )
-                          : Expanded(
-                              // Apply blur and absorb pointer based on absorbAndBlurContent
-                              child: AbsorbPointer(
-                                absorbing: absorbAndBlurContent,
-                                child: AnimatedOpacity(
-                                  opacity: absorbAndBlurContent ? 0.4 : 1.0, // Visually indicate disabled state more distinctly
-                                  duration: AppConstants.animationDurationMedium,
-                                  child: ImageFiltered(
-                                    imageFilter: absorbAndBlurContent
-                                        ? ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0)
-                                        : ImageFilter.blur(sigmaX: 0.0, sigmaY: 0.0),
-                                    child: DashboardContentSwitcher(
-                                      selectedTabIndex: _selectedTabIndex,
-                                      screens: _dashboardScreens,
-                                    ),
-                                  ),
-                                ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate(
+                          [
+                            const MatchCarouselWidget(),
+                            const SizedBox(height: AppConstants.paddingMedium),
+                            const ActivityFeedWidget(),
+                            const SizedBox(height: AppConstants.paddingMedium),
+                            const PersonalizedInsightsCard(),
+                            const SizedBox(height: AppConstants.paddingMedium),
+                            SizedBox(
+                              height: 300,
+                              child: const TrendingCosmicEvents(),
+                            ),
+                            const SizedBox(height: AppConstants.paddingLarge),
+                            Center(
+                              child: Text(
+                                'More cosmic journeys await...',
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontStyle: FontStyle.italic),
                               ),
                             ),
-                      // Dashboard Footer at the very bottom
-                      const DashboardFooter(),
-                    ],
-                  ),
+                            const SizedBox(height: AppConstants.paddingLarge),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

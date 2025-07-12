@@ -7,7 +7,8 @@ import 'dart:async'; // Required for StreamSubscription and ChangeNotifier
 import 'package:provider/provider.dart'; // Import for state management
 
 // Local imports - Ensure these files exist in your project structure
-import 'package:bliindaidating/app_constants.dart'; // Import app_constants for theme
+import 'package:bliindaidating/app_constants.dart'; // Import AppConstants from its dedicated file
+import 'package:bliindaidating/theme/app_theme.dart'; // Import AppTheme from its dedicated file
 import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile for redirect logic
 import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for redirect logic
@@ -18,7 +19,7 @@ import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/portal/portal_page.dart';
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
-import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Ensure this is the correct path
 
 // Existing profile setup screens from your tree
 import 'package:bliindaidating/profile/profile_setup_screen.dart'; // This is Phase 1 setup
@@ -106,10 +107,7 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => ThemeController()),
-          // IMPORTANT: ProfileService needs to be created before AuthService
-          // because AuthService depends on ProfileService.
           ChangeNotifierProvider(create: (context) => ProfileService()),
-          // FIX: Pass the ProfileService instance to AuthService constructor
           ChangeNotifierProvider(create: (context) => AuthService(context.read<ProfileService>())),
         ],
         child: const BlindAIDatingApp(),
@@ -124,7 +122,7 @@ Future<void> main() async {
           body: Center(
             child: Text(
               'Failed to start app: ${e.toString()}',
-              textAlign: TextAlign.center, // Added for better display of long error messages
+              textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.red, fontFamily: 'Inter'),
             ),
           ),
@@ -143,8 +141,6 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
-  // Keep references to the services that GoRouter's refreshListenable will monitor.
-  // These are initialized in initState after the context is available.
   late final AuthService _authService;
   late final ProfileService _profileService;
 
@@ -152,17 +148,14 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   @override
   void initState() {
     super.initState();
-    // Access the service instances from the provider tree.
-    // Use `context.read` here because we just need the instance, not to listen for rebuilds.
     _authService = context.read<AuthService>();
     _profileService = context.read<ProfileService>();
 
     _router = GoRouter(
       initialLocation: '/',
-      // Combine refresh listenables for both authentication and profile changes
       refreshListenable: Listenable.merge([
         GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
-        _profileService, // Now GoRouter also listens to ProfileService changes
+        _profileService,
       ]),
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
@@ -170,38 +163,31 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
         GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
 
-        // Main Dashboard and Profile Setup Routes
+        // MainDashboardScreen should be const and doesn't need a parameter here
         GoRoute(path: '/home', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()), // Phase 1 setup
-        GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()), // Phase 2 setup
-        GoRoute(path: '/my-profile', builder: (context, state) => const MyProfileScreen()), // Current user's profile view/edit
+        GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
+        GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
+        GoRoute(path: '/my-profile', builder: (context, state) => const MyProfileScreen()),
 
-        // Profile Editing/Setup Sub-screens (assuming these are used within ProfileTabsScreen or similar)
         GoRoute(path: '/edit_profile', builder: (context, state) => const ProfileTabsScreen()),
         GoRoute(path: '/about_me', builder: (context, state) => const AboutMeScreen()),
         GoRoute(path: '/availability', builder: (context, state) => const AvailabilityScreen()),
         GoRoute(path: '/interests', builder: (context, state) => const InterestsScreen()),
 
-        // Friends & Events
         GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])),
 
-        // Matching & Penalties
         GoRoute(path: '/penalties', builder: (context, state) => const PenaltyDisplayScreen()),
 
-        // Discovery Routes
         GoRoute(path: '/discovery', builder: (context, state) => const DiscoveryScreen()),
 
-        // Matches Routes
         GoRoute(path: '/matches', builder: (context, state) => const MatchesListScreen()),
 
-        // Settings, Feedback, Admin, Notifications
         GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
         GoRoute(path: '/feedback', builder: (context, state) => const FeedbackScreen()),
         GoRoute(path: '/report', builder: (context, state) => const ReportScreen()),
         GoRoute(path: '/admin', builder: (context, state) => const AdminDashboardScreen()),
         GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
 
-        // Dynamic Profile View
         GoRoute(
           path: '/profile/:userId',
           builder: (context, state) {
@@ -211,14 +197,11 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           },
         ),
 
-        // Public Info Screens (Privacy Policy, Terms, About Us) - always visible
         GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
         GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
         GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
       ],
-      redirect: (context, state) async { // Keeping it async as before, even if profile fetch is removed.
-        // Use context.read to access services in redirect, as it's a top-level callback
-        // and doesn't need to rebuild with the widget tree. The refreshListenable handles re-evaluation.
+      redirect: (context, state) async {
         final authService = context.read<AuthService>();
         final profileService = context.read<ProfileService>();
 
@@ -233,7 +216,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         final bool goingToPhase2Setup = currentPath == '/questionnaire-phase2';
         final bool goingToDashboard = currentPath == '/home';
 
-        // Define public info paths that don't require login or profile completion
         final List<String> publicInfoPaths = [
           '/about-us',
           '/privacy',
@@ -249,13 +231,11 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('  Is On Public Info Path: $isOnPublicInfoPath');
 
 
-        // ALLOW PUBLIC INFO PATHS WITHOUT REDIRECTION, REGARDLESS OF LOGIN OR PROFILE COMPLETION
         if (isOnPublicInfoPath) {
           debugPrint('  Redirect decision: On public info path. Allowing navigation.');
           return null;
         }
 
-        // 1. If not logged in, redirect to landing or auth pages (unless already there)
         if (!loggedIn) {
           if (!isAuthPath && !isOnPublicInitialPage) {
             debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /');
@@ -265,21 +245,12 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           return null;
         }
 
-        // --- User is logged in from here ---
-
-        // IMPORTANT CHANGE: Do NOT fetch profile here.
-        // The AuthService's listener already fetches the profile and ProfileService
-        // notifies its listeners, which in turn triggers this redirect.
-        // So, profileService.userProfile should be up-to-date.
-
         final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
         final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
         debugPrint('  Is Phase 1 Complete: $isPhase1Complete');
         debugPrint('  Is Phase 2 Complete: $isPhase2Complete');
 
-        // 2. If logged in but Phase 1 is NOT complete, redirect to /profile_setup
         if (!isPhase1Complete) {
-          // If we are already going to profile_setup, allow it. Otherwise, redirect.
           if (!goingToProfileSetup) {
             debugPrint('  Redirect decision: Logged in, Phase 1 NOT complete. Redirecting to /profile_setup');
             return '/profile_setup';
@@ -288,33 +259,19 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           return null;
         }
 
-        // --- User is logged in AND Phase 1 is complete from here ---
-
-        // 3. If Phase 2 is NOT complete:
-        //    Allow navigation to /home (dashboard) and /questionnaire-phase2.
-        //    Redirect from other protected paths (like auth or phase1 setup) to /home.
         if (!isPhase2Complete) {
-          // If trying to access auth paths, initial public pages, or phase1 setup, send to /home.
-          // The /home screen (MainDashboardScreen) should then guide the user to Phase 2.
           if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup) {
             debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on auth/public/phase1 page. Redirecting to /home.');
             return '/home';
           }
-          // If already on /home or /questionnaire-phase2, allow it.
           if (goingToDashboard || goingToPhase2Setup) {
              debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /home or /questionnaire-phase2. Allowing.');
              return null;
           }
-          // For any other authenticated but not specific setup/dashboard page (e.g., /settings, /matches),
-          // we allow it. It's assumed these pages might show a banner or warning about incomplete profile.
           debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on other protected page. Allowing (but expect UI guidance).');
           return null;
         }
 
-        // --- User is logged in AND BOTH phases are complete from here ---
-
-        // 4. If logged in AND both phases are complete:
-        //    Redirect from auth/public/setup pages to /home (dashboard)
         if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup || goingToPhase2Setup) {
           debugPrint('  Redirect decision: Logged in, BOTH phases complete, on auth/public/setup page. Redirecting to /home');
           return '/home';
@@ -329,8 +286,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   void dispose() {
-    // No explicit dispose needed for GoRouter itself, its refreshListenable handles subscription.
-    // The services are managed by Provider, so their dispose methods will be called by Provider.
     super.dispose();
   }
 
@@ -339,7 +294,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     final themeController = Provider.of<ThemeController>(context);
     return MaterialApp.router(
       title: AppConstants.appName,
-      theme: themeController.currentTheme,
+      theme: themeController.isDarkMode ? AppTheme.galaxyTheme : AppTheme.lightTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );
@@ -350,7 +305,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription<AuthState> _subscription;
 
   GoRouterRefreshStream(Stream<AuthState> stream) {
-    notifyListeners(); // Notify immediately with current state
+    notifyListeners();
     _subscription = stream.asBroadcastStream().listen(
           (AuthState event) => notifyListeners(),
         );
