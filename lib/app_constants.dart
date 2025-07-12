@@ -139,6 +139,9 @@ class AppConstants {
   static const double borderRadiusLarge = 16.0;
   static const double borderRadiusExtraLarge = 25.0; // Existing value for InsightCrystal
   static const double borderRadiusCircular = 1000.0;
+  // ADDED: General borderRadius constant
+  static const double borderRadius = 16.0; // A common default radius
+
 
   // Font Sizes (example, adjust as needed based on design) (Already existed, re-confirmed)
   static const double fontSizeSmall = 12.0;

@@ -35,8 +35,6 @@ import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart
 
 
 class MainDashboardScreen extends StatefulWidget {
-  // Parameters like totalDatesAttended, currentMatches, penaltyCount will be managed by sub-widgets or fetched as needed.
-  // The main dashboard shell doesn't directly need them in its constructor anymore.
   const MainDashboardScreen({super.key});
 
   @override
@@ -65,8 +63,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   Future<void> _fetchAIDummyData() async {
     debugPrint('--- Fetching AI Dummy Data (from MainDashboardScreen) ---');
     try {
-      // NOTE: Ensure your OpenAIService.generateDummyUserProfiles returns UserProfile objects
-      // with a 'userId' and 'profilePictureUrl' for these next steps to work correctly.
       final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
       debugPrint('AI Generated Dummy Profiles:');
       for (var profile in dummyProfiles) {
@@ -90,7 +86,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       }
 
       if (dummyProfiles.isNotEmpty) {
-        // Ensure generateDummyMatches can handle UserProfile objects
         final List<Map<String, dynamic>> dummyMatches = await _openAIService.generateDummyMatches(2, dummyProfiles);
         debugPrint('AI Generated Dummy Matches:');
         for (var match in dummyMatches) {
@@ -127,16 +122,17 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
           });
         }
-        if (!fetchedProfile.isProfileComplete) {
-           debugPrint('MainDashboardScreen: Profile is not marked complete. Redirecting to setup.');
-           if (mounted) context.go('/profile_setup'); // Corrected path if it was profile-setup
+        // Redirect if Phase 1 is incomplete (handled by main.dart's redirect primarily, but good fallback here)
+        if (!fetchedProfile.isPhase1Complete) { // Changed from isProfileComplete to isPhase1Complete
+           debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
+           if (mounted) context.go('/profile_setup');
            return;
         }
       } else {
         setState(() { _isLoadingProfile = false; });
         debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
         if (mounted) {
-          context.go('/profile_setup'); // Corrected path if it was profile-setup
+          context.go('/profile_setup');
         }
       }
 
@@ -149,13 +145,15 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           final UserProfile updatedProfile = UserProfile.fromJson(data.first);
           setState(() {
             _userProfile = updatedProfile;
+            // Ensure profile picture URL update on real-time changes
+            if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
+              _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
+            }
           });
           debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
-          if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
-            setState(() {
-              _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
-            });
-          }
+          // If Phase 1 becomes incomplete (unlikely but for robustness) or Phase 2 changes, trigger router refresh
+          // The main.dart listener for profileService takes care of router refresh.
+          // This local update just ensures the UI reacts.
         }
       });
     } on PostgrestException catch (e) {
@@ -178,6 +176,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   }
 
   void _onTabSelected(int index) {
+    // Prevent changing tabs if Phase 2 is incomplete, unless it's the questionnaire tab
+    if (_userProfile != null && !_userProfile!.isPhase2Complete && index != 3) { // Assuming QuestionnaireScreen is index 3
+      context.go('/questionnaire_screen'); // Directly navigate to ensure GoRouter redirect logic is hit
+      return;
+    }
     setState(() {
       _selectedTabIndex = index;
     });
@@ -195,18 +198,32 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
 
+    // Check Phase 2 completion status
+    final bool isPhase2Complete = _userProfile?.isPhase2Complete ?? false;
+    // Determine if the content should be absorbed (interactions blocked)
+    final bool absorbContent = _isLoadingProfile || !isPhase2Complete;
+
+
     // List of screens for the DashboardContentSwitcher
+    // Ensure QuestionnaireScreen is at a specific, known index (e.g., 3) for logic
     final List<Widget> _dashboardScreens = [
-      const NewsfeedScreen(), // Now a Stateful widget that fetches AI data
-      const MatchesListScreen(), // Now correctly navigates to ProfileViewScreen
-      const DiscoveryScreen(), // Now the overhauled Profile Discovery screen
-      const QuestionnaireScreen(), // Now a Stateful widget that fetches questions
+      const NewsfeedScreen(),
+      const MatchesListScreen(),
+      const DiscoveryScreen(),
+      const QuestionnaireScreen(), // Assuming this is always index 3
     ];
+
+    // Ensure _selectedTabIndex defaults to Questionnaire if Phase 2 is incomplete
+    if (!isPhase2Complete && _selectedTabIndex != 3) {
+      _selectedTabIndex = 3; // Force to Questionnaire screen
+    }
+
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      // Use the new DashboardAppBar
-      appBar: const DashboardAppBar(),
+      appBar: DashboardAppBar(
+        showProfileCompletion: !isPhase2Complete, // Pass status to app bar for potential indicator
+      ),
       body: Stack(
         children: [
           const Positioned.fill(child: AnimatedOrbBackground()), // Reuse background
@@ -227,18 +244,84 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           SafeArea(
             child: Row(
               children: [
-                // Left Side Menu
+                // Left Side Menu - pass isPhase2Complete to control enabled tabs
                 DashboardSideMenu(
                   userProfile: _userProfile,
                   profilePictureUrl: _profilePictureDisplayUrl,
                   selectedTabIndex: _selectedTabIndex,
                   onTabSelected: _onTabSelected,
+                  isPhase2Complete: isPhase2Complete, // Pass Phase 2 status
                 ),
                 // Main Content Area
                 Expanded(
                   child: Column(
                     children: [
-                      // Loading indicator for profile
+                      // Phase 2 Completion Banner
+                      if (!isPhase2Complete && !_isLoadingProfile) // Only show if not loading and Phase 2 incomplete
+                        Container(
+                          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                          margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.orange.shade800.withOpacity(0.9) : Colors.amber.shade200.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Action Required: Complete Your Profile Phase 2!',
+                                style: TextStyle(
+                                  color: isDarkMode ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: AppConstants.fontSizeMedium,
+                                  fontFamily: 'Inter',
+                                ),
+                              ),
+                              const SizedBox(height: AppConstants.paddingSmall),
+                              Text(
+                                'Unlock matches, news feed, and discovery by finishing the AI-driven questionnaire. It takes just a few minutes!',
+                                style: TextStyle(
+                                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                                  fontSize: AppConstants.fontSizeSmall,
+                                  fontFamily: 'Inter',
+                                ),
+                              ),
+                              const SizedBox(height: AppConstants.paddingSmall),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () {
+                                    // Navigate to the Questionnaire screen
+                                    context.go('/questionnaire_screen');
+                                  },
+                                  style: TextButton.styleFrom(
+                                    backgroundColor: isDarkMode ? AppConstants.primaryColor : AppConstants.accentColor,
+                                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Start Phase 2 Now!',
+                                    style: TextStyle(
+                                      color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      // Loading indicator or content area
                       _isLoadingProfile
                           ? Expanded(
                               child: Center(
@@ -247,10 +330,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                               ),
                             )
                           : Expanded(
-                              // Use DashboardContentSwitcher for displaying current tab's content
-                              child: DashboardContentSwitcher(
-                                selectedTabIndex: _selectedTabIndex,
-                                screens: _dashboardScreens,
+                              // AbsorbPointer to block interaction if Phase 2 is incomplete
+                              child: AbsorbPointer(
+                                absorbing: absorbContent && _selectedTabIndex != 3, // Absorb if incomplete AND not on Questionnaire tab
+                                child: Opacity(
+                                  opacity: absorbContent && _selectedTabIndex != 3 ? 0.5 : 1.0, // Visually indicate disabled state
+                                  child: DashboardContentSwitcher(
+                                    selectedTabIndex: _selectedTabIndex,
+                                    screens: _dashboardScreens,
+                                  ),
+                                ),
                               ),
                             ),
                       // Dashboard Footer at the very bottom

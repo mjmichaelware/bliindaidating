@@ -11,7 +11,6 @@ import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:cross_file/cross_file.dart'; // Import XFile
 import 'package:image_picker/image_picker.dart'; // Import ImagePicker for XFile
 
-
 // Import custom background/effects for immersion (assuming these exist from your base project)
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
 
@@ -200,63 +199,64 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     try {
       final UserProfile? userProfile = await _profileService.fetchUserProfile(currentUser.id);
       if (userProfile != null) {
-        _fullNameController.text = userProfile.fullName ?? '';
+        // Load data from the new fields first, then fallback to old ones if necessary for migration
+        _fullNameController.text = userProfile.fullLegalName ?? userProfile.fullName ?? '';
         _displayNameController.text = userProfile.displayName ?? '';
-        _heightController.text = userProfile.height?.toString() ?? '';
+        _heightController.text = userProfile.heightCm?.toString() ?? userProfile.height?.toString() ?? '';
         _phoneNumberController.text = userProfile.phoneNumber ?? '';
-        _addressZipController.text = userProfile.addressZip ?? '';
+        _addressZipController.text = userProfile.locationZipCode ?? userProfile.addressZip ?? ''; // Prioritize new field
         _bioController.text = userProfile.bio ?? '';
 
         _dateOfBirth = userProfile.dateOfBirth;
-        _gender = userProfile.gender;
+        _gender = userProfile.genderIdentity ?? userProfile.gender; // Prioritize new field
         _sexualOrientation = userProfile.sexualOrientation;
         _lookingFor = userProfile.lookingFor;
-        _selectedInterests = List.from(userProfile.interests);
+        _selectedInterests = List.from(userProfile.hobbiesAndInterests.isNotEmpty ? userProfile.hobbiesAndInterests : userProfile.interests); // Prioritize new field
         _agreedToTerms = userProfile.agreedToTerms;
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
         _imagePreviewPath = userProfile.profilePictureUrl;
 
-        _preferredGender = userProfile.gender;
-        _ageRange = const RangeValues(18, 50);
-        _maxDistance = 100;
+        _preferredGender = userProfile.genderIdentity ?? userProfile.gender; // Use new field
+        _ageRange = const RangeValues(18, 50); // These are preferences, not directly from profile
+        _maxDistance = 100; // These are preferences, not directly from profile
 
-        _showFullName = userProfile.fullName != null;
+        // Assuming visibility flags might come from new profile fields if relevant
+        _showFullName = userProfile.fullLegalName != null || userProfile.fullName != null;
         _showDisplayName = userProfile.displayName != null;
         _showAge = userProfile.dateOfBirth != null;
-        _showGender = userProfile.gender != null;
+        _showGender = userProfile.genderIdentity != null || userProfile.gender != null;
         _showBio = userProfile.bio != null;
         _showSexualOrientation = userProfile.sexualOrientation != null;
-        _showHeight = userProfile.height != null;
-        _showInterests = userProfile.interests.isNotEmpty;
+        _showHeight = userProfile.heightCm != null || userProfile.height != null;
+        _showInterests = userProfile.hobbiesAndInterests.isNotEmpty || userProfile.interests.isNotEmpty;
         _showLookingFor = userProfile.lookingFor != null;
-        _showLocation = userProfile.addressZip != null;
-        _showEthnicity = false;
-        _showLanguagesSpoken = false;
-        _showEducationLevel = false;
-        _showDesiredOccupation = false;
-        _showLoveLanguages = false;
-        _showFavoriteMedia = false;
-        _showMaritalStatus = false;
-        _showChildrenPreference = false;
-        _showWillingToRelocate = false;
-        _showMonogamyPolyamory = false;
-        _showLoveRelationshipGoals = false;
-        _showDealbreakersBoundaries = false;
-        _showAstrologicalSign = false;
-        _showAttachmentStyle = false;
-        _showCommunicationStyle = false;
-        _showMentalHealthDisclosures = false;
-        _showPetOwnership = false;
-        _showTravelFrequencyDestinations = false;
-        _showPoliticalViews = false;
-        _showReligionBeliefs = false;
-        _showDiet = false;
-        _showSmokingHabits = false;
-        _showDrinkingHabits = false;
-        _showExerciseFrequency = false;
-        _showSleepSchedule = false;
-        _showPersonalityTraits = false;
-
+        _showLocation = userProfile.locationZipCode != null || userProfile.addressZip != null;
+        _showEthnicity = userProfile.ethnicity != null; // NEW: check for ethnicity
+        _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty; // NEW
+        _showEducationLevel = userProfile.educationLevel != null; // NEW
+        _showDesiredOccupation = userProfile.desiredOccupation != null; // NEW
+        _showLoveLanguages = userProfile.loveLanguages.isNotEmpty; // NEW
+        _showFavoriteMedia = userProfile.favoriteMedia != null; // NEW
+        _showMaritalStatus = userProfile.maritalStatus != null; // NEW
+        _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null; // NEW
+        _showWillingToRelocate = userProfile.willingToRelocate != null; // NEW
+        _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null; // NEW
+        _showLoveRelationshipGoals = userProfile.relationshipGoals != null; // NEW
+        _showDealbreakersBoundaries = userProfile.dealbreakers != null; // NEW
+        _showAstrologicalSign = userProfile.astrologicalSign != null; // NEW
+        _showAttachmentStyle = userProfile.attachmentStyle != null; // NEW
+        _showCommunicationStyle = userProfile.communicationStyle != null; // NEW
+        _showMentalHealthDisclosures = userProfile.mentalHealthDisclosures != null; // NEW
+        _showPetOwnership = userProfile.petOwnership != null; // NEW
+        _showTravelFrequencyDestinations = userProfile.travelFrequencyOrFavoriteDestinations != null; // NEW
+        _showPoliticalViews = userProfile.politicalViews != null; // NEW
+        _showReligionBeliefs = userProfile.religionOrSpiritualBeliefs != null; // NEW
+        _showDiet = userProfile.diet != null; // NEW
+        _showSmokingHabits = userProfile.smokingHabits != null; // NEW
+        _showDrinkingHabits = userProfile.drinkingHabits != null; // NEW
+        _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null; // NEW
+        _showSleepSchedule = userProfile.sleepSchedule != null; // NEW
+        _showPersonalityTraits = userProfile.personalityTraits != null; // NEW
 
       }
       debugPrint('ProfileSetupScreen: Preferences loaded.');
@@ -320,28 +320,81 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     }
 
     try {
+      // Get existing profile to carry over non-updated fields
+      final UserProfile? existingProfile = await _profileService.fetchUserProfile(currentUser.id);
+
       final UserProfile profile = UserProfile(
         userId: currentUser.id,
         email: currentUser.email!,
-        fullName: _fullNameController.text.trim(),
-        displayName: _displayNameController.text.trim(),
-        dateOfBirth: _dateOfBirth!,
-        gender: _gender!,
-        phoneNumber: _phoneNumberController.text.trim(),
-        addressZip: _addressZipController.text.trim(),
-        profilePictureUrl: uploadedPhotoPath,
-        sexualOrientation: _sexualOrientation!,
-        lookingFor: _lookingFor!,
-        height: double.tryParse(_heightController.text.trim()),
-        bio: _bioController.text.trim(),
-        interests: _selectedInterests,
-        isProfileComplete: true,
-        agreedToTerms: _agreedToTerms, // <-- FIXED: Corrected typo here
+        // Carry over existing flags if they are not being explicitly set here
+        isPhase1Complete: true, // Mark Phase 1 complete upon successful initial setup
+        isPhase2Complete: existingProfile?.isPhase2Complete ?? false, // Keep existing or default to false
+        agreedToTerms: _agreedToTerms,
         agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
-        createdAt: currentUser.createdAt != null
+        createdAt: existingProfile?.createdAt ?? (currentUser.createdAt != null
             ? DateTime.tryParse(currentUser.createdAt!) ?? DateTime.now()
-            : DateTime.now(),
+            : DateTime.now()),
+        updatedAt: DateTime.now(), // Set updated at now
+
+        // Core Identity & Consent (Phase 1)
+        fullLegalName: _fullNameController.text.trim(), // Use new field
+        displayName: _displayNameController.text.trim(),
+        profilePictureUrl: uploadedPhotoPath, // This is for analysis photo, map to correct field
+        dateOfBirth: _dateOfBirth,
+        phoneNumber: _phoneNumberController.text.trim(),
+        locationCity: existingProfile?.locationCity, // Not collected in this screen
+        locationState: existingProfile?.locationState, // Not collected in this screen
+        locationZipCode: _addressZipController.text.trim(), // Map addressZip to new field
+        genderIdentity: _gender, // Map gender to new field
+        sexualOrientation: _sexualOrientation,
+        heightCm: double.tryParse(_heightController.text.trim()), // Map height to new field
+
+        // Phase 2 - Essential Matching Data & KYC Completion (Carry over or default)
+        governmentIdFrontUrl: existingProfile?.governmentIdFrontUrl,
+        governmentIdBackUrl: existingProfile?.governmentIdBackUrl,
+        ethnicity: existingProfile?.ethnicity,
+        languagesSpoken: existingProfile?.languagesSpoken ?? [],
+        desiredOccupation: existingProfile?.desiredOccupation,
+        educationLevel: existingProfile?.educationLevel,
+        hobbiesAndInterests: _selectedInterests, // Map interests to new field
+        loveLanguages: existingProfile?.loveLanguages ?? [],
+        favoriteMedia: existingProfile?.favoriteMedia,
+        maritalStatus: existingProfile?.maritalStatus,
+        hasChildren: existingProfile?.hasChildren,
+        wantsChildren: existingProfile?.wantsChildren,
+        relationshipGoals: existingProfile?.relationshipGoals,
+        dealbreakers: existingProfile?.dealbreakers,
+
+        // Phase 3 - Progressive Profiling (Carry over or default)
+        bio: _bioController.text.trim(),
+        lookingFor: _lookingFor,
+        religionOrSpiritualBeliefs: existingProfile?.religionOrSpiritualBeliefs,
+        politicalViews: existingProfile?.politicalViews,
+        diet: existingProfile?.diet,
+        smokingHabits: existingProfile?.smokingHabits,
+        drinkingHabits: existingProfile?.drinkingHabits,
+        exerciseFrequencyOrFitnessLevel: existingProfile?.exerciseFrequencyOrFitnessLevel,
+        sleepSchedule: existingProfile?.sleepSchedule,
+        personalityTraits: existingProfile?.personalityTraits,
+        willingToRelocate: existingProfile?.willingToRelocate,
+        monogamyVsPolyamoryPreferences: existingProfile?.monogamyVsPolyamoryPreferences,
+        astrologicalSign: existingProfile?.astrologicalSign,
+        attachmentStyle: existingProfile?.attachmentStyle,
+        communicationStyle: existingProfile?.communicationStyle,
+        mentalHealthDisclosures: existingProfile?.mentalHealthDisclosures,
+        petOwnership: existingProfile?.petOwnership,
+        travelFrequencyOrFavoriteDestinations: existingProfile?.travelFrequencyOrFavoriteDestinations,
+        profileVisibilityPreferences: existingProfile?.profileVisibilityPreferences,
+        pushNotificationPreferences: existingProfile?.pushNotificationPreferences,
+
+        // Deprecated/Redundant fields (keep for now, map from new or existing)
+        fullName: _fullNameController.text.trim(), // Keep for now for compatibility
+        gender: _gender, // Keep for now for compatibility
+        addressZip: _addressZipController.text.trim(), // Keep for now for compatibility
+        interests: _selectedInterests, // Keep for now for compatibility
+        height: double.tryParse(_heightController.text.trim()), // Keep for now for compatibility
       );
+
 
       await _profileService.createOrUpdateProfile(profile: profile);
 
@@ -350,7 +403,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile saved successfully!')),
         );
-        context.go('/home');
+        // After initial setup, go to home or directly to Phase 2 onboarding
+        context.go('/home'); // Or context.go('/phase2_onboarding_screen');
       }
     } on PostgrestException catch (e) {
       debugPrint('ProfileSetupScreen: Supabase Postgrest Error saving profile data: ${e.message}');

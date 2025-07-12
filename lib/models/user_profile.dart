@@ -6,67 +6,210 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // Required for 'User' 
 class UserProfile {
   final String userId;
   final String email;
-  final String? fullName;
+
+  // Phase 1 - Core Identity & Consent
+  final String? fullLegalName; // From KYC
   final String? displayName;
-  final String? profilePictureUrl;
-  final String? bio;
-  final String? lookingFor;
-  final bool isProfileComplete;
-  final String? gender;
-  final DateTime? dateOfBirth;
-  final String? phoneNumber;
-  final String? addressZip;
-  final List<String> interests;
-  final String? sexualOrientation;
-  final double? height;
+  final String? profilePictureUrl; // For live selfie
+  final DateTime? dateOfBirth; // For age verification
+  final String? phoneNumber; // For SMS verification
   final bool agreedToTerms;
   final bool agreedToCommunityGuidelines;
+  final String? locationCity; // From location for AI
+  final String? locationState; // From location for AI
+  final String? locationZipCode; // From location for AI, renamed for clarity
+  final String? genderIdentity; // From comprehensive gender options
+  final String? sexualOrientation;
+  final double? heightCm; // Height in centimeters for clarity
+  final bool isPhase1Complete; // NEW: Flag for Phase 1 completion
+
+  // Phase 2 - Essential Matching Data & KYC Completion
+  final String? governmentIdFrontUrl; // For ID verification
+  final String? governmentIdBackUrl; // For ID verification
+  final String? ethnicity;
+  final List<String> languagesSpoken;
+  final String? desiredOccupation;
+  final String? educationLevel;
+  final List<String> hobbiesAndInterests; // Primary interests field
+  final List<String> loveLanguages;
+  final String? favoriteMedia;
+  final String? maritalStatus;
+  final bool? hasChildren; // Whether user has children
+  final bool? wantsChildren; // Whether user wants children (NEW)
+  final String? relationshipGoals;
+  final String? dealbreakers; // Renamed from dealbreakers_or_boundaries for brevity
+  final bool isPhase2Complete; // NEW: Flag for Phase 2 completion
+
+  // Phase 3 - Progressive Profiling (Comprehensive Attributes)
+  final String? bio; // General bio
+  final String? lookingFor;
+  final String? religionOrSpiritualBeliefs;
+  final String? politicalViews;
+  final String? diet;
+  final String? smokingHabits;
+  final String? drinkingHabits;
+  final String? exerciseFrequencyOrFitnessLevel;
+  final String? sleepSchedule;
+  final String? personalityTraits;
+  final bool? willingToRelocate;
+  final String? monogamyVsPolyamoryPreferences;
+  final String? astrologicalSign;
+  final String? attachmentStyle;
+  final String? communicationStyle;
+  final String? mentalHealthDisclosures;
+  final String? petOwnership;
+  final String? travelFrequencyOrFavoriteDestinations;
+  final String? profileVisibilityPreferences;
+  final Map<String, dynamic>? pushNotificationPreferences; // For user notification settings
+
+  // Timestamps and other existing fields (kept for compatibility)
   final DateTime createdAt;
-  final DateTime? lastUpdated;
+  final DateTime? updatedAt; // Renamed from lastUpdated for consistency with DB
+
+  // Deprecated/Redundant fields (kept for now, but consider removing after full migration)
+  final String? fullName; // Consider using fullLegalName instead
+  final String? gender; // Consider using genderIdentity instead
+  final String? addressZip; // Consider using locationZipCode instead
+  final double? height; // Consider using heightCm instead
+  final List<String> interests; // Consider using hobbiesAndInterests instead
 
   UserProfile({
     required this.userId,
     required this.email,
-    this.fullName,
+
+    // Phase 1
+    this.fullLegalName,
     this.displayName,
     this.profilePictureUrl,
-    this.bio,
-    this.lookingFor,
-    required this.isProfileComplete,
-    this.gender,
     this.dateOfBirth,
     this.phoneNumber,
-    this.addressZip,
-    this.interests = const [],
-    this.sexualOrientation,
-    this.height,
     required this.agreedToTerms,
     required this.agreedToCommunityGuidelines,
+    this.locationCity,
+    this.locationState,
+    this.locationZipCode,
+    this.genderIdentity,
+    this.sexualOrientation,
+    this.heightCm,
+    required this.isPhase1Complete, // NEW
+
+    // Phase 2
+    this.governmentIdFrontUrl,
+    this.governmentIdBackUrl,
+    this.ethnicity,
+    this.languagesSpoken = const [],
+    this.desiredOccupation,
+    this.educationLevel,
+    this.hobbiesAndInterests = const [], // NEW
+    this.loveLanguages = const [], // NEW
+    this.favoriteMedia,
+    this.maritalStatus,
+    this.hasChildren,
+    this.wantsChildren, // NEW
+    this.relationshipGoals,
+    this.dealbreakers, // NEW
+    required this.isPhase2Complete, // NEW
+
+    // Phase 3
+    this.bio,
+    this.lookingFor,
+    this.religionOrSpiritualBeliefs,
+    this.politicalViews,
+    this.diet,
+    this.smokingHabits,
+    this.drinkingHabits,
+    this.exerciseFrequencyOrFitnessLevel,
+    this.sleepSchedule,
+    this.personalityTraits,
+    this.willingToRelocate,
+    this.monogamyVsPolyamoryPreferences,
+    this.astrologicalSign,
+    this.attachmentStyle,
+    this.communicationStyle,
+    this.mentalHealthDisclosures,
+    this.petOwnership,
+    this.travelFrequencyOrFavoriteDestinations,
+    this.profileVisibilityPreferences,
+    this.pushNotificationPreferences,
+
+    // Timestamps and old fields for compatibility
     required this.createdAt,
-    this.lastUpdated,
+    this.updatedAt,
+    this.fullName, // Kept for compatibility
+    this.gender, // Kept for compatibility
+    this.addressZip, // Kept for compatibility
+    this.interests = const [], // Kept for compatibility
+    this.height, // Kept for compatibility
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       userId: json['id'] as String,
       email: json['email'] as String,
-      fullName: json['full_name'] as String?,
+
+      // Phase 1
+      fullLegalName: json['full_legal_name'] as String?,
       displayName: json['display_name'] as String?,
       profilePictureUrl: json['profile_picture_url'] as String?,
-      bio: json['bio'] as String?,
-      lookingFor: json['looking_for'] as String?,
-      isProfileComplete: json['profile_complete'] as bool,
-      gender: json['gender'] as String?,
       dateOfBirth: json['date_of_birth'] != null ? DateTime.parse(json['date_of_birth'] as String) : null,
       phoneNumber: json['phone_number'] as String?,
+      agreedToTerms: json['agreed_to_terms'] as bool? ?? false, // Ensure non-nullable with default
+      agreedToCommunityGuidelines: json['agreed_to_community_guidelines'] as bool? ?? false, // Ensure non-nullable with default
+      locationCity: json['location_city'] as String?,
+      locationState: json['location_state'] as String?,
+      locationZipCode: json['location_zip_code'] as String?,
+      genderIdentity: json['gender_identity'] as String?,
+      sexualOrientation: json['sexual_orientation'] as String?,
+      heightCm: (json['height_cm'] as num?)?.toDouble(),
+      isPhase1Complete: json['is_phase1_complete'] as bool? ?? false, // NEW: With default for safety
+
+      // Phase 2
+      governmentIdFrontUrl: json['government_id_front_url'] as String?,
+      governmentIdBackUrl: json['government_id_back_url'] as String?,
+      ethnicity: json['ethnicity'] as String?,
+      languagesSpoken: (json['languages_spoken'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      desiredOccupation: json['desired_occupation'] as String?,
+      educationLevel: json['education_level'] as String?,
+      hobbiesAndInterests: (json['hobbies_and_interests_new'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [], // NEW: From new array column
+      loveLanguages: (json['love_languages_new'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [], // NEW: From new array column
+      favoriteMedia: json['favorite_media'] as String?,
+      maritalStatus: json['marital_status'] as String?,
+      hasChildren: json['has_children'] as bool?,
+      wantsChildren: json['wants_children'] as bool?, // NEW
+      relationshipGoals: json['relationship_goals'] as String?,
+      dealbreakers: json['dealbreakers'] as String?, // NEW
+      isPhase2Complete: json['is_phase2_complete'] as bool? ?? false, // NEW: With default for safety
+
+      // Phase 3
+      bio: json['bio'] as String?,
+      lookingFor: json['looking_for'] as String?,
+      religionOrSpiritualBeliefs: json['religion_or_spiritual_beliefs'] as String?,
+      politicalViews: json['political_views'] as String?,
+      diet: json['diet'] as String?,
+      smokingHabits: json['smoking_habits'] as String?,
+      drinkingHabits: json['drinking_habits'] as String?,
+      exerciseFrequencyOrFitnessLevel: json['exercise_frequency_or_fitness_level'] as String?,
+      sleepSchedule: json['sleep_schedule'] as String?,
+      personalityTraits: json['personality_traits'] as String?,
+      willingToRelocate: json['willing_to_relocate'] as bool?,
+      monogamyVsPolyamoryPreferences: json['monogamy_vs_polyamory_preferences'] as String?,
+      astrologicalSign: json['astrological_sign'] as String?,
+      attachmentStyle: json['attachment_style'] as String?,
+      communicationStyle: json['communication_style'] as String?,
+      mentalHealthDisclosures: json['mental_health_disclosures'] as String?,
+      petOwnership: json['pet_ownership'] as String?,
+      travelFrequencyOrFavoriteDestinations: json['travel_frequency_or_favorite_destinations'] as String?,
+      profileVisibilityPreferences: json['profile_visibility_preferences'] as String?,
+      pushNotificationPreferences: json['push_notification_preferences'] as Map<String, dynamic>?,
+
+      // Timestamps and old fields (kept for compatibility during migration)
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
+      fullName: json['full_name'] as String?,
+      gender: json['gender'] as String?,
       addressZip: json['address_zip'] as String?,
       interests: (json['interests'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      sexualOrientation: json['sexual_orientation'] as String?,
       height: (json['height'] as num?)?.toDouble(),
-      agreedToTerms: json['agreed_to_terms'] as bool,
-      agreedToCommunityGuidelines: json['agreed_to_community_guidelines'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      lastUpdated: json['last_updated'] != null ? DateTime.parse(json['last_updated'] as String) : null,
     );
   }
 
@@ -74,67 +217,192 @@ class UserProfile {
     return {
       'id': userId,
       'email': email,
-      'full_name': fullName,
+
+      // Phase 1
+      'full_legal_name': fullLegalName,
       'display_name': displayName,
       'profile_picture_url': profilePictureUrl,
-      'bio': bio,
-      'looking_for': lookingFor,
-      'is_profile_complete': isProfileComplete,
-      'gender': gender,
       'date_of_birth': dateOfBirth?.toIso8601String(),
       'phone_number': phoneNumber,
-      'address_zip': addressZip,
-      'interests': interests,
-      'sexual_orientation': sexualOrientation,
-      'height': height,
       'agreed_to_terms': agreedToTerms,
       'agreed_to_community_guidelines': agreedToCommunityGuidelines,
+      'location_city': locationCity,
+      'location_state': locationState,
+      'location_zip_code': locationZipCode,
+      'gender_identity': genderIdentity,
+      'sexual_orientation': sexualOrientation,
+      'height_cm': heightCm,
+      'is_phase1_complete': isPhase1Complete, // NEW
+
+      // Phase 2
+      'government_id_front_url': governmentIdFrontUrl,
+      'government_id_back_url': governmentIdBackUrl,
+      'ethnicity': ethnicity,
+      'languages_spoken': languagesSpoken,
+      'desired_occupation': desiredOccupation,
+      'education_level': educationLevel,
+      'hobbies_and_interests_new': hobbiesAndInterests, // NEW: Map to new array column name
+      'love_languages_new': loveLanguages, // NEW: Map to new array column name
+      'favorite_media': favoriteMedia,
+      'marital_status': maritalStatus,
+      'has_children': hasChildren,
+      'wants_children': wantsChildren, // NEW
+      'relationship_goals': relationshipGoals,
+      'dealbreakers': dealbreakers, // NEW
+      'is_phase2_complete': isPhase2Complete, // NEW
+
+      // Phase 3
+      'bio': bio,
+      'looking_for': lookingFor,
+      'religion_or_spiritual_beliefs': religionOrSpiritualBeliefs,
+      'political_views': politicalViews,
+      'diet': diet,
+      'smoking_habits': smokingHabits,
+      'drinking_habits': drinkingHabits,
+      'exercise_frequency_or_fitness_level': exerciseFrequencyOrFitnessLevel,
+      'sleep_schedule': sleepSchedule,
+      'personality_traits': personalityTraits,
+      'willing_to_relocate': willingToRelocate,
+      'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
+      'astrological_sign': astrologicalSign,
+      'attachment_style': attachmentStyle,
+      'communication_style': communicationStyle,
+      'mental_health_disclosures': mentalHealthDisclosures,
+      'pet_ownership': petOwnership,
+      'travel_frequency_or_favorite_destinations': travelFrequencyOrFavoriteDestinations,
+      'profile_visibility_preferences': profileVisibilityPreferences,
+      'push_notification_preferences': pushNotificationPreferences,
+
+      // Timestamps and old fields for compatibility during migration
       'created_at': createdAt.toIso8601String(),
-      'last_updated': lastUpdated?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'full_name': fullName,
+      'gender': gender,
+      'address_zip': addressZip,
+      'interests': interests,
+      'height': height,
     };
   }
 
   UserProfile copyWith({
     String? userId,
     String? email,
-    String? fullName,
+    String? fullLegalName,
     String? displayName,
     String? profilePictureUrl,
-    String? bio,
-    String? lookingFor,
-    bool? isProfileComplete,
-    String? gender,
     DateTime? dateOfBirth,
     String? phoneNumber,
-    String? addressZip,
-    List<String>? interests,
-    String? sexualOrientation,
-    double? height,
     bool? agreedToTerms,
     bool? agreedToCommunityGuidelines,
+    String? locationCity,
+    String? locationState,
+    String? locationZipCode,
+    String? genderIdentity,
+    String? sexualOrientation,
+    double? heightCm,
+    bool? isPhase1Complete,
+    String? governmentIdFrontUrl,
+    String? governmentIdBackUrl,
+    String? ethnicity,
+    List<String>? languagesSpoken,
+    String? desiredOccupation,
+    String? educationLevel,
+    List<String>? hobbiesAndInterests,
+    List<String>? loveLanguages,
+    String? favoriteMedia,
+    String? maritalStatus,
+    bool? hasChildren,
+    bool? wantsChildren,
+    String? relationshipGoals,
+    String? dealbreakers,
+    bool? isPhase2Complete,
+    String? bio,
+    String? lookingFor,
+    String? religionOrSpiritualBeliefs,
+    String? politicalViews,
+    String? diet,
+    String? smokingHabits,
+    String? drinkingHabits,
+    String? exerciseFrequencyOrFitnessLevel,
+    String? sleepSchedule,
+    String? personalityTraits,
+    bool? willingToRelocate,
+    String? monogamyVsPolyamoryPreferences,
+    String? astrologicalSign,
+    String? attachmentStyle,
+    String? communicationStyle,
+    String? mentalHealthDisclosures,
+    String? petOwnership,
+    String? travelFrequencyOrFavoriteDestinations,
+    String? profileVisibilityPreferences,
+    Map<String, dynamic>? pushNotificationPreferences,
     DateTime? createdAt,
-    DateTime? lastUpdated,
+    DateTime? updatedAt,
+    String? fullName,
+    String? gender,
+    String? addressZip,
+    List<String>? interests,
+    double? height,
   }) {
     return UserProfile(
       userId: userId ?? this.userId,
       email: email ?? this.email,
-      fullName: fullName ?? this.fullName,
+      fullLegalName: fullLegalName ?? this.fullLegalName,
       displayName: displayName ?? this.displayName,
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
-      bio: bio ?? this.bio,
-      lookingFor: lookingFor ?? this.lookingFor,
-      isProfileComplete: isProfileComplete ?? this.isProfileComplete,
-      gender: gender ?? this.gender,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      addressZip: addressZip ?? this.addressZip,
-      interests: interests ?? this.interests,
-      sexualOrientation: sexualOrientation ?? this.sexualOrientation,
-      height: height ?? this.height,
       agreedToTerms: agreedToTerms ?? this.agreedToTerms,
       agreedToCommunityGuidelines: agreedToCommunityGuidelines ?? this.agreedToCommunityGuidelines,
+      locationCity: locationCity ?? this.locationCity,
+      locationState: locationState ?? this.locationState,
+      locationZipCode: locationZipCode ?? this.locationZipCode,
+      genderIdentity: genderIdentity ?? this.genderIdentity,
+      sexualOrientation: sexualOrientation ?? this.sexualOrientation,
+      heightCm: heightCm ?? this.heightCm,
+      isPhase1Complete: isPhase1Complete ?? this.isPhase1Complete,
+      governmentIdFrontUrl: governmentIdFrontUrl ?? this.governmentIdFrontUrl,
+      governmentIdBackUrl: governmentIdBackUrl ?? this.governmentIdBackUrl,
+      ethnicity: ethnicity ?? this.ethnicity,
+      languagesSpoken: languagesSpoken ?? this.languagesSpoken,
+      desiredOccupation: desiredOccupation ?? this.desiredOccupation,
+      educationLevel: educationLevel ?? this.educationLevel,
+      hobbiesAndInterests: hobbiesAndInterests ?? this.hobbiesAndInterests,
+      loveLanguages: loveLanguages ?? this.loveLanguages,
+      favoriteMedia: favoriteMedia ?? this.favoriteMedia,
+      maritalStatus: maritalStatus ?? this.maritalStatus,
+      hasChildren: hasChildren ?? this.hasChildren,
+      wantsChildren: wantsChildren ?? this.wantsChildren,
+      relationshipGoals: relationshipGoals ?? this.relationshipGoals,
+      dealbreakers: dealbreakers ?? this.dealbreakers,
+      isPhase2Complete: isPhase2Complete ?? this.isPhase2Complete,
+      bio: bio ?? this.bio,
+      lookingFor: lookingFor ?? this.lookingFor,
+      religionOrSpiritualBeliefs: religionOrSpiritualBeliefs ?? this.religionOrSpiritualBeliefs,
+      politicalViews: politicalViews ?? this.politicalViews,
+      diet: diet ?? this.diet,
+      smokingHabits: smokingHabits ?? this.smokingHabits,
+      drinkingHabits: drinkingHabits ?? this.drinkingHabits,
+      exerciseFrequencyOrFitnessLevel: exerciseFrequencyOrFitnessLevel ?? this.exerciseFrequencyOrFitnessLevel,
+      sleepSchedule: sleepSchedule ?? this.sleepSchedule,
+      personalityTraits: personalityTraits ?? this.personalityTraits,
+      willingToRelocate: willingToRelocate ?? this.willingToRelocate,
+      monogamyVsPolyamoryPreferences: monogamyVsPolyamoryPreferences ?? this.monogamyVsPolyamoryPreferences,
+      astrologicalSign: astrologicalSign ?? this.astrologicalSign,
+      attachmentStyle: attachmentStyle ?? this.attachmentStyle,
+      communicationStyle: communicationStyle ?? this.communicationStyle,
+      mentalHealthDisclosures: mentalHealthDisclosures ?? this.mentalHealthDisclosures,
+      petOwnership: petOwnership ?? this.petOwnership,
+      travelFrequencyOrFavoriteDestinations: travelFrequencyOrFavoriteDestinations ?? this.travelFrequencyOrFavoriteDestinations,
+      profileVisibilityPreferences: profileVisibilityPreferences ?? this.profileVisibilityPreferences,
+      pushNotificationPreferences: pushNotificationPreferences ?? this.pushNotificationPreferences,
       createdAt: createdAt ?? this.createdAt,
-      lastUpdated: lastUpdated ?? this.lastUpdated,
+      updatedAt: updatedAt ?? this.updatedAt,
+      fullName: fullName ?? this.fullName,
+      gender: gender ?? this.gender,
+      addressZip: addressZip ?? this.addressZip,
+      interests: interests ?? this.interests,
+      height: height ?? this.height,
     );
   }
 
@@ -142,12 +410,18 @@ class UserProfile {
     return UserProfile(
       userId: user.id,
       email: user.email!,
-      isProfileComplete: false,
-      agreedToTerms: false,
-      agreedToCommunityGuidelines: false,
+      agreedToTerms: false, // Default to false, will be updated from DB
+      agreedToCommunityGuidelines: false, // Default to false, will be updated from DB
+      isPhase1Complete: false, // Default to false, will be updated from DB
+      isPhase2Complete: false, // Default to false, will be updated from DB
       createdAt: user.createdAt != null
           ? DateTime.parse(user.createdAt!)
           : DateTime.now(),
+      // Initialize List<String> fields as empty lists
+      languagesSpoken: [],
+      hobbiesAndInterests: [],
+      loveLanguages: [],
+      interests: [], // For compatibility
     );
   }
 }

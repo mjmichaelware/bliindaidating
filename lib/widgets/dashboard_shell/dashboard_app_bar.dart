@@ -6,7 +6,13 @@ import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const DashboardAppBar({super.key});
+  // ADDED: Parameter to show profile completion status (e.g., an indicator)
+  final bool showProfileCompletion;
+
+  const DashboardAppBar({
+    super.key,
+    this.showProfileCompletion = false, // Default to false if not provided
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +35,17 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       actions: [
+        // OPTIONAL: Add a visual indicator for profile completion here
+        // For example, a small dot or icon next to notifications if showProfileCompletion is true
+        if (showProfileCompletion)
+          Padding(
+            padding: EdgeInsets.only(right: AppConstants.paddingSmall),
+            child: Icon(
+              Icons.warning_rounded, // Or a custom icon
+              color: AppConstants.errorColor, // Highlight incomplete status
+              size: AppConstants.fontSizeLarge,
+            ),
+          ),
         IconButton(
           icon: Icon(
             Icons.notifications_rounded,

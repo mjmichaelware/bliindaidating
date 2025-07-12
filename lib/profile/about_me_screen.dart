@@ -31,7 +31,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
 
   UserProfile? _userProfile;
   DateTime? _dateOfBirth;
-  String? _gender;
+  String? _gender; // Old field, will map to genderIdentity
   String? _sexualOrientation;
   String? _lookingFor;
   String? _profilePictureUrl; // The URL for display
@@ -90,18 +90,18 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       if (profile != null) {
         setState(() {
           _userProfile = profile;
-          _fullNameController.text = profile.fullName ?? '';
+          _fullNameController.text = profile.fullLegalName ?? profile.fullName ?? ''; // Prioritize new field
           _displayNameController.text = profile.displayName ?? '';
           _bioController.text = profile.bio ?? '';
           _phoneNumberController.text = profile.phoneNumber ?? '';
-          _addressZipController.text = profile.addressZip ?? '';
-          _heightController.text = profile.height?.toString() ?? '';
+          _addressZipController.text = profile.locationZipCode ?? profile.addressZip ?? ''; // Prioritize new field
+          _heightController.text = profile.heightCm?.toString() ?? profile.height?.toString() ?? ''; // Prioritize new field
           _dateOfBirth = profile.dateOfBirth;
-          _gender = profile.gender;
+          _gender = profile.genderIdentity ?? profile.gender; // Prioritize new field
           _sexualOrientation = profile.sexualOrientation;
           _lookingFor = profile.lookingFor;
           _selectedInterests.clear();
-          _selectedInterests.addAll(profile.interests);
+          _selectedInterests.addAll(profile.hobbiesAndInterests.isNotEmpty ? profile.hobbiesAndInterests : profile.interests); // Prioritize new field
           _profilePictureUrl = profile.profilePictureUrl;
         });
       }
@@ -177,19 +177,65 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
 
     try {
       final UserProfile updatedProfile = (_userProfile ?? UserProfile.fromSupabaseUser(currentUser)).copyWith(
-        fullName: _fullNameController.text.trim(),
+        // Fields being explicitly updated by AboutMeScreen
+        fullLegalName: _fullNameController.text.trim(), // Map to new field
         displayName: _displayNameController.text.trim(),
         dateOfBirth: _dateOfBirth,
-        gender: _gender,
+        genderIdentity: _gender, // Map to new field
         bio: _bioController.text.trim(),
         profilePictureUrl: finalProfilePictureUrl,
-        isProfileComplete: true,
-        interests: _selectedInterests,
+        hobbiesAndInterests: _selectedInterests, // Map to new field
         lookingFor: _lookingFor,
         phoneNumber: _phoneNumberController.text.trim(),
-        addressZip: _addressZipController.text.trim(),
+        locationZipCode: _addressZipController.text.trim(), // Map to new field
         sexualOrientation: _sexualOrientation,
-        height: double.tryParse(_heightController.text.trim()),
+        heightCm: double.tryParse(_heightController.text.trim()), // Map to new field
+
+        // Carry over existing phase completion status and consent flags
+        isPhase1Complete: _userProfile?.isPhase1Complete ?? false,
+        isPhase2Complete: _userProfile?.isPhase2Complete ?? false,
+        agreedToTerms: _userProfile?.agreedToTerms ?? false,
+        agreedToCommunityGuidelines: _userProfile?.agreedToCommunityGuidelines ?? false,
+
+        // Carry over other existing fields that are not edited on this screen
+        ethnicity: _userProfile?.ethnicity,
+        languagesSpoken: _userProfile?.languagesSpoken,
+        desiredOccupation: _userProfile?.desiredOccupation,
+        educationLevel: _userProfile?.educationLevel,
+        loveLanguages: _userProfile?.loveLanguages,
+        favoriteMedia: _userProfile?.favoriteMedia,
+        maritalStatus: _userProfile?.maritalStatus,
+        hasChildren: _userProfile?.hasChildren,
+        wantsChildren: _userProfile?.wantsChildren,
+        relationshipGoals: _userProfile?.relationshipGoals,
+        dealbreakers: _userProfile?.dealbreakers,
+        religionOrSpiritualBeliefs: _userProfile?.religionOrSpiritualBeliefs,
+        politicalViews: _userProfile?.politicalViews,
+        diet: _userProfile?.diet,
+        smokingHabits: _userProfile?.smokingHabits,
+        drinkingHabits: _userProfile?.drinkingHabits,
+        exerciseFrequencyOrFitnessLevel: _userProfile?.exerciseFrequencyOrFitnessLevel,
+        sleepSchedule: _userProfile?.sleepSchedule,
+        personalityTraits: _userProfile?.personalityTraits,
+        willingToRelocate: _userProfile?.willingToRelocate,
+        monogamyVsPolyamoryPreferences: _userProfile?.monogamyVsPolyamoryPreferences,
+        astrologicalSign: _userProfile?.astrologicalSign,
+        attachmentStyle: _userProfile?.attachmentStyle,
+        communicationStyle: _userProfile?.communicationStyle,
+        mentalHealthDisclosures: _userProfile?.mentalHealthDisclosures,
+        petOwnership: _userProfile?.petOwnership,
+        travelFrequencyOrFavoriteDestinations: _userProfile?.travelFrequencyOrFavoriteDestinations,
+        profileVisibilityPreferences: _userProfile?.profileVisibilityPreferences,
+        pushNotificationPreferences: _userProfile?.pushNotificationPreferences,
+        createdAt: _userProfile?.createdAt,
+        updatedAt: DateTime.now(),
+
+        // Deprecated/Redundant fields (kept for compatibility during migration)
+        fullName: _fullNameController.text.trim(), // Still mapping for compatibility
+        gender: _gender, // Still mapping for compatibility
+        addressZip: _addressZipController.text.trim(), // Still mapping for compatibility
+        interests: _selectedInterests, // Still mapping for compatibility
+        height: double.tryParse(_heightController.text.trim()), // Still mapping for compatibility
       );
 
       await _profileService.createOrUpdateProfile(profile: updatedProfile);
@@ -316,15 +362,15 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                   DropdownButtonFormField<String>(
                     value: _gender,
                     decoration: InputDecoration(
-                      labelText: 'Gender',
+                      labelText: 'Gender Identity',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.transgender),
                       labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
                     ),
-                    items: _genders.map((String gender) {
+                    items: _genders.map((String value) {
                       return DropdownMenuItem<String>(
-                        value: gender,
-                        child: Text(gender, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
+                        value: value,
+                        child: Text(value, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -332,6 +378,63 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                         _gender = newValue;
                       });
                     },
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  DropdownButtonFormField<String>(
+                    value: _sexualOrientation,
+                    decoration: InputDecoration(
+                      labelText: 'Sexual Orientation',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.favorite),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    items: _sexualOrientations.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _sexualOrientation = newValue;
+                      });
+                    },
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  DropdownButtonFormField<String>(
+                    value: _lookingFor,
+                    decoration: InputDecoration(
+                      labelText: 'Looking For',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.search),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    items: _lookingForOptions.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _lookingFor = newValue;
+                      });
+                    },
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    controller: _heightController,
+                    decoration: InputDecoration(
+                      labelText: 'Height (cm)',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.accessibility_new),
+                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
+                    ),
+                    keyboardType: TextInputType.number,
+                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
@@ -349,71 +452,18 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                   TextFormField(
                     controller: _addressZipController,
                     decoration: InputDecoration(
-                      labelText: 'Address / ZIP Code',
+                      labelText: 'Zip Code',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.location_on),
                       labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
                     ),
+                    keyboardType: TextInputType.number,
                     style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
                   ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    controller: _heightController,
-                    decoration: InputDecoration(
-                      labelText: 'Height (in cm or inches)',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.height),
-                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
-                    ),
-                    keyboardType: TextInputType.text,
-                    style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
-                  ),
-                  const SizedBox(height: 16.0),
-                  DropdownButtonFormField<String>(
-                    value: _sexualOrientation,
-                    decoration: InputDecoration(
-                      labelText: 'Sexual Orientation',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.diversity_3),
-                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
-                    ),
-                    items: _sexualOrientations.map((String option) {
-                      return DropdownMenuItem<String>(
-                        value: option,
-                        child: Text(option, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _sexualOrientation = newValue;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  DropdownButtonFormField<String>(
-                    value: _lookingFor,
-                    decoration: InputDecoration(
-                      labelText: 'Looking For',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.favorite),
-                      labelStyle: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter'),
-                    ),
-                    items: _lookingForOptions.map((String option) {
-                      return DropdownMenuItem<String>(
-                        value: option,
-                        child: Text(option, style: textTheme.bodyLarge?.copyWith(fontFamily: 'Inter')),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _lookingFor = newValue;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 24.0),
                   Text(
-                    'Your Interests:',
-                    style: textTheme.titleLarge?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold),
+                    'Interests:',
+                    style: textTheme.titleMedium?.copyWith(fontFamily: 'Inter', fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8.0),
                   Wrap(
@@ -422,7 +472,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                     children: _allInterests.map((interest) {
                       final isSelected = _selectedInterests.contains(interest);
                       return FilterChip(
-                        label: Text(interest, style: const TextStyle(fontFamily: 'Inter')),
+                        label: Text(interest, style: textTheme.bodyMedium?.copyWith(fontFamily: 'Inter')),
                         selected: isSelected,
                         onSelected: (selected) {
                           setState(() {
@@ -433,27 +483,28 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
                             }
                           });
                         },
-                        selectedColor: colorScheme.primary.withOpacity(0.3),
-                        checkmarkColor: colorScheme.primary,
+                        selectedColor: colorScheme.primary,
+                        checkmarkColor: colorScheme.onPrimary,
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 24.0),
+                  const SizedBox(height: 32.0),
                   Center(
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _saveProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.secondary,
-                        foregroundColor: colorScheme.onSecondary,
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              'Save Profile',
-                              style: textTheme.labelLarge?.copyWith(fontFamily: 'Inter'),
-                            ),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : Text('Save Profile', style: textTheme.labelLarge?.copyWith(fontFamily: 'Inter')),
                     ),
                   ),
                 ],

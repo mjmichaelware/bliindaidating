@@ -1,4 +1,3 @@
-// lib/widgets/dashboard_shell/dashboard_side_menu.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +10,9 @@ class DashboardSideMenu extends StatelessWidget {
   final String? profilePictureUrl;
   final int selectedTabIndex;
   final ValueChanged<int> onTabSelected;
+  // ADDED: Parameter to indicate if Phase 2 is complete
+  final bool isPhase2Complete;
+
 
   const DashboardSideMenu({
     super.key,
@@ -18,6 +20,7 @@ class DashboardSideMenu extends StatelessWidget {
     this.profilePictureUrl,
     required this.selectedTabIndex,
     required this.onTabSelected,
+    this.isPhase2Complete = false, // Default to false if not provided
   });
 
   @override
@@ -122,6 +125,20 @@ class DashboardSideMenu extends StatelessWidget {
                   onTap: () => onTabSelected(3),
                   isDarkMode: isDarkMode,
                 ),
+                // NEW: Add Questionnaire Phase 2 link if Phase 2 is not complete
+                if (!isPhase2Complete) // Only show if Phase 2 is NOT complete
+                  _buildTabItem(
+                    context,
+                    icon: Icons.assignment_rounded, // A different icon for Phase 2 questions
+                    title: 'Phase 2 Questions',
+                    index: 4, // A new index for this item
+                    isSelected: selectedTabIndex == 4,
+                    onTap: () {
+                      context.push('/questionnaire-phase2'); // Adjust this route as needed
+                      onTabSelected(4);
+                    },
+                    isDarkMode: isDarkMode,
+                  ),
               ],
             ),
           ),
