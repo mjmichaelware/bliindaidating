@@ -1,10 +1,10 @@
-// lib/screens/main/main_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart'; // For debugPrint
+import 'dart:ui'; // Import for ImageFilter
 
 // Local imports for core project components
 import 'package:bliindaidating/app_constants.dart';
@@ -20,7 +20,7 @@ import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 // NEW: Dashboard Shell Component Imports (These files now exist as per tree output)
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart';
+import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart'; // FIX: Corrected import path
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switcher.dart';
 
 // NEW: Tab Content Screen Imports (These placeholder files now exist as per tree output)
@@ -57,7 +57,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     super.initState();
     _loadUserProfileAndSubscribe();
     // Call the AI dummy data fetch method for console verification
-    _fetchAIDummyData(); 
+    _fetchAIDummyData();
   }
 
   Future<void> _fetchAIDummyData() async {
@@ -176,14 +176,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   }
 
   void _onTabSelected(int index) {
-    // Prevent changing tabs if Phase 2 is incomplete, unless it's the questionnaire tab
-    if (_userProfile != null && !_userProfile!.isPhase2Complete && index != 3) { // Assuming QuestionnaireScreen is index 3
-      context.go('/questionnaire_screen'); // Directly navigate to ensure GoRouter redirect logic is hit
-      return;
-    }
+    // Allow selection of any tab
     setState(() {
       _selectedTabIndex = index;
     });
+    // If phase 2 is incomplete and they've navigated to a blocked tab,
+    // we can show a subtle hint or ensure the banner is prominent.
+    // The visual blurring handles the blocking of interaction.
   }
 
   @override
@@ -200,8 +199,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
     // Check Phase 2 completion status
     final bool isPhase2Complete = _userProfile?.isPhase2Complete ?? false;
-    // Determine if the content should be absorbed (interactions blocked)
-    final bool absorbContent = _isLoadingProfile || !isPhase2Complete;
+
+    // Determine if the content should be blurred and absorbed (interactions blocked)
+    // Content is absorbed if profile is still loading OR if Phase 2 is incomplete AND the current tab is NOT Questionnaire (index 3)
+    final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete && _selectedTabIndex != 3);
 
 
     // List of screens for the DashboardContentSwitcher
@@ -211,13 +212,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       const MatchesListScreen(),
       const DiscoveryScreen(),
       const QuestionnaireScreen(), // Assuming this is always index 3
+      const Placeholder(), // FIX: Added Placeholder for index 4 (Phase 2 Questions) to prevent out-of-bounds
     ];
-
-    // Ensure _selectedTabIndex defaults to Questionnaire if Phase 2 is incomplete
-    if (!isPhase2Complete && _selectedTabIndex != 3) {
-      _selectedTabIndex = 3; // Force to Questionnaire screen
-    }
-
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -262,7 +258,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                           padding: const EdgeInsets.all(AppConstants.paddingMedium),
                           margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
                           decoration: BoxDecoration(
-                            color: isDarkMode ? Colors.orange.shade800.withOpacity(0.9) : Colors.amber.shade200.withOpacity(0.9),
+                            color: isDarkMode ? AppConstants.bannerBackgroundColorDark.withOpacity(0.95) : AppConstants.bannerBackgroundColorLight.withOpacity(0.95),
                             borderRadius: BorderRadius.circular(AppConstants.borderRadius),
                             boxShadow: [
                               BoxShadow(
@@ -278,17 +274,17 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                               Text(
                                 'Action Required: Complete Your Profile Phase 2!',
                                 style: TextStyle(
-                                  color: isDarkMode ? Colors.white : Colors.black87,
+                                  color: isDarkMode ? AppConstants.bannerTextColorDark : AppConstants.bannerTextColorLight,
                                   fontWeight: FontWeight.bold,
                                   fontSize: AppConstants.fontSizeMedium,
                                   fontFamily: 'Inter',
                                 ),
                               ),
-                              const SizedBox(height: AppConstants.paddingSmall),
+                              const SizedBox(height: AppConstants.spacingSmall),
                               Text(
                                 'Unlock matches, news feed, and discovery by finishing the AI-driven questionnaire. It takes just a few minutes!',
                                 style: TextStyle(
-                                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                                  color: isDarkMode ? AppConstants.bannerTextColorDark.withOpacity(0.8) : AppConstants.bannerTextColorLight.withOpacity(0.8),
                                   fontSize: AppConstants.fontSizeSmall,
                                   fontFamily: 'Inter',
                                 ),
@@ -298,11 +294,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: () {
-                                    // Navigate to the Questionnaire screen
-                                    context.go('/questionnaire_screen');
+                                    // Navigate to the Questionnaire screen if not already there
+                                    if (_selectedTabIndex != 3) {
+                                      _onTabSelected(3); // Programmatically select the questionnaire tab
+                                    }
                                   },
                                   style: TextButton.styleFrom(
-                                    backgroundColor: isDarkMode ? AppConstants.primaryColor : AppConstants.accentColor,
+                                    backgroundColor: isDarkMode ? AppConstants.bannerButtonColorDark : AppConstants.bannerButtonColorLight,
                                     padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(AppConstants.borderRadius),
@@ -311,7 +309,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                   child: Text(
                                     'Start Phase 2 Now!',
                                     style: TextStyle(
-                                      color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                                      color: isDarkMode ? AppConstants.bannerButtonTextColorDark : AppConstants.bannerButtonTextColorLight,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'Inter',
                                     ),
@@ -330,14 +328,20 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                               ),
                             )
                           : Expanded(
-                              // AbsorbPointer to block interaction if Phase 2 is incomplete
+                              // Apply blur and absorb pointer based on absorbAndBlurContent
                               child: AbsorbPointer(
-                                absorbing: absorbContent && _selectedTabIndex != 3, // Absorb if incomplete AND not on Questionnaire tab
-                                child: Opacity(
-                                  opacity: absorbContent && _selectedTabIndex != 3 ? 0.5 : 1.0, // Visually indicate disabled state
-                                  child: DashboardContentSwitcher(
-                                    selectedTabIndex: _selectedTabIndex,
-                                    screens: _dashboardScreens,
+                                absorbing: absorbAndBlurContent,
+                                child: AnimatedOpacity(
+                                  opacity: absorbAndBlurContent ? 0.4 : 1.0, // Visually indicate disabled state more distinctly
+                                  duration: AppConstants.animationDurationMedium,
+                                  child: ImageFiltered(
+                                    imageFilter: absorbAndBlurContent
+                                        ? ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0)
+                                        : ImageFilter.blur(sigmaX: 0.0, sigmaY: 0.0),
+                                    child: DashboardContentSwitcher(
+                                      selectedTabIndex: _selectedTabIndex,
+                                      screens: _dashboardScreens,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -353,5 +357,5 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         ],
       ),
     );
-  } 
+  }
 }

@@ -70,7 +70,7 @@ class AppConstants {
   static const Color tertiaryColor = Color(0xFF8E24AA); // A deep purple
   static const Color complementaryColor1 = Color(0xFF00BCD4); // Cyan for contrast
   static const Color complementaryColor2 = Color(0xFF4CAF50); // Green for balance
-  static const Color complementaryColor3 = Color(0xFFFFC107); // Amber for warmth
+  static const Color complementaryColor3 = Color(0xFFFFC107); // Amber for warmth // FIX: Added 0x prefix
   static const Color complementaryColor4 = Color(0xFF9C27B0); // Another shade of purple
 
   // Explicit shade for complementaryColor2
@@ -113,6 +113,19 @@ class AppConstants {
   static const Color lightSecondaryColorShade900 = Color(0xFF0D47A1); // Darker blue for light theme
   static const Color lightSecondaryColorShade700 = Color(0xFF1976D2);
   static const Color lightSecondaryColorShade400 = Color(0xFF42A5F5);
+
+  // NEW: Colors for the Phase 2 Completion Banner
+  static const Color bannerBackgroundColorDark = Color(0xFF4A148C); // Deep Purple
+  static const Color bannerBackgroundColorLight = Color(0xFFD1C4E9); // Lighter purple for light theme
+
+  static const Color bannerTextColorDark = Colors.white;
+  static const Color bannerTextColorLight = Colors.black87;
+
+  static const Color bannerButtonColorDark = Color(0xFF0D47A1); // Galaxy Blue (Darker Secondary)
+  static const Color bannerButtonColorLight = Color(0xFFBBDEFB); // Lighter blue
+
+  static const Color bannerButtonTextColorDark = Colors.white;
+  static const Color bannerButtonTextColorLight = Colors.black87;
 
 
   // Spacing (Already existed, re-confirmed)

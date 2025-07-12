@@ -7,7 +7,7 @@ import 'dart:async'; // Required for StreamSubscription and ChangeNotifier
 import 'package:provider/provider.dart'; // Import for state management
 
 // Local imports - Ensure these files exist in your project structure
-import 'package:bliindaidating/utils/supabase_config.dart';
+// import 'package:bliindaidating/utils/supabase_config.dart'; // We'll handle Supabase init directly here
 import 'package:bliindaidating/app_constants.dart'; // Import app_constants for theme
 import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile for redirect logic
@@ -45,6 +45,18 @@ import 'package:bliindaidating/screens/notifications/notifications_screen.dart';
 import 'package:bliindaidating/screens/profile/profile_view_screen.dart';
 
 
+// Define the environment variables at the top level using const String.fromEnvironment
+// These values will be set at compile time by the --dart-define or --dart-define-from-file flags.
+// Provide empty strings as default values, then assert their presence for release builds.
+const String _supabaseUrl = String.fromEnvironment(
+  'SUPABASE_URL',
+  defaultValue: '', // Important: Provide a default empty string
+);
+const String _supabaseAnonKey = String.fromEnvironment(
+  'SUPABASE_ANON_KEY',
+  defaultValue: '', // Important: Provide a default empty string
+);
+
 // A simple Not Found screen for GoRouter's errorBuilder
 class NotFoundScreen extends StatelessWidget {
   const NotFoundScreen({super.key});
@@ -70,8 +82,30 @@ class NotFoundScreen extends StatelessWidget {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // --- Add these debug prints to verify the values at startup ---
+  debugPrint('>>> Build Mode: ${const bool.fromEnvironment('dart.vm.product') ? 'RELEASE' : 'DEBUG'}');
+  debugPrint('>>> Supabase URL from env: $_supabaseUrl');
+  debugPrint('>>> Supabase Anon Key from env: $_supabaseAnonKey');
+  // -----------------------------------------------------------
+
   try {
-    await SupabaseConfig.init();
+    // Check if in product (release) mode and if keys are missing
+    if (const bool.fromEnvironment('dart.vm.product')) {
+      if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
+        throw Exception('Supabase credentials (URL or Anon Key) are missing in RELEASE build. '
+                         'Ensure --dart-define or --dart-define-from-file are used.');
+      }
+    }
+
+    // Initialize Supabase directly here using the constants
+    await Supabase.initialize(
+      url: _supabaseUrl,
+      anonKey: _supabaseAnonKey,
+      // Turn off debug logging for Supabase in release builds automatically
+      debug: !const bool.fromEnvironment('dart.vm.product'),
+    );
+
     runApp(
       ChangeNotifierProvider(
         create: (context) => ThemeController(),
@@ -105,13 +139,17 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
-  final ProfileService _profileService = ProfileService();
+  final ProfileService _profileService = ProfileService(); // Make sure this service is correctly initialized and handles Supabase client internally.
+
+  // StreamSubscription to listen for auth state changes, if Supabase.instance.client.auth.onAuthStateChange
+  // is indeed a stream that needs explicit listening. GoRouterRefreshStream handles this.
 
   @override
   void initState() {
     super.initState();
     _router = GoRouter(
       initialLocation: '/',
+      // GoRouterRefreshStream correctly subscribes to onAuthStateChange
       refreshListenable: GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
@@ -213,6 +251,15 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   }
 
   @override
+  void dispose() {
+    // Ensure you dispose of _profileService if it holds any resources like streams or listeners
+    // For a simple service, it might not be necessary, but good practice if it has state.
+    // _profileService.dispose(); // Uncomment if ProfileService has a dispose method
+    super.dispose();
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
     return MaterialApp.router(
@@ -228,7 +275,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription<AuthState> _subscription;
 
   GoRouterRefreshStream(Stream<AuthState> stream) {
-    notifyListeners();
+    notifyListeners(); // Notify immediately to check initial state
     _subscription = stream.asBroadcastStream().listen(
           (AuthState event) => notifyListeners(),
         );
