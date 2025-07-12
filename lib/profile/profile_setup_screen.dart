@@ -12,13 +12,12 @@ import 'package:cross_file/cross_file.dart'; // Import XFile
 import 'package:image_picker/image_picker.dart'; // Import ImagePicker for XFile
 import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'dart:io'; // For File, if needed for platform-specific image handling
-// No need for dart:typed_data directly here, XFile handles bytes.
 
 // Import custom background/effects for immersion (assuming these exist from your base project)
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
 
 // Import the modular form widgets (CORRECTED PATHS)
-import 'package:bliindaidating/screens/profile_setup/widgets/basic_info_form.dart'; // FIXED: Added .dart and closing quote/semicolon
+import 'package:bliindaidating/screens/profile_setup/widgets/basic_info_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/identity_id_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/preferences_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/consent_form.dart';
@@ -34,8 +33,6 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<GlobalKey<FormState>> _formKeys = List.generate(4, (_) => GlobalKey<FormState>());
-  // ProfileService is now provided via Provider, so no need to instantiate here
-  // final ProfileService _profileService = ProfileService();
 
   bool _isLoading = true;
 
@@ -53,7 +50,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   String? _gender;
   String? _sexualOrientation;
   String? _lookingFor;
-  List<String> _selectedInterests = [];
+  List<String> _selectedInterests = []; // This remains non-nullable as it's a UI state
   bool _agreedToTerms = false;
   bool _agreedToCommunityGuidelines = false;
 
@@ -218,7 +215,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _gender = userProfile.genderIdentity ?? userProfile.gender; // Prioritize new field
         _sexualOrientation = userProfile.sexualOrientation;
         _lookingFor = userProfile.lookingFor;
-        _selectedInterests = List.from(userProfile.hobbiesAndInterests.isNotEmpty ? userProfile.hobbiesAndInterests : userProfile.interests); // Prioritize new field
+        // Corrected: Ensure List.from receives a non-null Iterable
+        _selectedInterests = List.from(userProfile.hobbiesAndInterests ?? userProfile.interests ?? []);
         _agreedToTerms = userProfile.agreedToTerms;
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
         _imagePreviewPath = userProfile.profilePictureUrl;
@@ -235,21 +233,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showBio = userProfile.bio != null;
         _showSexualOrientation = userProfile.sexualOrientation != null;
         _showHeight = userProfile.heightCm != null || userProfile.height != null;
-        _showInterests = userProfile.hobbiesAndInterests.isNotEmpty || userProfile.interests.isNotEmpty;
+        // Corrected: Use ?? [] for isNotEmpty check
+        _showInterests = (userProfile.hobbiesAndInterests ?? []).isNotEmpty || (userProfile.interests ?? []).isNotEmpty;
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.locationZipCode != null || userProfile.addressZip != null;
         _showEthnicity = userProfile.ethnicity != null; // NEW: check for ethnicity
-        _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty; // NEW
+        _showLanguagesSpoken = (userProfile.languagesSpoken ?? []).isNotEmpty; // Corrected
         _showEducationLevel = userProfile.educationLevel != null; // NEW
         _showDesiredOccupation = userProfile.desiredOccupation != null; // NEW
-        _showLoveLanguages = userProfile.loveLanguages.isNotEmpty; // NEW
-        _showFavoriteMedia = userProfile.favoriteMedia != null; // NEW
+        _showLoveLanguages = (userProfile.loveLanguages ?? []).isNotEmpty; // Corrected
+        _showFavoriteMedia = (userProfile.favoriteMedia ?? []).isNotEmpty; // Corrected
         _showMaritalStatus = userProfile.maritalStatus != null; // NEW
         _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null; // NEW
         _showWillingToRelocate = userProfile.willingToRelocate != null; // NEW
         _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null; // NEW
         _showLoveRelationshipGoals = userProfile.relationshipGoals != null; // NEW
-        _showDealbreakersBoundaries = userProfile.dealbreakers != null; // NEW
+        _showDealbreakersBoundaries = (userProfile.dealbreakers ?? []).isNotEmpty; // Corrected
         _showAstrologicalSign = userProfile.astrologicalSign != null; // NEW
         _showAttachmentStyle = userProfile.attachmentStyle != null; // NEW
         _showCommunicationStyle = userProfile.communicationStyle != null; // NEW
@@ -263,7 +262,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showDrinkingHabits = userProfile.drinkingHabits != null; // NEW
         _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null; // NEW
         _showSleepSchedule = userProfile.sleepSchedule != null; // NEW
-        _showPersonalityTraits = userProfile.personalityTraits != null; // NEW
+        _showPersonalityTraits = (userProfile.personalityTraits ?? []).isNotEmpty; // Corrected
 
       }
       debugPrint('ProfileSetupScreen: Preferences loaded.');
@@ -364,17 +363,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         governmentIdFrontUrl: existingProfile?.governmentIdFrontUrl,
         governmentIdBackUrl: existingProfile?.governmentIdBackUrl,
         ethnicity: existingProfile?.ethnicity,
-        languagesSpoken: existingProfile?.languagesSpoken ?? [],
+        languagesSpoken: existingProfile?.languagesSpoken, // Now nullable, no need for ?? [] here
         desiredOccupation: existingProfile?.desiredOccupation,
         educationLevel: existingProfile?.educationLevel,
         hobbiesAndInterests: _selectedInterests, // Map interests to new field
-        loveLanguages: existingProfile?.loveLanguages ?? [],
-        favoriteMedia: existingProfile?.favoriteMedia,
+        loveLanguages: existingProfile?.loveLanguages, // Now nullable
+        favoriteMedia: existingProfile?.favoriteMedia, // Now nullable
         maritalStatus: existingProfile?.maritalStatus,
         hasChildren: existingProfile?.hasChildren,
         wantsChildren: existingProfile?.wantsChildren,
         relationshipGoals: existingProfile?.relationshipGoals,
-        dealbreakers: existingProfile?.dealbreakers,
+        dealbreakers: existingProfile?.dealbreakers, // Now nullable
 
         // Phase 3 - Progressive Profiling (Carry over or default)
         bio: _bioController.text.trim(),
@@ -386,7 +385,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         drinkingHabits: existingProfile?.drinkingHabits,
         exerciseFrequencyOrFitnessLevel: existingProfile?.exerciseFrequencyOrFitnessLevel,
         sleepSchedule: existingProfile?.sleepSchedule,
-        personalityTraits: existingProfile?.personalityTraits,
+        personalityTraits: existingProfile?.personalityTraits, // Now nullable
         willingToRelocate: existingProfile?.willingToRelocate,
         monogamyVsPolyamoryPreferences: existingProfile?.monogamyVsPolyamoryPreferences,
         astrologicalSign: existingProfile?.astrologicalSign,

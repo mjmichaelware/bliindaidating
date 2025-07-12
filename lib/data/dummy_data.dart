@@ -137,7 +137,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     userId: _uuid.v4(),
     email: 'user1@example.com',
     fullLegalName: 'Alice Wonderland', // New field, explicitly setting
-    // Removed the duplicate 'fullName' here, relying on the single instance below for compatibility
     displayName: 'WonderAlice',
     profilePictureUrl: 'https://picsum.photos/id/1005/200/300',
     bio: 'An avid reader and aspiring writer, always looking for new stories and adventures. Loves deep conversations and exploring hidden cafes.',
@@ -153,23 +152,23 @@ List<UserProfile> dummyDiscoveryProfiles = [
     locationCity: 'Salt Lake City', // Added for completeness, inferred from zip
     locationState: 'UT', // Added for completeness, inferred from zip
     locationZipCode: '84101', // RENAMED from 'addressZip'
-    hobbiesAndInterests: ['Books', 'Writing', 'Coffee', 'Philosophy', 'Hiking'], // RENAMED from 'interests'
+    hobbiesAndInterests: ['Books', 'Writing', 'Coffee', 'Philosophy', 'Hiking'], // Corrected to List<String>
     sexualOrientation: 'Straight',
     heightCm: 165.0, // RENAMED from 'height'
     // New Phase 2 fields (example values)
     governmentIdFrontUrl: 'https://example.com/id_alice_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_alice_back.jpg',
     ethnicity: 'Caucasian',
-    languagesSpoken: ['English', 'Spanish'],
+    languagesSpoken: ['English', 'Spanish'], // Corrected to List<String>
     desiredOccupation: 'Writer',
     educationLevel: 'Master\'s Degree',
-    loveLanguages: ['Quality Time', 'Words of Affirmation'],
-    favoriteMedia: 'Dune, The Witcher, Studio Ghibli films',
+    loveLanguages: ['Quality Time', 'Words of Affirmation'], // Corrected to List<String>
+    favoriteMedia: ['Dune', 'The Witcher', 'Studio Ghibli films'], // Corrected to List<String>
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: true,
     relationshipGoals: 'Build a family and travel the world',
-    dealbreakers: 'Dishonesty, lack of ambition',
+    dealbreakers: ['Dishonesty', 'lack of ambition'], // Corrected to List<String>
     // Phase 3 fields (example values)
     religionOrSpiritualBeliefs: 'Spiritual but not religious',
     politicalViews: 'Liberal',
@@ -178,8 +177,8 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Socially',
     exerciseFrequencyOrFitnessLevel: '3 times a week',
     sleepSchedule: 'Early bird',
-    personalityTraits: 'Introverted, empathetic, curious',
-    willingToRelocate: true, // FIXED TYPO: was willingToToRelocate
+    personalityTraits: ['Introverted', 'empathetic', 'curious'], // Corrected to List<String>
+    willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Pisces',
     attachmentStyle: 'Secure',
@@ -191,12 +190,12 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
 
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 5)), // RENAMED from 'lastUpdated'
-    // Keeping deprecated fields for compatibility. Now there's only one 'fullName'
-    fullName: 'Alice Wonderland', // This is the original one from your file
+    updatedAt: DateTime.now().subtract(const Duration(days: 5)),
+    // Keeping deprecated fields for compatibility.
+    fullName: 'Alice Wonderland',
     gender: 'Female',
     addressZip: '84101',
-    interests: ['Books', 'Writing'], // If you want to keep data in old field
+    interests: ['Books', 'Writing'], // Corrected to List<String>
     height: 165.0,
   ),
   // Profile 2
@@ -213,29 +212,29 @@ List<UserProfile> dummyDiscoveryProfiles = [
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
     isPhase2Complete: true,
-    genderIdentity: 'Male', // RENAMED
+    genderIdentity: 'Male',
     dateOfBirth: DateTime(1990, 7, 22),
     phoneNumber: '+15552345678',
     locationCity: 'Salt Lake City',
     locationState: 'UT',
-    locationZipCode: '84102', // RENAMED
-    hobbiesAndInterests: ['Coding', 'Woodworking', 'Indie Music', 'Gaming', 'Cooking'], // RENAMED
+    locationZipCode: '84102',
+    hobbiesAndInterests: ['Coding', 'Woodworking', 'Indie Music', 'Gaming', 'Cooking'], // Corrected to List<String>
     sexualOrientation: 'Straight',
-    heightCm: 180.0, // RENAMED
+    heightCm: 180.0,
     // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_bob_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_bob_back.jpg',
     ethnicity: 'Asian',
-    languagesSpoken: ['English', 'Japanese'],
+    languagesSpoken: ['English', 'Japanese'], // Corrected to List<String>
     desiredOccupation: 'Software Engineer',
     educationLevel: 'Bachelor\'s Degree',
-    loveLanguages: ['Acts of Service', 'Physical Touch'],
-    favoriteMedia: 'Sci-fi movies, rock music',
+    loveLanguages: ['Acts of Service', 'Physical Touch'], // Corrected to List<String>
+    favoriteMedia: ['Sci-fi movies', 'rock music'], // Corrected to List<String>
     maritalStatus: 'Divorced',
     hasChildren: true,
     wantsChildren: false,
     relationshipGoals: 'Meaningful connections',
-    dealbreakers: 'Lack of humor, dishonesty',
+    dealbreakers: ['Lack of humor', 'dishonesty'], // Corrected to List<String>
     // Phase 3 fields (example values)
     religionOrSpiritualBeliefs: 'None',
     politicalViews: 'Centrist',
@@ -244,8 +243,8 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Often',
     exerciseFrequencyOrFitnessLevel: 'Daily',
     sleepSchedule: 'Night owl',
-    personalityTraits: 'Extroverted, logical, adventurous',
-    willingToRelocate: false, // FIXED TYPO
+    personalityTraits: ['Extroverted', 'logical', 'adventurous'], // Corrected to List<String>
+    willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Cancer',
     attachmentStyle: 'Anxious-preoccupied',
@@ -257,12 +256,12 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': false, 'events': true},
 
     createdAt: DateTime.now().subtract(const Duration(days: 45)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 10)), // RENAMED
+    updatedAt: DateTime.now().subtract(const Duration(days: 10)),
     // Keeping deprecated fields for compatibility
     fullName: 'Bob The Builder',
     gender: 'Male',
     addressZip: '84102',
-    interests: ['Coding', 'Woodworking'],
+    interests: ['Coding', 'Woodworking'], // Corrected to List<String>
     height: 180.0,
   ),
   // Profile 3
@@ -279,29 +278,29 @@ List<UserProfile> dummyDiscoveryProfiles = [
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
     isPhase2Complete: true,
-    genderIdentity: 'Male', // RENAMED
+    genderIdentity: 'Male',
     dateOfBirth: DateTime(1988, 11, 30),
     phoneNumber: '+15553456789',
     locationCity: 'Salt Lake City',
     locationState: 'UT',
-    locationZipCode: '84103', // RENAMED
-    hobbiesAndInterests: ['Movies', 'Jazz Music', 'Photography', 'History', 'Walking'], // RENAMED
+    locationZipCode: '84103',
+    hobbiesAndInterests: ['Movies', 'Jazz Music', 'Photography', 'History', 'Walking'], // Corrected to List<String>
     sexualOrientation: 'Bisexual',
-    heightCm: 175.0, // RENAMED
+    heightCm: 175.0,
     // New Phase 2 fields (example values)
     governmentIdFrontUrl: 'https://example.com/id_charlie_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_charlie_back.jpg',
     ethnicity: 'Hispanic',
-    languagesSpoken: ['English', 'French'],
+    languagesSpoken: ['English', 'French'], // Corrected to List<String>
     desiredOccupation: 'Historian',
     educationLevel: 'Ph.D.',
-    loveLanguages: ['Physical Touch', 'Quality Time'],
-    favoriteMedia: 'Classic films, Jazz',
+    loveLanguages: ['Physical Touch', 'Quality Time'], // Corrected to List<String>
+    favoriteMedia: ['Classic films', 'Jazz'], // Corrected to List<String>
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Meaningful connection and intellectual companionship',
-    dealbreakers: 'Superficiality',
+    dealbreakers: ['Superficiality'], // Corrected to List<String>
     // Phase 3 fields (example values)
     religionOrSpiritualBeliefs: 'Christian',
     politicalViews: 'Moderate',
@@ -310,8 +309,8 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Walking daily',
     sleepSchedule: 'Flexible',
-    personalityTraits: 'Calm, thoughtful, artistic',
-    willingToRelocate: true, // FIXED TYPO
+    personalityTraits: ['Calm', 'thoughtful', 'artistic'], // Corrected to List<String>
+    willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Sagittarius',
     attachmentStyle: 'Dismissive-avoidant',
@@ -323,12 +322,12 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
 
     createdAt: DateTime.now().subtract(const Duration(days: 60)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 15)), // RENAMED
+    updatedAt: DateTime.now().subtract(const Duration(days: 15)),
     // Keeping deprecated fields for compatibility
-    fullName: 'Charlie Chaplin', // This is the original one from your file
+    fullName: 'Charlie Chaplin',
     gender: 'Male',
     addressZip: '84103',
-    interests: ['Movies', 'Jazz Music'],
+    interests: ['Movies', 'Jazz Music'], // Corrected to List<String>
     height: 175.0,
   ),
   // Profile 4
@@ -345,29 +344,29 @@ List<UserProfile> dummyDiscoveryProfiles = [
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
     isPhase2Complete: true,
-    genderIdentity: 'Female', // RENAMED
+    genderIdentity: 'Female',
     dateOfBirth: DateTime(1992, 9, 1),
     phoneNumber: '+15554567890',
     locationCity: 'Salt Lake City',
     locationState: 'UT',
-    locationZipCode: '84104', // RENAMED
-    hobbiesAndInterests: ['Fitness', 'Hiking', 'Climbing', 'Travel', 'Healthy Eating'], // RENAMED
+    locationZipCode: '84104',
+    hobbiesAndInterests: ['Fitness', 'Hiking', 'Climbing', 'Travel', 'Healthy Eating'], // Corrected to List<String>
     sexualOrientation: 'Straight',
-    heightCm: 170.0, // RENAMED
+    heightCm: 170.0,
     // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_diana_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_diana_back.jpg',
     ethnicity: 'Mixed',
-    languagesSpoken: ['English'],
+    languagesSpoken: ['English'], // Corrected to List<String>
     desiredOccupation: 'Personal Trainer',
     educationLevel: 'Associate Degree',
-    loveLanguages: ['Acts of Service', 'Physical Touch'],
-    favoriteMedia: 'Action movies, pop music',
+    loveLanguages: ['Acts of Service', 'Physical Touch'], // Corrected to List<String>
+    favoriteMedia: ['Action movies', 'pop music'], // Corrected to List<String>
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: true,
     relationshipGoals: 'Active partnership and adventure',
-    dealbreakers: 'Laziness, negativity',
+    dealbreakers: ['Laziness', 'negativity'], // Corrected to List<String>
     // Phase 3 fields
     religionOrSpiritualBeliefs: 'Atheist',
     politicalViews: 'Independent',
@@ -376,8 +375,8 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Daily',
     sleepSchedule: 'Consistent',
-    personalityTraits: 'Energetic, confident, direct',
-    willingToRelocate: false, // FIXED TYPO
+    personalityTraits: ['Energetic', 'confident', 'direct'], // Corrected to List<String>
+    willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Virgo',
     attachmentStyle: 'Secure',
@@ -389,12 +388,12 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
 
     createdAt: DateTime.now().subtract(const Duration(days: 25)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 2)), // RENAMED
+    updatedAt: DateTime.now().subtract(const Duration(days: 2)),
     // Keeping deprecated fields for compatibility
-    fullName: 'Diana Prince', // This is the original one from your file
+    fullName: 'Diana Prince',
     gender: 'Female',
     addressZip: '84104',
-    interests: ['Fitness', 'Hiking'],
+    interests: ['Fitness', 'Hiking'], // Corrected to List<String>
     height: 170.0,
   ),
   // Profile 5
@@ -411,29 +410,29 @@ List<UserProfile> dummyDiscoveryProfiles = [
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
     isPhase2Complete: true,
-    genderIdentity: 'Female', // RENAMED
+    genderIdentity: 'Female',
     dateOfBirth: DateTime(1985, 4, 20),
     phoneNumber: '+15555678901',
     locationCity: 'Salt Lake City',
     locationState: 'UT',
-    locationZipCode: '84105', // RENAMED
-    hobbiesAndInterests: ['Gardening', 'Astronomy', 'Classical Music', 'Tea', 'Nature'], // RENAMED
+    locationZipCode: '84105',
+    hobbiesAndInterests: ['Gardening', 'Astronomy', 'Classical Music', 'Tea', 'Nature'], // Corrected to List<String>
     sexualOrientation: 'Bisexual',
-    heightCm: 160.0, // RENAMED
+    heightCm: 160.0,
     // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_eve_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_eve_back.jpg',
     ethnicity: 'Caucasian',
-    languagesSpoken: ['English'],
+    languagesSpoken: ['English'], // Corrected to List<String>
     desiredOccupation: 'Botanist',
     educationLevel: 'Bachelor\'s Degree',
-    loveLanguages: ['Quality Time', 'Gifts'],
-    favoriteMedia: 'Documentaries, instrumental music',
+    loveLanguages: ['Quality Time', 'Gifts'], // Corrected to List<String>
+    favoriteMedia: ['Documentaries', 'instrumental music'], // Corrected to List<String>
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Deep, intellectual connection',
-    dealbreakers: 'Loud environments, superficiality',
+    dealbreakers: ['Loud environments', 'superficiality'], // Corrected to List<String>
     // Phase 3 fields
     religionOrSpiritualBeliefs: 'Spiritual',
     politicalViews: 'Liberal',
@@ -441,9 +440,9 @@ List<UserProfile> dummyDiscoveryProfiles = [
     smokingHabits: 'Never',
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Yoga',
-    sleepSchedule: 'Early to bed, early to rise',
-    personalityTraits: 'Calm, observant, creative',
-    willingToRelocate: false, // FIXED TYPO
+    sleepSchedule: 'Early to bed',
+    personalityTraits: ['Calm', 'observant', 'creative'], // Corrected to List<String>
+    willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Taurus',
     attachmentStyle: 'Secure',
@@ -455,12 +454,12 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
 
     createdAt: DateTime.now().subtract(const Duration(days: 50)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 7)), // RENAMED
+    updatedAt: DateTime.now().subtract(const Duration(days: 7)),
     // Keeping deprecated fields for compatibility
-    fullName: 'Eve Adams', // This is the original one from your file
+    fullName: 'Eve Adams',
     gender: 'Female',
     addressZip: '84105',
-    interests: ['Gardening', 'Astronomy'],
+    interests: ['Gardening', 'Astronomy'], // Corrected to List<String>
     height: 160.0,
   ),
   // Profile 6
@@ -477,29 +476,29 @@ List<UserProfile> dummyDiscoveryProfiles = [
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
     isPhase2Complete: true,
-    genderIdentity: 'Male', // RENAMED
+    genderIdentity: 'Male',
     dateOfBirth: DateTime(1993, 8, 10),
     phoneNumber: '+15556789012',
     locationCity: 'Salt Lake City',
     locationState: 'UT',
-    locationZipCode: '84106', // RENAMED
-    hobbiesAndInterests: ['Music', 'Travel', 'Cooking', 'Beach', 'Culture'], // RENAMED
+    locationZipCode: '84106',
+    hobbiesAndInterests: ['Music', 'Travel', 'Cooking', 'Beach', 'Culture'], // Corrected to List<String>
     sexualOrientation: 'Gay',
-    heightCm: 178.0, // RENAMED
+    heightCm: 178.0,
     // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_frank_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_frank_back.jpg',
     ethnicity: 'African American',
-    languagesSpoken: ['English', 'Portuguese'],
+    languagesSpoken: ['English', 'Portuguese'], // Corrected to List<String>
     desiredOccupation: 'Musician',
     educationLevel: 'Some College',
-    loveLanguages: ['Acts of Service', 'Words of Affirmation'],
-    favoriteMedia: 'Soul music, documentaries',
+    loveLanguages: ['Acts of Service', 'Words of Affirmation'], // Corrected to List<String>
+    favoriteMedia: ['Soul music', 'documentaries'], // Corrected to List<String>
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Creative partnership',
-    dealbreakers: 'Close-mindedness, negativity',
+    dealbreakers: ['Close-mindedness', 'negativity'], // Corrected to List<String>
     // Phase 3 fields
     religionOrSpiritualBeliefs: 'None',
     politicalViews: 'Liberal',
@@ -508,8 +507,8 @@ List<UserProfile> dummyDiscoveryProfiles = [
     drinkingHabits: 'Socially',
     exerciseFrequencyOrFitnessLevel: 'Occasionally',
     sleepSchedule: 'Flexible',
-    personalityTraits: 'Creative, laid-back, empathetic',
-    willingToRelocate: true, // FIXED TYPO
+    personalityTraits: ['Creative', 'laid-back', 'empathetic'], // Corrected to List<String>
+    willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Open Relationship',
     astrologicalSign: 'Leo',
     attachmentStyle: 'Fearful-avoidant',
@@ -521,12 +520,12 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
 
     createdAt: DateTime.now().subtract(const Duration(days: 35)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 3)), // RENAMED
+    updatedAt: DateTime.now().subtract(const Duration(days: 3)),
     // Keeping deprecated fields for compatibility
-    fullName: 'Frank Ocean', // This is the original one from your file
+    fullName: 'Frank Ocean',
     gender: 'Male',
     addressZip: '84106',
-    interests: ['Music', 'Travel'],
+    interests: ['Music', 'Travel'], // Corrected to List<String>
     height: 178.0,
   ),
   // Profile 7
@@ -543,29 +542,29 @@ List<UserProfile> dummyDiscoveryProfiles = [
     agreedToCommunityGuidelines: true,
     isPhase1Complete: true,
     isPhase2Complete: true,
-    genderIdentity: 'Female', // RENAMED
+    genderIdentity: 'Female',
     dateOfBirth: DateTime(1991, 1, 25),
     phoneNumber: '+15557890123',
     locationCity: 'Salt Lake City',
     locationState: 'UT',
-    locationZipCode: '84107', // RENAMED
-    hobbiesAndInterests: ['Technology', 'Coding', 'Sci-Fi', 'Hiking', 'Coffee'], // RENAMED
+    locationZipCode: '84107',
+    hobbiesAndInterests: ['Technology', 'Coding', 'Sci-Fi', 'Hiking', 'Coffee'], // Corrected to List<String>
     sexualOrientation: 'Straight',
-    heightCm: 168.0, // RENAMED
+    heightCm: 168.0,
     // New Phase 2 fields
     governmentIdFrontUrl: 'https://example.com/id_grace_front.jpg',
     governmentIdBackUrl: 'https://example.com/id_grace_back.jpg',
     ethnicity: 'Asian',
-    languagesSpoken: ['English', 'Mandarin'],
+    languagesSpoken: ['English', 'Mandarin'], // Corrected to List<String>
     desiredOccupation: 'Data Scientist',
     educationLevel: 'Master\'s Degree',
-    loveLanguages: ['Acts of Service', 'Quality Time'],
-    favoriteMedia: 'Sci-fi series, electronic music',
+    loveLanguages: ['Acts of Service', 'Quality Time'], // Corrected to List<String>
+    favoriteMedia: ['Sci-fi series', 'electronic music'], // Corrected to List<String>
     maritalStatus: 'Single',
     hasChildren: false,
     wantsChildren: false,
     relationshipGoals: 'Intellectual partnership and shared growth',
-    dealbreakers: 'Resistance to learning, dishonesty',
+    dealbreakers: ['Resistance to learning', 'dishonesty'], // Corrected to List<String>
     // Phase 3 fields
     religionOrSpiritualBeliefs: 'Agnostic',
     politicalViews: 'Liberal',
@@ -573,9 +572,9 @@ List<UserProfile> dummyDiscoveryProfiles = [
     smokingHabits: 'Never',
     drinkingHabits: 'Rarely',
     exerciseFrequencyOrFitnessLevel: 'Occasionally',
-    sleepSchedule: 'Late to bed, late to rise',
-    personalityTraits: 'Analytical, curious, introverted',
-    willingToRelocate: false, // FIXED TYPO
+    sleepSchedule: 'Late to bed',
+    personalityTraits: ['Analytical', 'curious', 'introverted'], // Corrected to List<String>
+    willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Aquarius',
     attachmentStyle: 'Secure',
@@ -587,12 +586,12 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
 
     createdAt: DateTime.now().subtract(const Duration(days: 20)),
-    updatedAt: DateTime.now().subtract(const Duration(days: 1)), // RENAMED
+    updatedAt: DateTime.now().subtract(const Duration(days: 1)),
     // Keeping deprecated fields for compatibility
-    fullName: 'Grace Hopper', // This is the original one from your file
+    fullName: 'Grace Hopper',
     gender: 'Female',
     addressZip: '84107',
-    interests: ['Technology', 'Coding'],
+    interests: ['Technology', 'Coding'], // Corrected to List<String>
     height: 168.0,
   ),
   // Add more dummy users as needed, ensuring all required fields are provided

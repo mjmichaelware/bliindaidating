@@ -74,7 +74,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
       // Search by display name, full name, or interests
       final displayName = profile.displayName?.toLowerCase() ?? '';
       final fullName = profile.fullName?.toLowerCase() ?? '';
-      final interests = profile.interests.map((i) => i.toLowerCase()).join(' ');
+      // Corrected: Use ?? [] before calling map and join
+      final interests = (profile.interests ?? []).map((i) => i.toLowerCase()).join(' ');
       return displayName.contains(queryLower) ||
              fullName.contains(queryLower) ||
              interests.contains(queryLower);

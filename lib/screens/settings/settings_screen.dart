@@ -1,5 +1,3 @@
-// lib/screens/settings/settings_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,7 +9,7 @@ import 'package:bliindaidating/controllers/theme_controller.dart';
 
 import 'package:bliindaidating/screens/settings/widgets/dating_preferences_form.dart';
 import 'package:bliindaidating/screens/settings/widgets/profile_visibility_settings.dart';
-import 'package:bliindaidating/screens/settings/widgets/account_settings_form.dart';
+import 'package:bliindaidating/screens/settings/widgets/account_settings_form.dart'; // CORRECTED: Added .dart
 import 'package:bliindaidating/screens/settings/widgets/notification_settings.dart';
 import 'package:bliindaidating/screens/settings/widgets/privacy_data_settings.dart';
 
@@ -122,35 +120,36 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         _showBio = userProfile.bio != null;
         _showSexualOrientation = userProfile.sexualOrientation != null;
         _showHeight = userProfile.height != null;
-        _showInterests = userProfile.interests.isNotEmpty;
+        // Corrected: Use ?? [] for isNotEmpty check
+        _showInterests = (userProfile.interests ?? []).isNotEmpty;
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.addressZip != null;
-        _showEthnicity = false; // Mock values
-        _showLanguagesSpoken = false;
-        _showEducationLevel = false;
-        _showDesiredOccupation = false;
-        _showLoveLanguages = false;
-        _showFavoriteMedia = false;
-        _showMaritalStatus = false;
-        _showChildrenPreference = false;
-        _showWillingToRelocate = false;
-        _showMonogamyPolyamory = false;
-        _showLoveRelationshipGoals = false;
-        _showDealbreakersBoundaries = false;
-        _showAstrologicalSign = false;
-        _showAttachmentStyle = false;
-        _showCommunicationStyle = false;
-        _showMentalHealthDisclosures = false;
-        _showPetOwnership = false;
-        _showTravelFrequencyDestinations = false;
-        _showPoliticalViews = false;
-        _showReligionBeliefs = false;
-        _showDiet = false;
-        _showSmokingHabits = false;
-        _showDrinkingHabits = false;
-        _showExerciseFrequency = false;
-        _showSleepSchedule = false;
-        _showPersonalityTraits = false;
+        _showEthnicity = userProfile.ethnicity != null; // Corrected
+        _showLanguagesSpoken = (userProfile.languagesSpoken ?? []).isNotEmpty; // Corrected
+        _showEducationLevel = userProfile.educationLevel != null; // Corrected
+        _showDesiredOccupation = userProfile.desiredOccupation != null; // Corrected
+        _showLoveLanguages = (userProfile.loveLanguages ?? []).isNotEmpty; // Corrected
+        _showFavoriteMedia = (userProfile.favoriteMedia ?? []).isNotEmpty; // Corrected
+        _showMaritalStatus = userProfile.maritalStatus != null; // Corrected
+        _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null; // Corrected
+        _showWillingToRelocate = userProfile.willingToRelocate != null; // Corrected
+        _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null; // Corrected
+        _showLoveRelationshipGoals = userProfile.relationshipGoals != null; // Corrected
+        _showDealbreakersBoundaries = (userProfile.dealbreakers ?? []).isNotEmpty; // Corrected
+        _showAstrologicalSign = userProfile.astrologicalSign != null; // Corrected
+        _showAttachmentStyle = userProfile.attachmentStyle != null; // Corrected
+        _showCommunicationStyle = userProfile.communicationStyle != null; // Corrected
+        _showMentalHealthDisclosures = userProfile.mentalHealthDisclosures != null; // Corrected
+        _showPetOwnership = userProfile.petOwnership != null; // Corrected
+        _showTravelFrequencyDestinations = userProfile.travelFrequencyOrFavoriteDestinations != null; // Corrected
+        _showPoliticalViews = userProfile.politicalViews != null; // Corrected
+        _showReligionBeliefs = userProfile.religionOrSpiritualBeliefs != null; // Corrected
+        _showDiet = userProfile.diet != null; // Corrected
+        _showSmokingHabits = userProfile.smokingHabits != null; // Corrected
+        _showDrinkingHabits = userProfile.drinkingHabits != null; // Corrected
+        _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null; // Corrected
+        _showSleepSchedule = userProfile.sleepSchedule != null; // Corrected
+        _showPersonalityTraits = (userProfile.personalityTraits ?? []).isNotEmpty; // Corrected
       }
       debugPrint('SettingsScreen: Preferences loaded (mock/initial)');
     } catch (e) {

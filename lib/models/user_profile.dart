@@ -1,5 +1,6 @@
 // lib/models/user_profile.dart
 
+import 'dart:convert'; // Required for jsonDecode and jsonEncode
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Required for 'User' type
 
@@ -27,17 +28,17 @@ class UserProfile {
   final String? governmentIdFrontUrl; // For ID verification
   final String? governmentIdBackUrl; // For ID verification
   final String? ethnicity;
-  final List<String> languagesSpoken;
+  final List<String>? languagesSpoken; // Now nullable List<String>
   final String? desiredOccupation;
   final String? educationLevel;
-  final List<String> hobbiesAndInterests; // Primary interests field
-  final List<String> loveLanguages;
-  final String? favoriteMedia;
+  final List<String>? hobbiesAndInterests; // Now nullable List<String>
+  final List<String>? loveLanguages; // Now nullable List<String>
+  final List<String>? favoriteMedia; // Now nullable List<String>
   final String? maritalStatus;
   final bool? hasChildren; // Whether user has children
   final bool? wantsChildren; // Whether user wants children (NEW)
   final String? relationshipGoals;
-  final String? dealbreakers; // Renamed from dealbreakers_or_boundaries for brevity
+  final List<String>? dealbreakers; // Now nullable List<String>
   final bool isPhase2Complete; // NEW: Flag for Phase 2 completion
 
   // Phase 3 - Progressive Profiling (Comprehensive Attributes)
@@ -50,7 +51,7 @@ class UserProfile {
   final String? drinkingHabits;
   final String? exerciseFrequencyOrFitnessLevel;
   final String? sleepSchedule;
-  final String? personalityTraits;
+  final List<String>? personalityTraits; // Now nullable List<String>
   final bool? willingToRelocate;
   final String? monogamyVsPolyamoryPreferences;
   final String? astrologicalSign;
@@ -60,7 +61,9 @@ class UserProfile {
   final String? petOwnership;
   final String? travelFrequencyOrFavoriteDestinations;
   final String? profileVisibilityPreferences;
-  final Map<String, dynamic>? pushNotificationPreferences; // For user notification settings
+  final Map<String, dynamic>? pushNotificationPreferences; // Now nullable Map
+  final Map<String, dynamic>? questionnaireAnswers; // Now nullable Map
+  final Map<String, dynamic>? personalityAssessmentResults; // Now nullable Map
 
   // Timestamps and other existing fields (kept for compatibility)
   final DateTime createdAt;
@@ -71,7 +74,7 @@ class UserProfile {
   final String? gender; // Consider using genderIdentity instead
   final String? addressZip; // Consider using locationZipCode instead
   final double? height; // Consider using heightCm instead
-  final List<String> interests; // Consider using hobbiesAndInterests instead
+  final List<String>? interests; // Now nullable List<String>
 
   UserProfile({
     required this.userId,
@@ -97,17 +100,17 @@ class UserProfile {
     this.governmentIdFrontUrl,
     this.governmentIdBackUrl,
     this.ethnicity,
-    this.languagesSpoken = const [],
+    this.languagesSpoken, // No default, now nullable
     this.desiredOccupation,
     this.educationLevel,
-    this.hobbiesAndInterests = const [], // NEW
-    this.loveLanguages = const [], // NEW
-    this.favoriteMedia,
+    this.hobbiesAndInterests, // No default, now nullable
+    this.loveLanguages, // No default, now nullable
+    this.favoriteMedia, // No default, now nullable
     this.maritalStatus,
     this.hasChildren,
     this.wantsChildren, // NEW
     this.relationshipGoals,
-    this.dealbreakers, // NEW
+    this.dealbreakers, // No default, now nullable
     required this.isPhase2Complete, // NEW
 
     // Phase 3
@@ -120,7 +123,7 @@ class UserProfile {
     this.drinkingHabits,
     this.exerciseFrequencyOrFitnessLevel,
     this.sleepSchedule,
-    this.personalityTraits,
+    this.personalityTraits, // No default, now nullable
     this.willingToRelocate,
     this.monogamyVsPolyamoryPreferences,
     this.astrologicalSign,
@@ -131,6 +134,8 @@ class UserProfile {
     this.travelFrequencyOrFavoriteDestinations,
     this.profileVisibilityPreferences,
     this.pushNotificationPreferences,
+    this.questionnaireAnswers, // NEW
+    this.personalityAssessmentResults, // NEW
 
     // Timestamps and old fields for compatibility
     required this.createdAt,
@@ -138,9 +143,57 @@ class UserProfile {
     this.fullName, // Kept for compatibility
     this.gender, // Kept for compatibility
     this.addressZip, // Kept for compatibility
-    this.interests = const [], // Kept for compatibility
+    this.interests, // No default, now nullable
     this.height, // Kept for compatibility
   });
+
+  // Helper to parse PostgreSQL text array strings (e.g., "{item1,item2}" or "{}") into List<String>?
+  // Returns null if the input is null, empty, or represents an empty array.
+  static List<String>? _parseTextArray(String? text) {
+    if (text == null || text.isEmpty || text == '{}') {
+      return null; // Return null for empty or null strings/arrays
+    }
+    // Remove leading/trailing curly braces and split by comma
+    final List<String> parsedList = text.substring(1, text.length - 1)
+               .split(',')
+               .map((e) => e.trim())
+               .where((e) => e.isNotEmpty) // Filter out empty strings from potential trailing commas
+               .toList();
+    return parsedList.isEmpty ? null : parsedList; // Return null if list is empty after parsing
+  }
+
+  // Helper to convert List<String>? to PostgreSQL text array string format
+  // Returns null if the list is null or empty.
+  static String? _listToTextArrayString(List<String>? list) {
+    if (list == null || list.isEmpty) {
+      return null;
+    }
+    return '{${list.join(',')}}';
+  }
+
+  // Helper to parse JSON strings (e.g., "{"key":"value"}" or "{}") into Map<String, dynamic>?
+  // Returns null if the input is null, empty, or parsing fails.
+  static Map<String, dynamic>? _parseJsonString(String? jsonString) {
+    if (jsonString == null || jsonString.isEmpty) {
+      return null;
+    }
+    try {
+      final Map<String, dynamic> parsedMap = jsonDecode(jsonString) as Map<String, dynamic>;
+      return parsedMap.isEmpty ? null : parsedMap; // Return null if map is empty after parsing
+    } catch (e) {
+      debugPrint('Error parsing JSON string: $e - String: "$jsonString"');
+      return null;
+    }
+  }
+
+  // Helper to convert Map<String, dynamic>? to JSON string
+  // Returns null if the map is null or empty.
+  static String? _mapToJsonString(Map<String, dynamic>? map) {
+    if (map == null || map.isEmpty) {
+      return null;
+    }
+    return jsonEncode(map);
+  }
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
@@ -167,17 +220,17 @@ class UserProfile {
       governmentIdFrontUrl: json['government_id_front_url'] as String?,
       governmentIdBackUrl: json['government_id_back_url'] as String?,
       ethnicity: json['ethnicity'] as String?,
-      languagesSpoken: (json['languages_spoken'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      languagesSpoken: _parseTextArray(json['languages_spoken'] as String?), // Parse from String
       desiredOccupation: json['desired_occupation'] as String?,
       educationLevel: json['education_level'] as String?,
-      hobbiesAndInterests: (json['hobbies_and_interests_new'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [], // NEW: From new array column
-      loveLanguages: (json['love_languages_new'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [], // NEW: From new array column
-      favoriteMedia: json['favorite_media'] as String?,
+      hobbiesAndInterests: _parseTextArray(json['hobbies_and_interests'] as String?), // Corrected key, parse from String
+      loveLanguages: _parseTextArray(json['love_languages'] as String?), // Corrected key, parse from String
+      favoriteMedia: _parseTextArray(json['favorite_media'] as String?), // Parse from String
       maritalStatus: json['marital_status'] as String?,
       hasChildren: json['has_children'] as bool?,
       wantsChildren: json['wants_children'] as bool?, // NEW
       relationshipGoals: json['relationship_goals'] as String?,
-      dealbreakers: json['dealbreakers'] as String?, // NEW
+      dealbreakers: _parseTextArray(json['dealbreakers'] as String?), // Parse from String
       isPhase2Complete: json['is_phase2_complete'] as bool? ?? false, // NEW: With default for safety
 
       // Phase 3
@@ -190,7 +243,7 @@ class UserProfile {
       drinkingHabits: json['drinking_habits'] as String?,
       exerciseFrequencyOrFitnessLevel: json['exercise_frequency_or_fitness_level'] as String?,
       sleepSchedule: json['sleep_schedule'] as String?,
-      personalityTraits: json['personality_traits'] as String?,
+      personalityTraits: _parseTextArray(json['personality_traits'] as String?), // Parse from String
       willingToRelocate: json['willing_to_relocate'] as bool?,
       monogamyVsPolyamoryPreferences: json['monogamy_vs_polyamory_preferences'] as String?,
       astrologicalSign: json['astrological_sign'] as String?,
@@ -200,15 +253,17 @@ class UserProfile {
       petOwnership: json['pet_ownership'] as String?,
       travelFrequencyOrFavoriteDestinations: json['travel_frequency_or_favorite_destinations'] as String?,
       profileVisibilityPreferences: json['profile_visibility_preferences'] as String?,
-      pushNotificationPreferences: json['push_notification_preferences'] as Map<String, dynamic>?,
+      pushNotificationPreferences: _parseJsonString(json['push_notification_preferences'] as String?), // Parse from String
+      questionnaireAnswers: _parseJsonString(json['questionnaire_answers'] as String?), // NEW: Parse from String
+      personalityAssessmentResults: _parseJsonString(json['personality_assessment_results'] as String?), // NEW: Parse from String
 
-      // Timestamps and old fields (kept for compatibility during migration)
+      // Timestamps and old fields for compatibility during migration
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
       fullName: json['full_name'] as String?,
       gender: json['gender'] as String?,
       addressZip: json['address_zip'] as String?,
-      interests: (json['interests'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      interests: _parseTextArray(json['interests'] as String?), // Parse from String
       height: (json['height'] as num?)?.toDouble(),
     );
   }
@@ -238,17 +293,17 @@ class UserProfile {
       'government_id_front_url': governmentIdFrontUrl,
       'government_id_back_url': governmentIdBackUrl,
       'ethnicity': ethnicity,
-      'languages_spoken': languagesSpoken,
+      'languages_spoken': _listToTextArrayString(languagesSpoken), // Convert to String
       'desired_occupation': desiredOccupation,
       'education_level': educationLevel,
-      'hobbies_and_interests_new': hobbiesAndInterests, // NEW: Map to new array column name
-      'love_languages_new': loveLanguages, // NEW: Map to new array column name
-      'favorite_media': favoriteMedia,
+      'hobbies_and_interests': _listToTextArrayString(hobbiesAndInterests), // Corrected key, convert to String
+      'love_languages': _listToTextArrayString(loveLanguages), // Corrected key, convert to String
+      'favorite_media': _listToTextArrayString(favoriteMedia), // Convert to String
       'marital_status': maritalStatus,
       'has_children': hasChildren,
       'wants_children': wantsChildren, // NEW
       'relationship_goals': relationshipGoals,
-      'dealbreakers': dealbreakers, // NEW
+      'dealbreakers': _listToTextArrayString(dealbreakers), // Convert to String
       'is_phase2_complete': isPhase2Complete, // NEW
 
       // Phase 3
@@ -259,9 +314,9 @@ class UserProfile {
       'diet': diet,
       'smoking_habits': smokingHabits,
       'drinking_habits': drinkingHabits,
-      'exercise_frequency_or_fitness_level': exerciseFrequencyOrFitnessLevel,
-      'sleep_schedule': sleepSchedule,
-      'personality_traits': personalityTraits,
+      'exerciseFrequencyOrFitnessLevel': exerciseFrequencyOrFitnessLevel,
+      'sleepSchedule': sleepSchedule,
+      'personality_traits': _listToTextArrayString(personalityTraits), // Convert to String
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
       'astrological_sign': astrologicalSign,
@@ -271,7 +326,9 @@ class UserProfile {
       'pet_ownership': petOwnership,
       'travel_frequency_or_favorite_destinations': travelFrequencyOrFavoriteDestinations,
       'profile_visibility_preferences': profileVisibilityPreferences,
-      'push_notification_preferences': pushNotificationPreferences,
+      'push_notification_preferences': _mapToJsonString(pushNotificationPreferences), // Convert to String
+      'questionnaire_answers': _mapToJsonString(questionnaireAnswers), // NEW: Convert to String
+      'personality_assessment_results': _mapToJsonString(personalityAssessmentResults), // NEW: Convert to String
 
       // Timestamps and old fields for compatibility during migration
       'created_at': createdAt.toIso8601String(),
@@ -279,7 +336,7 @@ class UserProfile {
       'full_name': fullName,
       'gender': gender,
       'address_zip': addressZip,
-      'interests': interests,
+      'interests': _listToTextArrayString(interests), // Convert to String
       'height': height,
     };
   }
@@ -309,12 +366,12 @@ class UserProfile {
     String? educationLevel,
     List<String>? hobbiesAndInterests,
     List<String>? loveLanguages,
-    String? favoriteMedia,
+    List<String>? favoriteMedia, // Type changed to nullable List<String>
     String? maritalStatus,
     bool? hasChildren,
     bool? wantsChildren,
     String? relationshipGoals,
-    String? dealbreakers,
+    List<String>? dealbreakers, // Type changed to nullable List<String>
     bool? isPhase2Complete,
     String? bio,
     String? lookingFor,
@@ -325,7 +382,7 @@ class UserProfile {
     String? drinkingHabits,
     String? exerciseFrequencyOrFitnessLevel,
     String? sleepSchedule,
-    String? personalityTraits,
+    List<String>? personalityTraits, // Type changed to nullable List<String>
     bool? willingToRelocate,
     String? monogamyVsPolyamoryPreferences,
     String? astrologicalSign,
@@ -336,12 +393,14 @@ class UserProfile {
     String? travelFrequencyOrFavoriteDestinations,
     String? profileVisibilityPreferences,
     Map<String, dynamic>? pushNotificationPreferences,
+    Map<String, dynamic>? questionnaireAnswers, // NEW
+    Map<String, dynamic>? personalityAssessmentResults, // NEW
     DateTime? createdAt,
     DateTime? updatedAt,
     String? fullName,
     String? gender,
     String? addressZip,
-    List<String>? interests,
+    List<String>? interests, // Type changed to nullable List<String>
     double? height,
   }) {
     return UserProfile(
@@ -396,6 +455,8 @@ class UserProfile {
       travelFrequencyOrFavoriteDestinations: travelFrequencyOrFavoriteDestinations ?? this.travelFrequencyOrFavoriteDestinations,
       profileVisibilityPreferences: profileVisibilityPreferences ?? this.profileVisibilityPreferences,
       pushNotificationPreferences: pushNotificationPreferences ?? this.pushNotificationPreferences,
+      questionnaireAnswers: questionnaireAnswers ?? this.questionnaireAnswers, // NEW
+      personalityAssessmentResults: personalityAssessmentResults ?? this.personalityAssessmentResults, // NEW
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       fullName: fullName ?? this.fullName,
@@ -417,11 +478,18 @@ class UserProfile {
       createdAt: user.createdAt != null
           ? DateTime.parse(user.createdAt!)
           : DateTime.now(),
-      // Initialize List<String> fields as empty lists
-      languagesSpoken: [],
-      hobbiesAndInterests: [],
-      loveLanguages: [],
-      interests: [], // For compatibility
+      // Initialize nullable List<String> fields as null
+      languagesSpoken: null,
+      hobbiesAndInterests: null,
+      loveLanguages: null,
+      favoriteMedia: null,
+      dealbreakers: null,
+      personalityTraits: null,
+      interests: null, // For compatibility
+      governmentIdFrontUrl: null,
+      governmentIdBackUrl: null,
+      questionnaireAnswers: null, // NEW
+      personalityAssessmentResults: null, // NEW
     );
   }
 }

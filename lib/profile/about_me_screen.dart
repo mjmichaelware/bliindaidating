@@ -101,7 +101,8 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
           _sexualOrientation = profile.sexualOrientation;
           _lookingFor = profile.lookingFor;
           _selectedInterests.clear();
-          _selectedInterests.addAll(profile.hobbiesAndInterests.isNotEmpty ? profile.hobbiesAndInterests : profile.interests); // Prioritize new field
+          // Corrected: Use null-coalescing to provide an empty list if either is null
+          _selectedInterests.addAll(profile.hobbiesAndInterests ?? profile.interests ?? []); // Prioritize new field
           _profilePictureUrl = profile.profilePictureUrl;
         });
       }
@@ -227,6 +228,8 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
         travelFrequencyOrFavoriteDestinations: _userProfile?.travelFrequencyOrFavoriteDestinations,
         profileVisibilityPreferences: _userProfile?.profileVisibilityPreferences,
         pushNotificationPreferences: _userProfile?.pushNotificationPreferences,
+        questionnaireAnswers: _userProfile?.questionnaireAnswers, // Carry over
+        personalityAssessmentResults: _userProfile?.personalityAssessmentResults, // Carry over
         createdAt: _userProfile?.createdAt,
         updatedAt: DateTime.now(),
 

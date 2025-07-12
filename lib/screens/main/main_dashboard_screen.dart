@@ -20,7 +20,7 @@ import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 // NEW: Dashboard Shell Component Imports (These files now exist as per tree output)
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart';
+import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart'; // CORRECTED: Added .dart
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switcher.dart';
 
 // NEW: Tab Content Screen Imports (These placeholder files now exist as per tree output)
@@ -69,7 +69,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
       debugPrint('AI Generated Dummy Profiles:');
       for (var profile in dummyProfiles) {
-        debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${profile.interests.join(', ')}');
+        // Corrected: Use ?? [] for interests before calling join
+        debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${(profile.interests ?? []).join(', ')}');
       }
 
       final List<NewsfeedItem> newsfeedItems = await _openAIService.generateNewsfeedItems(

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile has needed fields
-import 'dart:ui'; // For ImageFilter.blur
+import 'package:go_router/go_router.dart';
+import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
+import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for styling
 
 class ProfileDiscoveryCard extends StatelessWidget {
   final UserProfile profile;
-  final VoidCallback onLike; // Callback for when the like button is pressed
-  final bool isDarkMode; // To adapt UI based on theme
+  final VoidCallback onLike;
+  final bool isDarkMode;
 
   const ProfileDiscoveryCard({
     super.key,
@@ -17,122 +17,142 @@ class ProfileDiscoveryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // You'll need to ensure your UserProfile model has a profilePictureUrl and
-    // properties for public info like bio, interests, pet ownership, etc.
-    final String? profileImageUrl = profile.profilePictureUrl;
-    final String displayName = profile.displayName ?? profile.fullName ?? 'Mysterious User';
-    final String bio = profile.bio ?? 'This user has not provided a bio yet.';
-    final List<String> interests = profile.interests;
-    // Assuming UserProfile has properties like ownsPets, isSmoker, etc.
-    // final bool ownsPets = profile.ownsPets ?? false;
-    // final bool isSmoker = profile.isSmoker ?? false;
+    // Ensure interests is a non-nullable list for display purposes
+    final List<String> interestsToDisplay = profile.hobbiesAndInterests ?? profile.interests ?? [];
 
-    return Card(
-      color: isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-      ),
-      elevation: 4,
-      clipBehavior: Clip.antiAlias, // Ensures content is clipped to borderRadius
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Blurred Image
-                profileImageUrl != null && profileImageUrl.isNotEmpty
-                    ? Image.network(
-                        profileImageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                  : null,
-                              color: AppConstants.primaryColor,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) => Center(
-                          child: Icon(Icons.person, size: 80, color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
-                        ),
-                      )
-                    : Center(
-                        child: Icon(Icons.person, size: 80, color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
-                      ),
-                // Apply blur filter
-                BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0), // Adjust blur intensity
-                  child: Container(
-                    color: Colors.black.withOpacity(0.2), // Optional overlay for better blur visibility
-                  ),
-                ),
-                // "Like" button (can be positioned more prominently or as an overlay)
-                Positioned(
-                  bottom: AppConstants.spacingSmall,
-                  right: AppConstants.spacingSmall,
-                  child: FloatingActionButton(
-                    heroTag: 'like_btn_${profile.userId}', // Unique tag for hero animation
-                    onPressed: onLike,
-                    backgroundColor: AppConstants.primaryColor,
-                    child: Icon(Icons.favorite, color: Colors.white, size: AppConstants.fontSizeExtraLarge),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: EdgeInsets.all(AppConstants.paddingMedium),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        // Navigate to the full profile view screen
+        context.push('/profile_view/${profile.userId}');
+      },
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+        ),
+        elevation: 8,
+        shadowColor: isDarkMode ? Colors.black54 : Colors.grey.shade400,
+        color: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text(
-                    displayName,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
-                      fontWeight: FontWeight.bold,
+                  // Profile Picture
+                  profile.profilePictureUrl != null && profile.profilePictureUrl!.isNotEmpty
+                      ? Image.network(
+                          profile.profilePictureUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Icon(
+                                Icons.person,
+                                size: 80,
+                                color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor,
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Icon(
+                            Icons.person,
+                            size: 80,
+                            color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor,
+                          ),
+                        ),
+                  // Gradient Overlay for Text Readability
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            (isDarkMode ? Colors.black : Colors.black).withOpacity(0.5),
+                          ],
+                        ),
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: AppConstants.spacingSmall),
-                  Text(
-                    bio, // Displaying bio as public info
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  // Name and Age
+                  Positioned(
+                    bottom: AppConstants.paddingMedium,
+                    left: AppConstants.paddingMedium,
+                    right: AppConstants.paddingMedium,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.displayName ?? profile.fullName ?? 'Unnamed User',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.bold,
+                            fontSize: AppConstants.fontSizeLarge,
+                            color: AppConstants.textColor, // Always white on dark gradient
+                          ),
+                        ),
+                        if (profile.dateOfBirth != null)
+                          Text(
+                            '${(DateTime.now().year - profile.dateOfBirth!.year)} years old',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: AppConstants.fontSizeSmall,
+                              color: AppConstants.textLowEmphasis, // Lighter white
+                            ),
+                          ),
+                      ],
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: AppConstants.spacingSmall),
-                  // Display interests as chips
-                  if (interests.isNotEmpty)
-                    Wrap(
-                      spacing: AppConstants.spacingExtraSmall,
-                      runSpacing: AppConstants.spacingExtraSmall,
-                      children: interests.take(3).map((interest) => Chip(
-                        label: Text(interest, style: TextStyle(fontSize: AppConstants.fontSizeSmall)),
-                        backgroundColor: isDarkMode ? AppConstants.secondaryColor.withOpacity(0.2) : AppConstants.lightSecondaryColor.withOpacity(0.5),
-                        labelStyle: TextStyle(color: isDarkMode ? AppConstants.secondaryColor : AppConstants.secondaryColorShade900),
-                      )).toList(),
-                    ),
-                  // You can add more public info here conditionally, e.g.:
-                  // if (profile.ownsPets == true)
-                  //   Text('🐶 Pet Owner', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis)),
-                  // if (profile.isSmoker == false)
-                  //   Text('🚭 Non-Smoker', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis)),
                 ],
               ),
             ),
-          ),
-        ],
+            // Interests and Like Button
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (interestsToDisplay.isNotEmpty) // Use the non-nullable list
+                    Text(
+                      interestsToDisplay.join(', '), // Use the non-nullable list
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: AppConstants.fontSizeSmall,
+                        color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                      ),
+                    ),
+                  const SizedBox(height: AppConstants.spacingMedium),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: onLike,
+                      icon: Icon(Icons.favorite, color: AppConstants.textColor),
+                      label: Text(
+                        'Like Profile',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          color: AppConstants.textColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppConstants.secondaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingSmall),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
