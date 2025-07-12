@@ -1,3 +1,5 @@
+// lib/screens/profile_setup/phase2_setup_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
@@ -224,38 +226,27 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     final profileService = Provider.of<ProfileService>(context, listen: false);
 
     try {
-      // Fetch current profile to update only isPhase2Complete
-      final UserProfile? existingProfile = await profileService.fetchUserProfile(currentUser.id);
+      // CORRECTED: Call updateProfile directly to set isPhase2Complete
+      // Pass the required userId parameter
+      await profileService.updateProfile(
+        userId: currentUser.id, // <--- ADDED THIS LINE
+        isPhase2Complete: true,
+        // You might want to pass other collected Phase 2 data here
+        // e.g., educationLevel: '...', familyBackground: '...', etc.
+      );
 
-      if (existingProfile != null) {
-        final UserProfile updatedProfile = existingProfile.copyWith(
-          isPhase2Complete: true, // Mark Phase 2 as complete
-          updatedAt: DateTime.now(), // Update timestamp
-          // Other fields remain as they were, as this screen only sets the flag
+      debugPrint('Phase 2 Profile Setup Complete for user ${currentUser.id}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile Phase 2 Complete!'),
+            backgroundColor: Colors.green,
+          ),
         );
-        await profileService.createOrUpdateProfile(profile: updatedProfile);
-
-        debugPrint('Phase 2 Profile Setup Complete for user ${currentUser.id}');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile Phase 2 Complete!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          // Navigate back to the main dashboard
-          context.go('/home');
-        }
-      } else {
-        debugPrint('Error: Existing profile not found for user ${currentUser.id}. Cannot mark Phase 2 complete.');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to complete Phase 2: Profile not found.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        // Navigate back to the main dashboard
+        // After successful update, the redirect in main.dart should
+        // correctly send them to /home if both phases are complete.
+        context.go('/home');
       }
     } on PostgrestException catch (e) {
       debugPrint('Supabase Postgrest Error completing Phase 2: ${e.message}');
@@ -328,8 +319,11 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
             padding: const EdgeInsets.only(right: AppConstants.paddingMedium),
             child: TextButton(
               onPressed: _isSaving ? null : () {
-                // Navigate back to the home screen (dashboard)
-                context.go('/home');
+                // CORRECTED: Assuming you want to allow closing and seeing dashboard
+                // This will pop the current route, but the main.dart redirect
+                // might still push it back if the logic isn't relaxed.
+                // The main.dart changes will make this work as intended for "browse at leisure".
+                context.pop();
               },
               style: TextButton.styleFrom(
                 foregroundColor: textColor,

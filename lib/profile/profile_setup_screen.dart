@@ -1,3 +1,4 @@
+// lib/profile/profile_setup_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -41,14 +42,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _addressZipController = TextEditingController();
+  final TextEditingController _addressZipController = TextEditingController(); // Corresponds to locationZipCode
   final TextEditingController _bioController = TextEditingController();
 
   DateTime? _dateOfBirth;
-  String? _gender;
+  String? _gender; // Will be mapped to genderIdentity
   String? _sexualOrientation;
   String? _lookingFor;
-  List<String> _selectedInterests = []; // This remains non-nullable as it's a UI state
+  List<String> _selectedInterests = []; // Will be mapped to hobbiesAndInterests
   bool _agreedToTerms = false;
   bool _agreedToCommunityGuidelines = false;
 
@@ -338,88 +339,106 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
 
     try {
       // Get existing profile to carry over non-updated fields
-      final UserProfile? existingProfile = await profileService.fetchUserProfile(currentUser.id);
+      // This is crucial for update, as partial updates only send changed fields.
+      // We'll use the profileService.userProfile which should be pre-loaded by fetchUserProfile.
+      final UserProfile? existingProfile = profileService.userProfile;
 
-      final UserProfile profile = UserProfile(
-        userId: currentUser.id,
-        email: currentUser.email!,
-        // Carry over existing flags if they are not being explicitly set here
-        isPhase1Complete: true, // Mark Phase 1 complete upon successful initial setup
-        isPhase2Complete: existingProfile?.isPhase2Complete ?? false, // Keep existing or default to false
-        agreedToTerms: _agreedToTerms,
-        agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
-        createdAt: existingProfile?.createdAt ?? (currentUser.createdAt != null
-            ? DateTime.tryParse(currentUser.createdAt!) ?? DateTime.now()
-            : DateTime.now()),
-        updatedAt: DateTime.now(), // Set updated at now
+      // Determine if it's an insert or update operation
+      if (existingProfile == null) {
+        // INSERT SCENARIO
+        await profileService.insertProfile(
+          userId: currentUser.id,
+          email: currentUser.email!,
+          // Core Identity & Consent (Phase 1)
+          fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
+          displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
+          profilePictureUrl: uploadedPhotoPath,
+          dateOfBirth: _dateOfBirth,
+          phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : null,
+          locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : null,
+          genderIdentity: _gender,
+          sexualOrientation: _sexualOrientation,
+          heightCm: double.tryParse(_heightController.text.trim()),
+          hobbiesAndInterests: _selectedInterests.isNotEmpty ? _selectedInterests : null,
+          lookingFor: _lookingFor,
+          isPhase1Complete: true, // Mark Phase 1 complete upon successful initial setup
+          agreedToTerms: _agreedToTerms,
+          agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
 
-        // Core Identity & Consent (Phase 1)
-        fullLegalName: _fullNameController.text.trim(), // Use new field
-        displayName: _displayNameController.text.trim(),
-        profilePictureUrl: uploadedPhotoPath, // This is for analysis photo, map to correct field
-        dateOfBirth: _dateOfBirth,
-        phoneNumber: _phoneNumberController.text.trim(),
-        // REMOVED: locationCity: existingProfile?.locationCity,
-        // REMOVED: locationState: existingProfile?.locationState,
-        locationZipCode: _addressZipController.text.trim(), // Map addressZip to new field
-        genderIdentity: _gender, // Map gender to new field
-        sexualOrientation: _sexualOrientation,
-        heightCm: double.tryParse(_heightController.text.trim()), // Map height to new field
-
-        // Phase 2 - Essential Matching Data & KYC Completion (Carry over or default)
-        governmentIdFrontUrl: existingProfile?.governmentIdFrontUrl,
-        governmentIdBackUrl: existingProfile?.governmentIdBackUrl,
-        ethnicity: existingProfile?.ethnicity,
-        languagesSpoken: existingProfile?.languagesSpoken, // Now nullable, no need for ?? [] here
-        desiredOccupation: existingProfile?.desiredOccupation,
-        educationLevel: existingProfile?.educationLevel,
-        hobbiesAndInterests: _selectedInterests, // Map interests to new field
-        loveLanguages: existingProfile?.loveLanguages, // Now nullable
-        favoriteMedia: existingProfile?.favoriteMedia, // Now nullable
-        maritalStatus: existingProfile?.maritalStatus,
-        hasChildren: existingProfile?.hasChildren,
-        wantsChildren: existingProfile?.wantsChildren,
-        relationshipGoals: existingProfile?.relationshipGoals,
-        dealbreakers: existingProfile?.dealbreakers, // Now nullable
-
-        // Phase 3 - Progressive Profiling (Carry over or default)
-        bio: _bioController.text.trim(),
-        lookingFor: _lookingFor,
-        religionOrSpiritualBeliefs: existingProfile?.religionOrSpiritualBeliefs,
-        politicalViews: existingProfile?.politicalViews,
-        diet: existingProfile?.diet,
-        smokingHabits: existingProfile?.smokingHabits,
-        drinkingHabits: existingProfile?.drinkingHabits,
-        exerciseFrequencyOrFitnessLevel: existingProfile?.exerciseFrequencyOrFitnessLevel,
-        sleepSchedule: existingProfile?.sleepSchedule,
-        personalityTraits: existingProfile?.personalityTraits, // Now nullable
-        willingToRelocate: existingProfile?.willingToRelocate,
-        monogamyVsPolyamoryPreferences: existingProfile?.monogamyVsPolyamoryPreferences,
-        astrologicalSign: existingProfile?.astrologicalSign,
-        attachmentStyle: existingProfile?.attachmentStyle,
-        communicationStyle: existingProfile?.communicationStyle,
-        mentalHealthDisclosures: existingProfile?.mentalHealthDisclosures,
-        petOwnership: existingProfile?.petOwnership,
-        travelFrequencyOrFavoriteDestinations: existingProfile?.travelFrequencyOrFavoriteDestinations,
-        profileVisibilityPreferences: existingProfile?.profileVisibilityPreferences,
-        pushNotificationPreferences: existingProfile?.pushNotificationPreferences,
-
-        // Deprecated/Redundant fields (keep for now, map from new or existing)
-        fullName: _fullNameController.text.trim(), // Keep for now for compatibility
-        gender: _gender, // Keep for now for compatibility
-        addressZip: _addressZipController.text.trim(), // Keep for now for compatibility
-        interests: _selectedInterests, // Keep for now for compatibility
-        height: double.tryParse(_heightController.text.trim()), // Keep for now for compatibility
-      );
-
-
-      await profileService.createOrUpdateProfile(profile: profile);
-
-      debugPrint('User profile ${currentUser.id} updated successfully in Supabase.');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully!')),
+          // For insert, carry over relevant defaults or nulls for other phases
+          ethnicity: null, // Default to null for insert if not part of initial screen
+          languagesSpoken: null,
+          desiredOccupation: null,
+          educationLevel: null,
+          loveLanguages: null,
+          favoriteMedia: null,
+          maritalStatus: null,
+          hasChildren: null,
+          wantsChildren: null,
+          relationshipGoals: null,
+          dealbreakers: null,
+          bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
+          religionOrSpiritualBeliefs: null,
+          politicalViews: null,
+          diet: null,
+          smokingHabits: null,
+          drinkingHabits: null,
+          exerciseFrequencyOrFitnessLevel: null,
+          sleepSchedule: null,
+          personalityTraits: null,
+          questionnaireAnswers: null,
+          personalityAssessmentResults: null,
+          willingToRelocate: null,
+          monogamyVsPolyamoryPreferences: null,
+          astrologicalSign: null,
+          attachmentStyle: null,
+          communicationStyle: null,
+          mentalHealthDisclosures: null,
+          petOwnership: null,
+          travelFrequencyOrFavoriteDestinations: null,
+          profileVisibilityPreferences: null,
+          pushNotificationPreferences: null,
+          isPhase2Complete: false, // Default to false for new profile
         );
+        debugPrint('User profile ${currentUser.id} inserted successfully in Supabase.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile created successfully!')),
+          );
+        }
+      } else {
+        // UPDATE SCENARIO
+        await profileService.updateProfile(
+          userId: currentUser.id, // Required for update
+          fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
+          displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
+          profilePictureUrl: uploadedPhotoPath,
+          dateOfBirth: _dateOfBirth,
+          phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : null,
+          locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : null,
+          genderIdentity: _gender,
+          sexualOrientation: _sexualOrientation,
+          heightCm: double.tryParse(_heightController.text.trim()),
+          hobbiesAndInterests: _selectedInterests.isNotEmpty ? _selectedInterests : null,
+          lookingFor: _lookingFor,
+          isPhase1Complete: true, // Mark Phase 1 complete upon successful initial setup
+          agreedToTerms: _agreedToTerms,
+          agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
+          bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
+          // Only include parameters for fields you want to explicitly update from this screen.
+          // Other fields not touched by this screen will retain their existing values from the database.
+          // Example of explicitly setting a list to empty if the user cleared it:
+          // languagesSpoken: _someLanguagesList.isNotEmpty ? _someLanguagesList : [],
+        );
+        debugPrint('User profile ${currentUser.id} updated successfully in Supabase.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile updated successfully!')),
+          );
+        }
+      }
+
+      if (mounted) {
         // After initial setup, go to home or directly to Phase 2 onboarding
         context.go('/home'); // Or context.go('/phase2_onboarding_screen');
       }

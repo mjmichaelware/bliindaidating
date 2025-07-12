@@ -159,24 +159,19 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/my-profile', builder: (context, state) => const MyProfileScreen()), // Current user's profile view/edit
 
         // Profile Editing/Setup Sub-screens (assuming these are used within ProfileTabsScreen or similar)
-        // Removed 'const' for now as they might not have them, add if they do.
-        GoRoute(path: '/edit_profile', builder: (context, state) => ProfileTabsScreen()),
-        GoRoute(path: '/about_me', builder: (context, state) => AboutMeScreen()),
-        GoRoute(path: '/availability', builder: (context, state) => AvailabilityScreen()),
-        GoRoute(path: '/interests', builder: (context, state) => InterestsScreen()),
+        GoRoute(path: '/edit_profile', builder: (context, state) => const ProfileTabsScreen()), // Added const if applicable
+        GoRoute(path: '/about_me', builder: (context, state) => const AboutMeScreen()), // Added const if applicable
+        GoRoute(path: '/availability', builder: (context, state) => const AvailabilityScreen()), // Added const if applicable
+        GoRoute(path: '/interests', builder: (context, state) => const InterestsScreen()), // Added const if applicable
 
         // Friends & Events
-        GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])), // Existing local events screen
-        // Removed: '/friends/match' as FriendsMatchScreen does not exist in your tree.
+        GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])),
 
         // Matching & Penalties
         GoRoute(path: '/penalties', builder: (context, state) => const PenaltyDisplayScreen()),
-        // Removed: '/matching/compatibility_insights', '/matching/date_proposal', '/dashboard/compatibility_results', '/favorites/list'
-        // as their respective screens do not exist in your tree.
 
         // Discovery Routes
         GoRoute(path: '/discovery', builder: (context, state) => const DiscoveryScreen()),
-        // Removed: '/discovery/people' as PeopleDiscoveryScreen does not exist in your tree.
 
         // Matches Routes
         GoRoute(path: '/matches', builder: (context, state) => const MatchesListScreen()),
@@ -202,11 +197,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
         GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
         GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
-
-        // Removed: '/daily/prompts', '/dashboard/daily_personality_question' as their screens don't exist.
-        // Removed: '/newsfeed' as NewsfeedScreen does not exist.
-        // Removed: Premium routes as their screens don't exist.
-        // Removed: '/info/safety_tips', '/info/guided_tour', '/info/activity_feed', '/info/user_progress' as their screens don't exist.
       ],
       redirect: (context, state) async {
         final authService = Provider.of<AuthService>(context, listen: false);
@@ -255,10 +245,28 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           return null;
         }
 
-        // 2. If logged in, fetch profile if not already loaded (or if it's stale/different user)
+        // --- User is logged in from here ---
+
+        // 2. Fetch profile if not already loaded or if it's for a different user
+        // Ensure profileService.userProfile is up-to-date for the current user
         if (profileService.userProfile == null || profileService.userProfile!.userId != currentUser.id) {
-          debugPrint('  Fetching user profile for redirect logic...');
-          await profileService.fetchUserProfile(currentUser.id);
+          debugPrint('  Fetching user profile for redirect logic (or refreshing)...');
+          try {
+            await profileService.fetchUserProfile(currentUser.id);
+            // If profile still null after fetch, it means no profile exists in DB yet.
+            // This can happen right after a new signup.
+            if (profileService.userProfile == null) {
+              debugPrint('  No profile found after fetch. Assuming new user, redirecting to Phase 1 setup.');
+              if (!goingToProfileSetup) {
+                return '/profile_setup';
+              }
+              return null; // Already going to setup
+            }
+          } catch (e) {
+            debugPrint('  Error during profile fetch in redirect: $e. Redirecting to login or landing.');
+            // Handle cases where profile fetching itself fails badly
+            return '/'; // Fallback to landing/login
+          }
         }
 
         final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
@@ -266,7 +274,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('  Is Phase 1 Complete: $isPhase1Complete');
         debugPrint('  Is Phase 2 Complete: $isPhase2Complete');
 
-        // 3. If logged in but Phase 1 is not complete, redirect to /profile_setup
+        // 3. If logged in but Phase 1 is NOT complete, redirect to /profile_setup
         if (!isPhase1Complete) {
           if (!goingToProfileSetup) {
             debugPrint('  Redirect decision: Logged in, Phase 1 NOT complete. Redirecting to /profile_setup');
@@ -276,24 +284,35 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           return null;
         }
 
-        // 4. If logged in, Phase 1 complete, but Phase 2 is not complete, redirect to /questionnaire-phase2
-        if (isPhase1Complete && !isPhase2Complete) {
-          // Allow dashboard to show banner, but redirect other attempts
-          if (!goingToPhase2Setup && !goingToDashboard) {
-            debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete. Redirecting to /questionnaire-phase2');
-            return '/questionnaire-phase2';
+        // --- User is logged in AND Phase 1 is complete from here ---
+
+        // 4. If Phase 2 is NOT complete:
+        //    Allow navigation to /home (dashboard) and /questionnaire-phase2.
+        //    Redirect from other protected paths (like auth or phase1 setup) to /home.
+        if (!isPhase2Complete) {
+          // If trying to access auth paths or phase1 setup, send to home (where banner will show)
+          if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup) {
+            debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on auth/public/phase1 page. Redirecting to /home.');
+            return '/home';
           }
-          debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /questionnaire-phase2 or /home. Allowing.');
+          // If already on /home or /questionnaire-phase2, allow it.
+          if (goingToDashboard || goingToPhase2Setup) {
+             debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /home or /questionnaire-phase2. Allowing.');
+             return null;
+          }
+          // For any other non-home/non-phase2 setup protected page (e.g., /settings), allow it but implicitly
+          // you might show a banner or warning there. No explicit redirect here.
+          debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on other protected page. Allowing.');
           return null;
         }
 
+        // --- User is logged in AND BOTH phases are complete from here ---
+
         // 5. If logged in AND both phases are complete:
         //    Redirect from auth/public/setup pages to /home (dashboard)
-        if (loggedIn && isPhase1Complete && isPhase2Complete) {
-          if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup || goingToPhase2Setup) {
-            debugPrint('  Redirect decision: Logged in, BOTH phases complete, on auth/public/setup page. Redirecting to /home');
-            return '/home';
-          }
+        if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup || goingToPhase2Setup) {
+          debugPrint('  Redirect decision: Logged in, BOTH phases complete, on auth/public/setup page. Redirecting to /home');
+          return '/home';
         }
 
         debugPrint('  Redirect decision: No specific redirection needed. Allowing current path.');
@@ -305,6 +324,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   void dispose() {
+    // No explicit dispose needed for GoRouter itself, its refreshListenable handles subscription.
     super.dispose();
   }
 

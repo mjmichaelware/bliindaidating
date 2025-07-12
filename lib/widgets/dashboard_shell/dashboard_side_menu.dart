@@ -396,7 +396,8 @@ class DashboardSideMenu extends StatelessWidget {
             padding: const EdgeInsets.all(AppConstants.paddingMedium),
             child: ElevatedButton.icon(
               onPressed: () async {
-                await authService.signOut(context: context); // Pass context for ProfileService.clearProfile()
+                // Pass context to the signOut method
+                await authService.signOut(context); // <--- CORRECTED THIS LINE
                 if (context.mounted) {
                   // Ensure context is still valid before navigating
                   context.go('/login'); // Redirect to login after sign out

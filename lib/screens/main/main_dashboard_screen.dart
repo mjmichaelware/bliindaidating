@@ -1,3 +1,5 @@
+// lib/screens/main/main_dashboard_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -20,18 +22,18 @@ import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 // NEW: Dashboard Shell Component Imports (These files now exist as per tree output)
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart'; // CORRECTED: Added .dart
+import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switcher.dart';
 
 // NEW: Tab Content Screen Imports (These placeholder files now exist as per tree output)
 import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
-import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // From screens/profile
-import 'package:bliindaidating/screens/discovery/discovery_screen.dart'; // Existing screen, likely in screens/discovery
-import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart';
-import 'package:bliindaidating/screens/matches/matches_list_screen.dart'; // Existing screen, likely in screens/matches
+import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
+import 'package:bliindaidating/screens/discovery/discovery_screen.dart';
+import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart'; // This is tab index 3
+import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
 
 // NEW: Import the new Phase2SetupScreen
-import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // ADDED THIS IMPORT
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // This is tab index 4
 
 // Assuming AnimatedOrbBackground is in landing_page/widgets as per tree
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
@@ -51,17 +53,100 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
   int _selectedTabIndex = 0; // Default to Newsfeed (index 0)
 
-  final ProfileService _profileService = ProfileService();
+  // Obtain ProfileService via Provider in initState or build, not instantiate directly
+  // The ProfileService is provided at the root of the app.
+  // final ProfileService _profileService = ProfileService(); // REMOVE: Don't instantiate here
   final OpenAIService _openAIService = OpenAIService(); // Instantiate OpenAIService
 
 
   @override
   void initState() {
     super.initState();
+    // No need to instantiate ProfileService here if it's already provided by MultiProvider
+    // Access it using Provider.of in _loadUserProfileAndSubscribe
     _loadUserProfileAndSubscribe();
-    // Call the AI dummy data fetch method for console verification
     _fetchAIDummyData();
   }
+
+  // Moved profile service access to the method, as context is available
+  Future<void> _loadUserProfileAndSubscribe() async {
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+    final User? currentUser = Supabase.instance.client.auth.currentUser;
+
+    if (currentUser == null) {
+      setState(() { _isLoadingProfile = false; });
+      debugPrint('MainDashboardScreen: No current user for profile load. Redirecting to login.');
+      if (mounted) context.go('/login');
+      return;
+    }
+
+    try {
+      final UserProfile? fetchedProfile = await profileService.fetchUserProfile(currentUser.id);
+      if (fetchedProfile != null) {
+        setState(() {
+          _userProfile = fetchedProfile;
+          _isLoadingProfile = false;
+        });
+        if (fetchedProfile.profilePictureUrl != null) {
+          setState(() {
+            _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
+          });
+        }
+        // Redirect if Phase 1 is incomplete (handled by main.dart's redirect primarily, but good fallback here)
+        if (!fetchedProfile.isPhase1Complete) {
+           debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
+           if (mounted) context.go('/profile_setup');
+           return;
+        }
+      } else {
+        setState(() { _isLoadingProfile = false; });
+        debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
+        if (mounted) {
+          context.go('/profile_setup'); // Ensure Phase 1 setup handles new profile creation
+        }
+      }
+
+      // Realtime subscription setup
+      // Use profileService.userProfileStream if ProfileService exposes one,
+      // or set up a direct Supabase stream here as before.
+      // The current direct stream is fine.
+      _profileSubscription = Supabase.instance.client
+          .from('profiles')
+          .stream(primaryKey: ['id'])
+          .eq('id', currentUser.id)
+          .listen((List<Map<String, dynamic>> data) async {
+        if (data.isNotEmpty) {
+          final UserProfile updatedProfile = UserProfile.fromJson(data.first);
+          setState(() {
+            _userProfile = updatedProfile;
+            if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
+              _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
+            }
+          });
+          debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
+          // If profile completion status changes, this setState will trigger a rebuild,
+          // and the UI (blur, banner) will react accordingly.
+        }
+      });
+    } on PostgrestException catch (e) {
+      debugPrint('MainDashboardScreen: Supabase Postgrest Error loading profile or setting up Realtime: ${e.message}');
+      setState(() { _isLoadingProfile = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load profile: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      debugPrint('MainDashboardScreen: General Error loading profile or setting up Realtime: $e');
+      setState(() { _isLoadingProfile = false; });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
 
   Future<void> _fetchAIDummyData() async {
     debugPrint('--- Fetching AI Dummy Data (from MainDashboardScreen) ---');
@@ -69,13 +154,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
       debugPrint('AI Generated Dummy Profiles:');
       for (var profile in dummyProfiles) {
-        // Corrected: Use ?? [] for interests before calling join
         debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${(profile.interests ?? []).join(', ')}');
       }
 
       final List<NewsfeedItem> newsfeedItems = await _openAIService.generateNewsfeedItems(
         5,
-        userLocation: 'Snyderville, Utah', // Updated to current location
+        userLocation: 'Snyderville, Utah',
         userRadius: 50,
       );
       debugPrint('AI Generated Newsfeed Items:');
@@ -105,88 +189,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     }
   }
 
-  Future<void> _loadUserProfileAndSubscribe() async {
-    final User? currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
-      setState(() { _isLoadingProfile = false; });
-      debugPrint('MainDashboardScreen: No current user for profile load. Redirecting to login.');
-      if (mounted) context.go('/login');
-      return;
-    }
-
-    try {
-      final UserProfile? fetchedProfile = await _profileService.fetchUserProfile(currentUser.id);
-      if (fetchedProfile != null) {
-        setState(() {
-          _userProfile = fetchedProfile;
-          _isLoadingProfile = false;
-        });
-        if (fetchedProfile.profilePictureUrl != null) {
-          setState(() {
-            _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
-          });
-        }
-        // Redirect if Phase 1 is incomplete (handled by main.dart's redirect primarily, but good fallback here)
-        if (!fetchedProfile.isPhase1Complete) { // Changed from isProfileComplete to isPhase1Complete
-           debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
-           if (mounted) context.go('/profile_setup');
-           return;
-        }
-      } else {
-        setState(() { _isLoadingProfile = false; });
-        debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
-        if (mounted) {
-          context.go('/profile_setup');
-        }
-      }
-
-      _profileSubscription = Supabase.instance.client
-          .from('profiles')
-          .stream(primaryKey: ['id'])
-          .eq('id', currentUser.id)
-          .listen((List<Map<String, dynamic>> data) async {
-        if (data.isNotEmpty) {
-          final UserProfile updatedProfile = UserProfile.fromJson(data.first);
-          setState(() {
-            _userProfile = updatedProfile;
-            // Ensure profile picture URL update on real-time changes
-            if (updatedProfile.profilePictureUrl != null && updatedProfile.profilePictureUrl != _profilePictureDisplayUrl) {
-              _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
-            }
-          });
-          debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
-          // If Phase 1 becomes incomplete (unlikely but for robustness) or Phase 2 changes, trigger router refresh
-          // The main.dart listener for profileService takes care of router refresh.
-          // This local update just ensures the UI reacts.
-        }
-      });
-    } on PostgrestException catch (e) {
-      debugPrint('MainDashboardScreen: Supabase Postgrest Error loading profile or setting up Realtime: ${e.message}');
-      setState(() { _isLoadingProfile = false; });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load profile: ${e.message}')),
-        );
-      }
-    } catch (e) {
-      debugPrint('MainDashboardScreen: General Error loading profile or setting up Realtime: $e');
-      setState(() { _isLoadingProfile = false; });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
   void _onTabSelected(int index) {
-    // Allow selection of any tab
     setState(() {
       _selectedTabIndex = index;
     });
-    // If phase 2 is incomplete and they've navigated to a blocked tab,
-    // we can show a subtle hint or ensure the banner is prominent.
-    // The visual blurring handles the blocking of interaction.
   }
 
   @override
@@ -201,22 +207,32 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
 
-    // Check Phase 2 completion status
-    final bool isPhase2Complete = _userProfile?.isPhase2Complete ?? false;
+    // Check Phase 2 completion status from the service's current profile
+    // It's crucial to listen to ProfileService here if you want immediate UI reactions
+    // to changes in isPhase2Complete without relying solely on _profileSubscription.
+    // However, _profileSubscription already updates _userProfile, so that's effective.
+    final profileService = Provider.of<ProfileService>(context); // Listen to ProfileService
+    final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
+
+
+    // Define the index for the Phase 2 setup screen in your _dashboardScreens list.
+    // IMPORTANT: Ensure this matches the actual index of Phase2SetupScreen in the list below.
+    const int phase2SetupTabIndex = 4; // Phase2SetupScreen is at index 4
 
     // Determine if the content should be blurred and absorbed (interactions blocked)
-    // Content is absorbed if profile is still loading OR if Phase 2 is incomplete AND the current tab is NOT Questionnaire (index 3)
-    final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete && _selectedTabIndex != 3);
+    // Content is absorbed if profile is still loading OR if Phase 2 is incomplete
+    // AND the current tab is NOT the Phase 2 setup tab.
+    final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete && _selectedTabIndex != phase2SetupTabIndex);
 
 
     // List of screens for the DashboardContentSwitcher
-    // Ensure QuestionnaireScreen is at a specific, known index (e.g., 3) for logic
-    final List<Widget> _dashboardScreens = [
-      const NewsfeedScreen(),
-      const MatchesListScreen(),
-      const DiscoveryScreen(),
-      const QuestionnaireScreen(), // This is the main questionnaire screen (index 3)
-      const Phase2SetupScreen(), // REPLACED Placeholder with Phase2SetupScreen (index 4)
+    final List<Widget> _dashboardScreens = const [
+      NewsfeedScreen(),           // Index 0
+      MatchesListScreen(),        // Index 1
+      DiscoveryScreen(),          // Index 2
+      QuestionnaireScreen(),      // Index 3 (Assuming this is a general questionnaire, not Phase 2 setup)
+      Phase2SetupScreen(),        // Index 4 (This is the dedicated Phase 2 Setup with sub-tabs)
+      // Add other main dashboard screens as needed
     ];
 
     return Scaffold(
@@ -298,9 +314,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: () {
-                                    // Navigate to the Questionnaire screen if not already there
-                                    if (_selectedTabIndex != 3) {
-                                      _onTabSelected(3); // Programmatically select the questionnaire tab
+                                    // Navigate to the Phase 2 Setup screen if not already there
+                                    if (_selectedTabIndex != phase2SetupTabIndex) {
+                                      _onTabSelected(phase2SetupTabIndex); // Programmatically select the Phase 2 setup tab
                                     }
                                   },
                                   style: TextButton.styleFrom(

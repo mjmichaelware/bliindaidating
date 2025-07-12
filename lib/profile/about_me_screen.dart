@@ -7,12 +7,13 @@ import 'dart:io' show File; // Keep for FileImage on non-web if needed, but we'l
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'dart:typed_data'; // For Uint8List to display image bytes
+import 'package:provider/provider.dart'; // Import Provider to access ProfileService
 
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 
 // You can uncomment and create a spacing_constants.dart if you want
-// import 'package:bliindaidating/constants/spacing_constants.dart'; 
+// import 'package:bliindaidating/constants/spacing_constants.dart';
 
 class AboutMeScreen extends StatefulWidget {
   const AboutMeScreen({super.key});
@@ -31,7 +32,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   final TextEditingController _addressZipController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
 
-  final ProfileService _profileService = ProfileService();
+  // REMOVED: final ProfileService _profileService = ProfileService(); // Don't instantiate directly here
   final ImagePicker _picker = ImagePicker();
 
   UserProfile? _userProfile;
@@ -69,7 +70,10 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    // Delay loadProfile to ensure context is available for Provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfile();
+    });
   }
 
   @override
@@ -91,8 +95,11 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       return;
     }
 
+    // Access ProfileService via Provider
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+
     try {
-      final UserProfile? profile = await _profileService.fetchUserProfile(currentUser.id);
+      final UserProfile? profile = await profileService.fetchUserProfile(currentUser.id);
       if (profile != null) {
         setState(() {
           _userProfile = profile;
@@ -194,10 +201,15 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
       return;
     }
 
+    // Access ProfileService via Provider
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+
+
     String? finalProfilePictureUrl = _profilePictureUrl; // Start with the existing URL
     if (_newPickedImage != null) { // If a new image was picked, upload it
       try {
-        finalProfilePictureUrl = await _profileService.uploadAnalysisPhoto(currentUser.id, _newPickedImage!);
+        // Use the profileService from Provider
+        finalProfilePictureUrl = await profileService.uploadAnalysisPhoto(currentUser.id, _newPickedImage!);
       } catch (e) {
         debugPrint('Error uploading new profile picture: $e');
         if (mounted) {
@@ -211,73 +223,29 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
     }
 
     try {
-      final UserProfile updatedProfile = (_userProfile ?? UserProfile.fromSupabaseUser(currentUser)).copyWith(
-        // Fields being explicitly updated by AboutMeScreen
-        fullLegalName: _fullNameController.text.trim(),
-        displayName: _displayNameController.text.trim(),
+      // AboutMeScreen is for updating an existing profile, so we always call updateProfile
+      // Use the profileService from Provider
+      await profileService.updateProfile(
+        userId: currentUser.id, // Pass userId as it's now required
+        fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
+        displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
         dateOfBirth: _dateOfBirth,
         genderIdentity: _gender,
-        bio: _bioController.text.trim(),
+        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
         profilePictureUrl: finalProfilePictureUrl,
-        hobbiesAndInterests: _selectedInterests,
+        hobbiesAndInterests: _selectedInterests.isNotEmpty ? _selectedInterests : null,
         lookingFor: _lookingFor,
-        phoneNumber: _phoneNumberController.text.trim(),
-        locationZipCode: _addressZipController.text.trim(),
+        phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : null,
+        locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : null,
         sexualOrientation: _sexualOrientation,
         heightCm: double.tryParse(_heightController.text.trim()),
 
-        // Carry over existing phase completion status and consent flags
-        isPhase1Complete: _userProfile?.isPhase1Complete ?? false,
-        isPhase2Complete: _userProfile?.isPhase2Complete ?? false,
-        agreedToTerms: _userProfile?.agreedToTerms ?? false,
-        agreedToCommunityGuidelines: _userProfile?.agreedToCommunityGuidelines ?? false,
-
-        // Carry over other existing fields that are not edited on this screen
-        ethnicity: _userProfile?.ethnicity,
-        languagesSpoken: _userProfile?.languagesSpoken,
-        desiredOccupation: _userProfile?.desiredOccupation,
-        educationLevel: _userProfile?.educationLevel,
-        loveLanguages: _userProfile?.loveLanguages,
-        favoriteMedia: _userProfile?.favoriteMedia,
-        maritalStatus: _userProfile?.maritalStatus,
-        hasChildren: _userProfile?.hasChildren,
-        wantsChildren: _userProfile?.wantsChildren,
-        relationshipGoals: _userProfile?.relationshipGoals,
-        dealbreakers: _userProfile?.dealbreakers,
-        religionOrSpiritualBeliefs: _userProfile?.religionOrSpiritualBeliefs,
-        politicalViews: _userProfile?.politicalViews,
-        diet: _userProfile?.diet,
-        smokingHabits: _userProfile?.smokingHabits,
-        drinkingHabits: _userProfile?.drinkingHabits,
-        exerciseFrequencyOrFitnessLevel: _userProfile?.exerciseFrequencyOrFitnessLevel,
-        sleepSchedule: _userProfile?.sleepSchedule,
-        personalityTraits: _userProfile?.personalityTraits,
-        willingToRelocate: _userProfile?.willingToRelocate,
-        monogamyVsPolyamoryPreferences: _userProfile?.monogamyVsPolyamoryPreferences,
-        astrologicalSign: _userProfile?.astrologicalSign,
-        attachmentStyle: _userProfile?.attachmentStyle,
-        communicationStyle: _userProfile?.communicationStyle,
-        mentalHealthDisclosures: _userProfile?.mentalHealthDisclosures,
-        petOwnership: _userProfile?.petOwnership,
-        travelFrequencyOrFavoriteDestinations: _userProfile?.travelFrequencyOrFavoriteDestinations,
-        profileVisibilityPreferences: _userProfile?.profileVisibilityPreferences,
-        pushNotificationPreferences: _userProfile?.pushNotificationPreferences,
-        questionnaireAnswers: _userProfile?.questionnaireAnswers,
-        personalityAssessmentResults: _userProfile?.personalityAssessmentResults,
-        createdAt: _userProfile?.createdAt,
-        updatedAt: DateTime.now(),
-
-        // Deprecated/Redundant fields (kept for compatibility during migration) - ensure these are handled on the backend as well
-        fullName: _fullNameController.text.trim(),
-        gender: _gender,
-        addressZip: _addressZipController.text.trim(),
-        interests: _selectedInterests,
-        height: double.tryParse(_heightController.text.trim()),
+        // For update, only pass fields that are explicitly edited on this screen.
+        // Other fields not listed here will retain their existing values in the database.
+        // The ProfileService.updateProfile method handles removing nulls to prevent overwriting.
       );
 
-      await _profileService.createOrUpdateProfile(profile: updatedProfile);
-
-      debugPrint('Profile for ${updatedProfile.userId} updated successfully.');
+      debugPrint('Profile for ${currentUser.id} updated successfully.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!')),
