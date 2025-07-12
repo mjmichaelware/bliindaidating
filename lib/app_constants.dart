@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // IMPORTANT: Add this import
 
 class AppConstants {
   static const String appName = 'Blind AI Dating';
@@ -31,14 +32,14 @@ class AppConstants {
   // All listed SVG assets for InsightCrystal
   static const String svgLoveAndDating1 = 'assets/svg/DrawKit Vector Illustration Love & Dating (1).svg';
   static const String svgLoveAndDating2 = 'assets/svg/DrawKit Vector Illustration Love & Dating (2).svg';
-  static const String svgLoveAndDating3 = 'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg'; // Added missing
+  static const String svgLoveAndDating3 = 'assets/svg/DrawKit Vector Illustration Love & Dating (3).svg';
   static const String svgLoveAndDating4 = 'assets/svg/DrawKit Vector Illustration Love & Dating (4).svg';
-  static const String svgLoveAndDating5 = 'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg'; // Added missing
-  static const String svgLoveAndDating6 = 'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg'; // Added missing
+  static const String svgLoveAndDating5 = 'assets/svg/DrawKit Vector Illustration Love & Dating (5).svg';
+  static const String svgLoveAndDating6 = 'assets/svg/DrawKit Vector Illustration Love & Dating (6).svg';
   static const String svgLoveAndDating7 = 'assets/svg/DrawKit Vector Illustration Love & Dating (7).svg';
   static const String svgLoveAndDating8 = 'assets/svg/DrawKit Vector Illustration Love & Dating (8).svg';
   static const String svgLoveAndDating9 = 'assets/svg/DrawKit Vector Illustration Love & Dating (9).svg';
-  static const String svgLoveAndDating10 = 'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg'; // Added missing
+  static const String svgLoveAndDating10 = 'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg';
   static const String svgLoveAndDating11 = 'assets/svg/DrawKit Vector Illustration Love & Dating (11).svg';
   static const String svgLoveAndDating12 = 'assets/svg/DrawKit Vector Illustration Love & Dating (12).svg';
 
@@ -61,7 +62,7 @@ class AppConstants {
   static const Color secondaryColorShade700 = Color(0xFF1976D2); // Darker shade of secondary
   static const Color secondaryColorShade400 = Color(0xFF42A5F5); // Lighter shade of secondary
 
-  // ADDED: Accent colors for AppBar, mapping to secondary colors
+  // Accent colors for AppBar, mapping to secondary colors
   static const Color accentColor = secondaryColor;
   static const Color lightAccentColor = lightSecondaryColor;
 
@@ -70,7 +71,7 @@ class AppConstants {
   static const Color tertiaryColor = Color(0xFF8E24AA); // A deep purple
   static const Color complementaryColor1 = Color(0xFF00BCD4); // Cyan for contrast
   static const Color complementaryColor2 = Color(0xFF4CAF50); // Green for balance
-  static const Color complementaryColor3 = Color(0xFFFFC107); // Amber for warmth // FIX: Added 0x prefix
+  static const Color complementaryColor3 = Color(0xFFFFC107); // Amber for warmth
   static const Color complementaryColor4 = Color(0xFF9C27B0); // Another shade of purple
 
   // Explicit shade for complementaryColor2
@@ -106,7 +107,7 @@ class AppConstants {
   // Explicit shades for primary and secondary colors (light theme)
   static const Color lightPrimaryColor = Color(0xFFFFCDD2); // Lighter pink for light theme
   static const Color lightPrimaryColorShade900 = Color(0xFFB71C1C); // Darker red for light theme
-  static const Color lightPrimaryColorShade700 = Color(0xFFD32F2F); // Added missing
+  static const Color lightPrimaryColorShade700 = Color(0xFFD32F2F);
   static const Color lightPrimaryColorShade400 = Color(0xFFEF5350);
 
   static const Color lightSecondaryColor = Color(0xFFBBDEFB); // Lighter blue for light theme
@@ -128,35 +129,34 @@ class AppConstants {
   static const Color bannerButtonTextColorLight = Colors.black87;
 
 
-  // Spacing (Already existed, re-confirmed)
+  // Spacing
   static const double spacingExtraSmall = 4.0;
   static const double spacingSmall = 8.0;
   static const double spacingMedium = 16.0;
   static const double spacingLarge = 24.0;
   static const double spacingExtraLarge = 32.0;
-  static const double spacingXXL = 48.0; // Added for larger gaps
-  static const double spacingXXXL = 64.0; // Added for very large gaps
-  static const double spacingXXXXL = 96.0; // Added for extra large gaps
+  static const double spacingXXL = 48.0;
+  static const double spacingXXXL = 64.0;
+  static const double spacingXXXXL = 96.0;
 
 
-  // Padding (Already existed, re-confirmed, ADDED paddingExtraSmall)
-  static const double paddingExtraSmall = 4.0; // <--- ADDED THIS LINE
+  // Padding
+  static const double paddingExtraSmall = 4.0;
   static const double paddingSmall = 8.0;
   static const double paddingMedium = 16.0;
   static const double paddingLarge = 24.0;
   static const double paddingExtraLarge = 32.0;
 
-  // Border Radius (Already existed, re-confirmed)
+  // Border Radius
   static const double borderRadiusSmall = 4.0;
   static const double borderRadiusMedium = 8.0;
   static const double borderRadiusLarge = 16.0;
-  static const double borderRadiusExtraLarge = 25.0; // Existing value for InsightCrystal
+  static const double borderRadiusExtraLarge = 25.0;
   static const double borderRadiusCircular = 1000.0;
-  // ADDED: General borderRadius constant
-  static const double borderRadius = 16.0; // A common default radius
+  static const double borderRadius = 16.0;
 
 
-  // Font Sizes (example, adjust as needed based on design) (Already existed, re-confirmed)
+  // Font Sizes
   static const double fontSizeSmall = 12.0;
   static const double fontSizeMedium = 16.0;
   static const double fontSizeLarge = 20.0;
@@ -165,12 +165,15 @@ class AppConstants {
   static const double fontSizeHeadline = 28.0;
   static const double fontSizeBody = 16.0;
 
-  // Animation Durations (example) (Already existed, re-confirmed)
+  // Animation Durations
   static const Duration animationDurationShort = Duration(milliseconds: 200);
   static const Duration animationDurationMedium = Duration(milliseconds: 500);
   static const Duration animationDurationLong = Duration(seconds: 1);
   static const Duration animationDurationExtraLong = Duration(seconds: 2);
 
-  // ADDED: Avatar Radius
-  static const double avatarRadius = 40.0; // A reasonable default for an avatar
+  // Avatar Radius
+  static const double avatarRadius = 40.0;
+
+  // Date Formatter (NEWLY ADDED)
+  static final DateFormat dateFormatter = DateFormat('yyyy-MM-dd'); // Formats date as YYYY-MM-DD
 }
