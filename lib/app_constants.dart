@@ -1,3 +1,5 @@
+// lib/app_constants.dart
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // IMPORTANT: Add this import
 
@@ -176,4 +178,7 @@ class AppConstants {
 
   // Date Formatter (NEWLY ADDED)
   static final DateFormat dateFormatter = DateFormat('yyyy-MM-dd'); // Formats date as YYYY-MM-DD
+
+  // NEW: Dashboard Side Menu Width
+  static const double dashboardSideMenuWidth = 280.0;
 }

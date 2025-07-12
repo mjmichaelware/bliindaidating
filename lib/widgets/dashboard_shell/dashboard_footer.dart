@@ -1,7 +1,9 @@
 // lib/widgets/dashboard_shell/dashboard_footer.dart
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // Import go_router for internal navigation
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+// import 'package:url_launcher/url_launcher.dart'; // No longer needed for internal routes
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
@@ -47,11 +49,8 @@ class DashboardFooter extends StatelessWidget {
             runSpacing: AppConstants.spacingExtraSmall,
             children: [
               TextButton(
-                onPressed: () async {
-                  final Uri url = Uri.parse('https://www.bliindaidating.com/privacy');
-                  if (!await launchUrl(url)) {
-                    debugPrint('Could not launch $url');
-                  }
+                onPressed: () {
+                  context.go('/privacy'); // Use context.go for internal routing
                 },
                 style: footerButtonStyle,
                 child: const Text('Privacy Policy'),
@@ -61,11 +60,8 @@ class DashboardFooter extends StatelessWidget {
                 style: footerTextStyle,
               ),
               TextButton(
-                onPressed: () async {
-                  final Uri url = Uri.parse('https://www.bliindaidating.com/terms');
-                  if (!await launchUrl(url)) {
-                    debugPrint('Could not launch $url');
-                  }
+                onPressed: () {
+                  context.go('/terms'); // Use context.go for internal routing
                 },
                 style: footerButtonStyle,
                 child: const Text('Terms & Conditions'),
@@ -75,11 +71,8 @@ class DashboardFooter extends StatelessWidget {
                 style: footerTextStyle,
               ),
               TextButton(
-                onPressed: () async {
-                  final Uri url = Uri.parse('https://www.bliindaidating.com/about');
-                  if (!await launchUrl(url)) {
-                    debugPrint('Could not launch $url');
-                  }
+                onPressed: () {
+                  context.go('/about-us'); // Use context.go for internal routing
                 },
                 style: footerButtonStyle,
                 child: const Text('About Us'),

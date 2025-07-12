@@ -10,12 +10,15 @@ import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:cross_file/cross_file.dart'; // Import XFile
 import 'package:image_picker/image_picker.dart'; // Import ImagePicker for XFile
+import 'package:flutter/foundation.dart'; // For kIsWeb
+import 'dart:io'; // For File, if needed for platform-specific image handling
+// No need for dart:typed_data directly here, XFile handles bytes.
 
 // Import custom background/effects for immersion (assuming these exist from your base project)
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
 
-// Import the modular form widgets (assuming these exist from your base project)
-import 'package:bliindaidating/screens/profile_setup/widgets/basic_info_form.dart';
+// Import the modular form widgets (CORRECTED PATHS)
+import 'package:bliindaidating/screens/profile_setup/widgets/basic_info_form.dart'; // FIXED: Added .dart and closing quote/semicolon
 import 'package:bliindaidating/screens/profile_setup/widgets/identity_id_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/preferences_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/consent_form.dart';
@@ -31,7 +34,8 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<GlobalKey<FormState>> _formKeys = List.generate(4, (_) => GlobalKey<FormState>());
-  final ProfileService _profileService = ProfileService();
+  // ProfileService is now provided via Provider, so no need to instantiate here
+  // final ProfileService _profileService = ProfileService();
 
   bool _isLoading = true;
 
@@ -196,8 +200,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       return;
     }
 
+    // Access ProfileService via Provider
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+
     try {
-      final UserProfile? userProfile = await _profileService.fetchUserProfile(currentUser.id);
+      final UserProfile? userProfile = await profileService.fetchUserProfile(currentUser.id);
       if (userProfile != null) {
         // Load data from the new fields first, then fallback to old ones if necessary for migration
         _fullNameController.text = userProfile.fullLegalName ?? userProfile.fullName ?? '';
@@ -296,10 +303,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       return;
     }
 
+    // Access ProfileService via Provider
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+
     String? uploadedPhotoPath;
     if (_pickedImage != null) {
       try {
-        uploadedPhotoPath = await _profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage);
+        // Assert _pickedImage is not null with '!'
+        uploadedPhotoPath = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!);
         if (uploadedPhotoPath == null) {
           throw Exception('Failed to get uploaded photo path after upload.');
         }
@@ -321,7 +332,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
 
     try {
       // Get existing profile to carry over non-updated fields
-      final UserProfile? existingProfile = await _profileService.fetchUserProfile(currentUser.id);
+      final UserProfile? existingProfile = await profileService.fetchUserProfile(currentUser.id);
 
       final UserProfile profile = UserProfile(
         userId: currentUser.id,
@@ -396,7 +407,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       );
 
 
-      await _profileService.createOrUpdateProfile(profile: profile);
+      await profileService.createOrUpdateProfile(profile: profile);
 
       debugPrint('User profile ${currentUser.id} updated successfully in Supabase.');
       if (mounted) {
@@ -431,13 +442,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
     final isDarkMode = themeController.isDarkMode;
-    final colorScheme = Theme.of(context).colorScheme;
+    // final colorScheme = Theme.of(context).colorScheme; // Not used directly, can remove if not needed
 
-    final Color primaryColor = isDarkMode ? Colors.deepPurpleAccent : Colors.blue.shade700;
-    final Color secondaryColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
-    final Color accentColor = isDarkMode ? Colors.cyanAccent : Colors.orangeAccent;
-    final Color textColor = isDarkMode ? Colors.white : Colors.black87;
-    final Color iconColor = isDarkMode ? Colors.white70 : Colors.black54;
+    final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final Color accentColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor; // Using secondary as accent
+    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+    final Color iconColor = isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor; // Using AppConstants for consistency
 
     return Scaffold(
       body: Stack(

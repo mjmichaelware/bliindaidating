@@ -7,11 +7,11 @@ import 'dart:async'; // Required for StreamSubscription and ChangeNotifier
 import 'package:provider/provider.dart'; // Import for state management
 
 // Local imports - Ensure these files exist in your project structure
-// import 'package:bliindaidating/utils/supabase_config.dart'; // We'll handle Supabase init directly here
 import 'package:bliindaidating/app_constants.dart'; // Import app_constants for theme
 import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile for redirect logic
 import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for redirect logic
+import 'package:bliindaidating/services/auth_service.dart'; // Import AuthService for redirect logic
 
 // Screens imports - Ensure all these paths are correct and these files exist.
 import 'package:bliindaidating/landing_page/landing_page.dart';
@@ -20,7 +20,10 @@ import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 
-import 'package:bliindaidating/profile/profile_setup_screen.dart';
+// Corrected import paths for profile setup screens based on your tree
+import 'package:bliindaidating/profile/profile_setup_screen.dart'; // This is Phase 1 setup
+// These screens are imported because they are used in GoRouter routes,
+// even if they don't have const constructors yet.
 import 'package:bliindaidating/profile/profile_tabs_screen.dart';
 import 'package:bliindaidating/profile/about_me_screen.dart';
 import 'package:bliindaidating/profile/availability_screen.dart';
@@ -40,9 +43,11 @@ import 'package:bliindaidating/screens/feedback_report/feedback_screen.dart';
 import 'package:bliindaidating/screens/feedback_report/report_screen.dart';
 import 'package:bliindaidating/screens/admin/admin_dashboard_screen.dart';
 
-// NEW IMPORTS for screens
+// NEW IMPORTS for screens (ENSURE THESE ARE CORRECT)
 import 'package:bliindaidating/screens/notifications/notifications_screen.dart';
-import 'package:bliindaidating/screens/profile/profile_view_screen.dart';
+import 'package:bliindaidating/screens/profile/profile_view_screen.dart'; // For /profile/:userId dynamic route
+import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // ADDED: For /my-profile static route
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // ADDED: For /questionnaire-phase2 route
 
 
 // Define the environment variables at the top level using const String.fromEnvironment
@@ -107,8 +112,12 @@ Future<void> main() async {
     );
 
     runApp(
-      ChangeNotifierProvider(
-        create: (context) => ThemeController(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => ThemeController()),
+          ChangeNotifierProvider(create: (context) => AuthService()), // AuthService now extends ChangeNotifier
+          ChangeNotifierProvider(create: (context) => ProfileService()), // ProfileService now extends ChangeNotifier
+        ],
         child: const BlindAIDatingApp(),
       ),
     );
@@ -139,17 +148,12 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
-  final ProfileService _profileService = ProfileService(); // Make sure this service is correctly initialized and handles Supabase client internally.
-
-  // StreamSubscription to listen for auth state changes, if Supabase.instance.client.auth.onAuthStateChange
-  // is indeed a stream that needs explicit listening. GoRouterRefreshStream handles this.
 
   @override
   void initState() {
     super.initState();
     _router = GoRouter(
       initialLocation: '/',
-      // GoRouterRefreshStream correctly subscribes to onAuthStateChange
       refreshListenable: GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
@@ -157,11 +161,14 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
         GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
         GoRoute(path: '/home', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
-        GoRoute(path: '/edit_profile', builder: (context, state) => const ProfileTabsScreen()),
-        GoRoute(path: '/about_me', builder: (context, state) => const AboutMeScreen()),
-        GoRoute(path: '/availability', builder: (context, state) => const AvailabilityScreen()),
-        GoRoute(path: '/interests', builder: (context, state) => const InterestsScreen()),
+        GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()), // Phase 1 setup
+        GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()), // NEW: Phase 2 setup
+        GoRoute(path: '/my-profile', builder: (context, state) => const MyProfileScreen()), // NEW: Direct route to current user's profile
+        // Removed 'const' from these constructors as they likely don't have them
+        GoRoute(path: '/edit_profile', builder: (context, state) => ProfileTabsScreen()),
+        GoRoute(path: '/about_me', builder: (context, state) => AboutMeScreen()),
+        GoRoute(path: '/availability', builder: (context, state) => AvailabilityScreen()),
+        GoRoute(path: '/interests', builder: (context, state) => InterestsScreen()),
         GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])),
         GoRoute(path: '/penalties', builder: (context, state) => const PenaltyDisplayScreen()),
         GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
@@ -183,68 +190,80 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           },
         ),
       ],
-      // THIS IS THE BYPASS LOGIC:
+      // Redirect logic - RE-ENABLED AND CORRECTED
       redirect: (context, state) async {
-        final User? currentUser = Supabase.instance.client.auth.currentUser;
+        // Access services via Provider
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final profileService = Provider.of<ProfileService>(context, listen: false);
+
+        final User? currentUser = authService.currentUser; // Use AuthService's getter
         final bool loggedIn = currentUser != null;
         final String currentPath = state.matchedLocation;
 
         final bool isAuthPath = currentPath == '/login' || currentPath == '/signup';
         final bool isOnPublicInitialPage = currentPath == '/' || currentPath == '/portal_hub';
+        final bool goingToProfileSetup = currentPath == '/profile_setup';
+        final bool goingToPhase2Setup = currentPath == '/questionnaire-phase2';
+        final bool goingToMyProfile = currentPath == '/my-profile';
+        final bool goingToDashboard = currentPath == '/home';
 
         debugPrint('GoRouter Redirect:');
         debugPrint('  Current Path: $currentPath');
         debugPrint('  Logged In: $loggedIn');
-        debugPrint('  Is Auth Path: $isAuthPath');
-        debugPrint('  On Public Initial Page: $isOnPublicInitialPage');
 
+        // 1. If not logged in, redirect to landing or auth pages
         if (!loggedIn) {
           if (!isAuthPath && !isOnPublicInitialPage) {
             debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /');
             return '/';
           }
           debugPrint('  Redirect decision: Not logged in but on auth/public path. Allowing navigation.');
-          return null;
+          return null; // Allow navigation to login/signup/landing/portal_hub
         }
 
-        if (loggedIn) {
-          // --- START BYPASS SECTION (COMMENTED OUT PROFILE COMPLETION CHECK) ---
-          // This section is commented out to temporarily bypass the profile completion check.
-          // It will force logged-in users to /home if they are on auth/public pages or profile_setup.
-          // Uncomment this section when you are ready to re-enable profile completion checks
-          // and have fixed the underlying TypeError from Supabase.
+        // 2. If logged in, fetch profile if not already loaded (or if it's stale/different user)
+        // Ensure profileService.userProfile is up-to-date for the current user.
+        if (profileService.userProfile == null || profileService.userProfile!.userId != currentUser.id) {
+          debugPrint('  Fetching user profile for redirect logic...');
+          await profileService.fetchUserProfile(currentUser.id);
+        }
 
-          /*
-          UserProfile? userProfile;
-          try {
-            userProfile = await _profileService.fetchUserProfile(currentUser.id);
-          } catch (e) {
-            debugPrint('Error fetching user profile in redirect (bypassed for now): $e');
-            // If fetching fails due to TypeErrors, treat as incomplete for now,
-            // but the bypass below will take precedence.
-            userProfile = null;
-          }
+        final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
+        final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
+        debugPrint('  Is Phase 1 Complete: $isPhase1Complete');
+        debugPrint('  Is Phase 2 Complete: $isPhase2Complete');
 
-          final bool isProfileComplete = userProfile?.isProfileComplete ?? false;
-          debugPrint('  Is Profile Complete: $isProfileComplete');
-
-          if (!isProfileComplete && currentPath != '/profile_setup') {
-            debugPrint('  Redirect decision: Logged in, profile NOT complete. Redirecting to /profile_setup');
+        // 3. If logged in but Phase 1 is not complete, redirect to /profile_setup
+        if (!isPhase1Complete) {
+          if (!goingToProfileSetup) {
+            debugPrint('  Redirect decision: Logged in, Phase 1 NOT complete. Redirecting to /profile_setup');
             return '/profile_setup';
           }
-          */
-          // --- END BYPASS SECTION ---
+          debugPrint('  Redirect decision: Logged in, Phase 1 NOT complete, on /profile_setup. Allowing.');
+          return null; // Allow navigation to /profile_setup
+        }
 
-          // FORCED BYPASS: If logged in, and on an auth page, public page, or profile setup, force to /home.
-          // This overrides the profile completion check from the commented out section above.
-          if (isAuthPath || isOnPublicInitialPage || currentPath == '/profile_setup') {
-            debugPrint('  Redirect decision (BYPASSED): Logged in, forcing to /home.');
+        // 4. If logged in, Phase 1 complete, but Phase 2 is not complete, redirect to /questionnaire-phase2
+        if (isPhase1Complete && !isPhase2Complete) {
+          if (!goingToPhase2Setup && !goingToDashboard) { // Allow dashboard to show banner
+            debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete. Redirecting to /questionnaire-phase2');
+            return '/questionnaire-phase2';
+          }
+          debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /questionnaire-phase2 or /home. Allowing.');
+          return null; // Allow navigation to /questionnaire-phase2 or /home
+        }
+
+        // 5. If logged in AND both phases are complete:
+        //    Redirect from auth/public/setup pages to /home (dashboard)
+        if (loggedIn && isPhase1Complete && isPhase2Complete) {
+          if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup || goingToPhase2Setup) {
+            debugPrint('  Redirect decision: Logged in, BOTH phases complete, on auth/public/setup page. Redirecting to /home');
             return '/home';
           }
         }
 
         debugPrint('  Redirect decision: No specific redirection needed. Allowing current path.');
-        return null;
+        return null; // Allow navigation to any other path
       },
       errorBuilder: (context, state) => const NotFoundScreen(),
     );
@@ -252,9 +271,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   void dispose() {
-    // Ensure you dispose of _profileService if it holds any resources like streams or listeners
-    // For a simple service, it might not be necessary, but good practice if it has state.
-    // _profileService.dispose(); // Uncomment if ProfileService has a dispose method
+    // Services are managed by Provider, no manual dispose here.
     super.dispose();
   }
 

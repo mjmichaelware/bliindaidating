@@ -1,18 +1,19 @@
+// lib/widgets/dashboard_shell/dashboard_side_menu.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
+import 'package:bliindaidating/services/auth_service.dart'; // Import AuthService for sign out
 
 class DashboardSideMenu extends StatelessWidget {
   final UserProfile? userProfile;
   final String? profilePictureUrl;
   final int selectedTabIndex;
   final ValueChanged<int> onTabSelected;
-  // ADDED: Parameter to indicate if Phase 2 is complete
-  final bool isPhase2Complete;
-
+  final bool isPhase2Complete; // Parameter to indicate if Phase 2 is complete
 
   const DashboardSideMenu({
     super.key,
@@ -27,119 +28,174 @@ class DashboardSideMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    final Color menuBackgroundColor = isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor;
+    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+    final Color selectedItemColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
+    final Color dividerColor = isDarkMode ? AppConstants.borderColor.withOpacity(0.2) : AppConstants.lightBorderColor.withOpacity(0.5);
+    final Color buttonColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+
+    // Determine the display name
+    final String displayName = userProfile?.displayName ?? userProfile?.fullName ?? 'User';
 
     return Container(
-      width: 280, // Fixed width for the side menu
-      color: isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor,
-      padding: EdgeInsets.symmetric(
-        horizontal: AppConstants.paddingLarge,
-        vertical: AppConstants.paddingExtraLarge,
+      width: AppConstants.dashboardSideMenuWidth, // Using constant for width
+      decoration: BoxDecoration(
+        color: menuBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(5, 0),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // User Profile Section
-          GestureDetector(
-            onTap: () {
-              context.go('/my-profile');
-              debugPrint('Navigating to My Profile');
-            },
+          Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
                   radius: AppConstants.avatarRadius,
-                  backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+                  backgroundColor: selectedItemColor.withOpacity(0.2),
                   backgroundImage: profilePictureUrl != null
-                      ? NetworkImage(profilePictureUrl!) as ImageProvider<Object>
+                      ? NetworkImage(profilePictureUrl!)
                       : null,
                   child: profilePictureUrl == null
                       ? Icon(
-                          Icons.account_circle,
+                          Icons.person_rounded,
                           size: AppConstants.avatarRadius * 1.2,
-                          color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor,
+                          color: unselectedItemColor,
                         )
                       : null,
                 ),
-                SizedBox(height: AppConstants.spacingMedium),
+                const SizedBox(height: AppConstants.spacingSmall),
                 Text(
-                  'Welcome, ${userProfile?.displayName ?? userProfile?.fullName ?? 'User'}!',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFamily: 'Inter',
-                    color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  'Welcome, $displayName', // Correctly uses displayName
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: AppConstants.fontSizeMedium,
                     fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-                Text(
-                  'View Profile',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     fontFamily: 'Inter',
-                    color: isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingSmall),
+                TextButton(
+                  onPressed: () {
+                    context.go('/my-profile'); // Correctly route to /my-profile
+                  },
+                  child: Text(
+                    'View Profile',
+                    style: TextStyle(
+                      color: selectedItemColor,
+                      fontSize: AppConstants.fontSizeSmall,
+                      fontFamily: 'Inter',
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(height: AppConstants.spacingExtraLarge),
+          Divider(color: dividerColor, height: 1),
 
-          // Navigation Tabs
+          // Navigation Items
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildTabItem(
+                _buildMenuItem(
                   context,
+                  label: 'News Feed',
                   icon: Icons.article_rounded,
-                  title: 'Newsfeed',
                   index: 0,
                   isSelected: selectedTabIndex == 0,
                   onTap: () => onTabSelected(0),
                   isDarkMode: isDarkMode,
+                  isEnabled: true, // Always enabled
                 ),
-                _buildTabItem(
+                _buildMenuItem(
                   context,
+                  label: 'Matches',
                   icon: Icons.favorite_rounded,
-                  title: 'My Matches',
                   index: 1,
                   isSelected: selectedTabIndex == 1,
                   onTap: () => onTabSelected(1),
                   isDarkMode: isDarkMode,
+                  isEnabled: isPhase2Complete, // Enabled only if Phase 2 is complete
                 ),
-                _buildTabItem(
+                _buildMenuItem(
                   context,
-                  icon: Icons.person_search_rounded,
-                  title: 'Profile Discovery',
+                  label: 'Discovery',
+                  icon: Icons.explore_rounded,
                   index: 2,
                   isSelected: selectedTabIndex == 2,
                   onTap: () => onTabSelected(2),
                   isDarkMode: isDarkMode,
+                  isEnabled: isPhase2Complete, // Enabled only if Phase 2 is complete
                 ),
-                _buildTabItem(
+                _buildMenuItem(
                   context,
+                  label: 'Questionnaire',
                   icon: Icons.quiz_rounded,
-                  title: 'Questionnaire',
                   index: 3,
                   isSelected: selectedTabIndex == 3,
                   onTap: () => onTabSelected(3),
                   isDarkMode: isDarkMode,
+                  isEnabled: true, // Always enabled, as it's the entry point to Phase 2
                 ),
-                // NEW: Add Questionnaire Phase 2 link if Phase 2 is not complete
-                if (!isPhase2Complete) // Only show if Phase 2 is NOT complete
-                  _buildTabItem(
-                    context,
-                    icon: Icons.assignment_rounded, // A different icon for Phase 2 questions
-                    title: 'Phase 2 Questions',
-                    index: 4, // A new index for this item
-                    isSelected: selectedTabIndex == 4,
-                    onTap: () {
-                      context.push('/questionnaire-phase2'); // Adjust this route as needed
-                      onTabSelected(4);
-                    },
-                    isDarkMode: isDarkMode,
-                  ),
+                // Phase 2 Questions tab - always enabled, and routes directly
+                _buildMenuItem(
+                  context,
+                  label: 'Phase 2 Questions',
+                  icon: Icons.psychology_alt_rounded,
+                  index: 4,
+                  isSelected: selectedTabIndex == 4,
+                  onTap: () {
+                    context.go('/questionnaire-phase2'); // Use context.go for main tab navigation
+                    onTabSelected(4);
+                  },
+                  isDarkMode: isDarkMode,
+                  isEnabled: true, // Always enabled
+                ),
+                // Add more menu items as needed
               ],
+            ),
+          ),
+
+          // Logout Button
+          Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await authService.signOut();
+                if (context.mounted) {
+                  context.go('/login'); // Redirect to login after sign out
+                }
+              },
+              icon: Icon(Icons.logout_rounded, color: textColor),
+              label: Text(
+                'Logout',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: AppConstants.fontSizeMedium,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonColor,
+                foregroundColor: textColor,
+                minimumSize: const Size(double.infinity, 50), // Full width button
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                ),
+                elevation: 5,
+                shadowColor: buttonColor.withOpacity(0.5),
+              ),
             ),
           ),
         ],
@@ -147,53 +203,70 @@ class DashboardSideMenu extends StatelessWidget {
     );
   }
 
-  Widget _buildTabItem(
+  Widget _buildMenuItem(
     BuildContext context, {
+    required String label,
     required IconData icon,
-    required String title,
     required int index,
     required bool isSelected,
     required VoidCallback onTap,
     required bool isDarkMode,
+    required bool isEnabled,
   }) {
-    final Color itemColor = isSelected
-        ? (isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor)
-        : (isDarkMode ? AppConstants.textColor.withOpacity(0.8) : AppConstants.lightTextColor.withOpacity(0.8));
-    final Color selectedBgColor = isDarkMode ? AppConstants.primaryColor.withOpacity(0.2) : AppConstants.lightPrimaryColor.withOpacity(0.2);
+    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+    final Color selectedItemColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
+    final Color disabledColor = isDarkMode ? AppConstants.textLowEmphasis.withOpacity(0.3) : AppConstants.lightTextLowEmphasis.withOpacity(0.3);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-        highlightColor: selectedBgColor,
-        splashColor: selectedBgColor.withOpacity(0.5),
-        child: AnimatedContainer(
-          duration: AppConstants.animationDurationShort,
-          curve: Curves.easeInOut,
-          padding: EdgeInsets.symmetric(
-            vertical: AppConstants.paddingSmall,
-            horizontal: AppConstants.paddingMedium,
-          ),
-          decoration: BoxDecoration(
-            color: isSelected ? selectedBgColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: itemColor, size: AppConstants.fontSizeExtraLarge),
-              SizedBox(width: AppConstants.spacingMedium),
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+    return AnimatedContainer(
+      duration: AppConstants.animationDurationShort,
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingSmall,
+        vertical: AppConstants.paddingExtraSmall,
+      ),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? selectedItemColor.withOpacity(0.2)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        border: isSelected
+            ? Border.all(color: selectedItemColor.withOpacity(0.5), width: 1.0)
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isEnabled ? onTap : null, // Disable tap if not enabled
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.paddingMedium,
+              vertical: AppConstants.paddingSmall,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isEnabled
+                      ? (isSelected ? selectedItemColor : unselectedItemColor)
+                      : disabledColor, // Apply disabled color
+                  size: AppConstants.fontSizeExtraLarge,
+                ),
+                const SizedBox(width: AppConstants.spacingMedium),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isEnabled
+                        ? (isSelected ? textColor : unselectedItemColor)
+                        : disabledColor, // Apply disabled color
+                    fontSize: AppConstants.fontSizeMedium,
                     fontFamily: 'Inter',
-                    color: itemColor,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
