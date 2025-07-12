@@ -7,7 +7,7 @@ part of 'user_profile.dart';
 // **************************************************************************
 
 UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => UserProfile(
-      userId: json['user_id'] as String,
+      userId: json['id'] as String,
       email: json['email'] as String,
       fullLegalName: json['full_legal_name'] as String?,
       displayName: json['display_name'] as String?,
@@ -38,8 +38,8 @@ UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => UserProfile(
           ?.map((e) => e as String)
           .toList(),
       maritalStatus: json['marital_status'] as String?,
-      hasChildren: json['has_children'] as bool?,
-      wantsChildren: json['wants_children'] as bool?,
+      hasChildren: json['hasChildren'] as bool?,
+      wantsChildren: json['wantsChildren'] as bool?,
       relationshipGoals: json['relationship_goals'] as String?,
       dealbreakers: (json['dealbreakers'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -103,7 +103,7 @@ UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => UserProfile(
 
 Map<String, dynamic> _$UserProfileToJson(UserProfile instance) =>
     <String, dynamic>{
-      'user_id': instance.userId,
+      'id': instance.userId,
       'email': instance.email,
       'full_legal_name': instance.fullLegalName,
       'display_name': instance.displayName,
@@ -124,8 +124,8 @@ Map<String, dynamic> _$UserProfileToJson(UserProfile instance) =>
       'love_languages': instance.loveLanguages,
       'favorite_media': instance.favoriteMedia,
       'marital_status': instance.maritalStatus,
-      'has_children': instance.hasChildren,
-      'wants_children': instance.wantsChildren,
+      'hasChildren': instance.hasChildren,
+      'wantsChildren': instance.wantsChildren,
       'relationship_goals': instance.relationshipGoals,
       'dealbreakers': instance.dealbreakers,
       'bio': instance.bio,

@@ -214,7 +214,7 @@ class _Phase2ProfileDataTabState extends State<Phase2ProfileDataTab>
                       unselectedLabelColor: textColor.withOpacity(0.6),
                       labelStyle: AppConstants.buttonTextStyle.copyWith(fontWeight: FontWeight.bold),
                       unselectedLabelStyle: AppConstants.buttonTextStyle.copyWith(fontWeight: FontWeight.normal),
-                      tabs: _forms.asMap().(entries ?? []).map((entry) {
+                      tabs: _forms.asMap().entries.map((entry) {
                         int idx = entry.key;
                         String label = '';
                         if (entry.value is PersonalAndContactForm) label = 'Identity';

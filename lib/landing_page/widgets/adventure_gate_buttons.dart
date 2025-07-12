@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bliindaidating/shared/glowing_button.dart';
+import 'package:bliindaidating/shared/glowing_button.dart'; // Make sure this path is correct for your GlowingButton widget
 
 class AdventureGateButtons extends StatelessWidget {
   final VoidCallback onExplore;
@@ -32,3 +32,19 @@ class AdventureGateButtons extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         Expanded(
+          // This is the previously missing or incomplete part
+          child: GlowingButton(
+            text: 'Create Profile', // Text for the second button
+            icon: Icons.person_add_alt_1_rounded, // Icon for the second button
+            onPressed: onCreate,
+            gradientColors: [
+              Colors.orange.shade600, // Example gradient colors for the second button
+              Colors.red.shade400,
+            ],
+            height: isSmallScreen ? 44 : 56,
+          ),
+        ),
+      ],
+    );
+  }
+}
