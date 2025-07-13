@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'dart:ui'; // Import for ImageFilter
+import 'dart:math' as math; // For math.Random and other math functions
 
 // Local imports for core project components
 import 'package:bliindaidating/app_constants.dart';
@@ -19,25 +20,22 @@ import 'package:bliindaidating/services/openai_service.dart';
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 
-// NEW: Dashboard Shell Component Imports (These files now exist as per tree output)
+// NEW: Dashboard Shell Component Imports
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_footer.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switcher.dart';
 
-// NEW: Tab Content Screen Imports (These placeholder files now exist as per tree output)
+// NEW: Tab Content Screen Imports
 import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
 import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
 import 'package:bliindaidating/screens/discovery/discovery_screen.dart';
-import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart'; // This is tab index 3
+import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart';
 import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 
-// NEW: Import the new Phase2SetupScreen
-import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // This is tab index 4
-
-// Assuming AnimatedOrbBackground is in landing_page/widgets as per tree
-import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
-
+// Re-importing the custom painters from landing_page for consistency
+import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains NebulaBackgroundPainter, ParticleFieldPainter
 
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
@@ -53,22 +51,45 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
   int _selectedTabIndex = 0; // Default to Newsfeed (index 0)
 
-  // Obtain ProfileService via Provider in initState or build, not instantiate directly
-  // The ProfileService is provided at the root of the app.
-  // final ProfileService _profileService = ProfileService(); // REMOVE: Don't instantiate here
+  // State for the collapsible side menu
+  bool _isSideMenuCollapsed = false; // Initial state for desktop, will be overridden by responsive logic
+
+  // Animation controllers for the cosmic background
+  late AnimationController _backgroundNebulaController;
+  late Animation<double> _backgroundNebulaAnimation;
+  late AnimationController _particleFieldController;
+  late Animation<double> _particleFieldAnimation;
+
+  final List<Offset> _nebulaParticles = [];
+  final List<Offset> _deepSpaceParticles = [];
+  final math.Random _random = math.Random();
+
   final OpenAIService _openAIService = OpenAIService(); // Instantiate OpenAIService
 
 
   @override
   void initState() {
     super.initState();
-    // No need to instantiate ProfileService here if it's already provided by MultiProvider
-    // Access it using Provider.of in _loadUserProfileAndSubscribe
     _loadUserProfileAndSubscribe();
     _fetchAIDummyData();
+
+    // Initialize background animation controllers
+    _backgroundNebulaController = AnimationController(vsync: this, duration: const Duration(seconds: 40))..repeat();
+    _backgroundNebulaAnimation = CurvedAnimation(parent: _backgroundNebulaController, curve: Curves.linear);
+
+    _particleFieldController = AnimationController(vsync: this, duration: const Duration(seconds: 30))..repeat();
+    _particleFieldAnimation = CurvedAnimation(parent: _particleFieldController, curve: Curves.linear);
+
+    _generateParticles(100, _nebulaParticles); // For the nebula painter
+    _generateParticles(80, _deepSpaceParticles); // For the particle field painter
   }
 
-  // Moved profile service access to the method, as context is available
+  void _generateParticles(int count, List<Offset> particleList) {
+    for (int i = 0; i < count; i++) {
+      particleList.add(Offset(_random.nextDouble(), _random.nextDouble()));
+    }
+  }
+
   Future<void> _loadUserProfileAndSubscribe() async {
     final profileService = Provider.of<ProfileService>(context, listen: false);
     final User? currentUser = Supabase.instance.client.auth.currentUser;
@@ -92,7 +113,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
           });
         }
-        // Redirect if Phase 1 is incomplete (handled by main.dart's redirect primarily, but good fallback here)
         if (!fetchedProfile.isPhase1Complete) {
            debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
            if (mounted) context.go('/profile_setup');
@@ -102,14 +122,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
         setState(() { _isLoadingProfile = false; });
         debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
         if (mounted) {
-          context.go('/profile_setup'); // Ensure Phase 1 setup handles new profile creation
+          context.go('/profile_setup');
         }
       }
 
-      // Realtime subscription setup
-      // Use profileService.userProfileStream if ProfileService exposes one,
-      // or set up a direct Supabase stream here as before.
-      // The current direct stream is fine.
       _profileSubscription = Supabase.instance.client
           .from('profiles')
           .stream(primaryKey: ['id'])
@@ -124,8 +140,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             }
           });
           debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
-          // If profile completion status changes, this setState will trigger a rebuild,
-          // and the UI (blur, banner) will react accordingly.
         }
       });
     } on PostgrestException catch (e) {
@@ -154,7 +168,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
       debugPrint('AI Generated Dummy Profiles:');
       for (var profile in dummyProfiles) {
-        // FIXED: Use profile.hobbiesAndInterests which is List<String>
         debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${profile.hobbiesAndInterests.join(', ')}');
       }
 
@@ -196,9 +209,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     });
   }
 
+  // Callback to update collapsed state from side menu
+  void _onSideMenuCollapseToggle(bool isCollapsed) {
+    setState(() {
+      _isSideMenuCollapsed = isCollapsed;
+    });
+  }
+
   @override
   void dispose() {
     _profileSubscription?.cancel();
+    _backgroundNebulaController.dispose();
+    _particleFieldController.dispose();
     super.dispose();
   }
 
@@ -207,74 +229,138 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   Widget build(BuildContext context) {
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
+    final size = MediaQuery.of(context).size;
 
-    // Check Phase 2 completion status from the service's current profile
-    // It's crucial to listen to ProfileService here if you want immediate UI reactions
-    // to changes in isPhase2Complete without relying solely on _profileSubscription.
-    // However, _profileSubscription already updates _userProfile, so that's effective.
-    final profileService = Provider.of<ProfileService>(context); // Listen to ProfileService
+    // Responsive breakpoints
+    final bool isSmallScreen = size.width < 600; // Mobile
+    final bool isMediumScreen = size.width >= 600 && size.width < 1000; // Tablet
+    // final bool isLargeScreen = size.width >= 1000; // Desktop
+
+    final profileService = Provider.of<ProfileService>(context);
     final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
 
+    const int phase2SetupTabIndex = 4;
 
-    // Define the index for the Phase 2 setup screen in your _dashboardScreens list.
-    // IMPORTANT: Ensure this matches the actual index of Phase2SetupScreen in the list below.
-    const int phase2SetupTabIndex = 4; // Phase2SetupScreen is at index 4
-
-    // Determine if the content should be blurred and absorbed (interactions blocked)
-    // Content is absorbed if profile is still loading OR if Phase 2 is incomplete
-    // AND the current tab is NOT the Phase 2 setup tab.
     final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete && _selectedTabIndex != phase2SetupTabIndex);
 
-
-    // List of screens for the DashboardContentSwitcher
     final List<Widget> _dashboardScreens = const [
-      NewsfeedScreen(),           // Index 0
-      MatchesListScreen(),        // Index 1
-      DiscoveryScreen(),          // Index 2
-      QuestionnaireScreen(),      // Index 3 (Assuming this is a general questionnaire, not Phase 2 setup)
-      Phase2SetupScreen(),        // Index 4 (This is the dedicated Phase 2 Setup with sub-tabs)
-      // Add other main dashboard screens as needed
+      NewsfeedScreen(),
+      MatchesListScreen(),
+      DiscoveryScreen(),
+      QuestionnaireScreen(),
+      Phase2SetupScreen(),
     ];
+
+    // Determine the width of the side menu based on its collapsed state
+    final double sideMenuWidth = _isSideMenuCollapsed
+        ? AppConstants.spacingXXL + AppConstants.paddingMedium // Min width (icon size + padding)
+        : AppConstants.dashboardSideMenuWidth;
+
+    // Colors for the background painters, derived from AppConstants
+    final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: DashboardAppBar(
-        showProfileCompletion: !isPhase2Complete, // Pass status to app bar for potential indicator
-      ),
+      // AppBar for mobile (will show menu icon to open drawer)
+      // For larger screens, the side menu is persistent, so no need for leading icon in app bar.
+      appBar: isSmallScreen
+          ? DashboardAppBar(
+              showProfileCompletion: !isPhase2Complete,
+              // For mobile, the menu button opens the endDrawer
+              onMenuPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            )
+          : null, // No app bar for larger screens (or a custom one without leading menu icon)
+      // End Drawer for mobile (the actual side menu)
+      endDrawer: isSmallScreen
+          ? DashboardSideMenu(
+              userProfile: _userProfile,
+              profilePictureUrl: _profilePictureDisplayUrl,
+              selectedTabIndex: _selectedTabIndex,
+              onTabSelected: (index) {
+                _onTabSelected(index);
+                Navigator.of(context).pop(); // Close drawer after selection
+              },
+              isPhase2Complete: isPhase2Complete,
+              onCollapseToggle: _onSideMenuCollapseToggle, // This won't be used on mobile, but passed for consistency
+              isInitiallyCollapsed: false, // Mobile drawer is always initially expanded when opened
+            )
+          : null,
       body: Stack(
         children: [
-          const Positioned.fill(child: AnimatedOrbBackground()), // Reuse background
+          // --- Full-screen Background Elements (Nebula and Particles) ---
+          // Nebula background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: NebulaBackgroundPainter(
+                _backgroundNebulaAnimation,
+                primaryColor,
+                secondaryColor,
+              ),
+            ),
+          ),
+          // Particle field background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: ParticleFieldPainter(
+                _deepSpaceParticles, // Using deep space particles for main background
+                _particleFieldAnimation,
+                AppConstants.spacingExtraSmall, // Particle size
+                isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+              ),
+            ),
+          ),
+          // Subtle overlay gradient for depth and consistency
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    isDarkMode ? Colors.deepPurple.shade900.withOpacity(0.7) : Colors.blue.shade100.withOpacity(0.7),
-                    isDarkMode ? Colors.black : Colors.white.withOpacity(0.85),
+                    isDarkMode ? AppConstants.backgroundColor.withOpacity(0.8) : AppConstants.lightBackgroundColor.withOpacity(0.8),
+                    isDarkMode ? AppConstants.backgroundColor.withOpacity(0.95) : AppConstants.lightBackgroundColor.withOpacity(0.95),
                   ],
-                  center: Alignment.topLeft,
-                  radius: 1.5,
+                  center: Alignment.center, // Centered for overall screen effect
+                  radius: 1.0,
                 ),
               ),
             ),
           ),
+
           SafeArea(
             child: Row(
               children: [
-                // Left Side Menu - pass isPhase2Complete to control enabled tabs
-                DashboardSideMenu(
-                  userProfile: _userProfile,
-                  profilePictureUrl: _profilePictureDisplayUrl,
-                  selectedTabIndex: _selectedTabIndex,
-                  onTabSelected: _onTabSelected,
-                  isPhase2Complete: isPhase2Complete, // Pass Phase 2 status
-                ),
-                // Main Content Area
-                Expanded(
+                // Persistent Side Menu for Tablet/Desktop
+                if (!isSmallScreen)
+                  DashboardSideMenu(
+                    userProfile: _userProfile,
+                    profilePictureUrl: _profilePictureDisplayUrl,
+                    selectedTabIndex: _selectedTabIndex,
+                    onTabSelected: _onTabSelected,
+                    isPhase2Complete: isPhase2Complete,
+                    onCollapseToggle: _onSideMenuCollapseToggle, // Pass callback
+                    isInitiallyCollapsed: isMediumScreen, // Start collapsed on tablet, expanded on desktop
+                  ),
+                // Main Content Area - dynamically sized
+                AnimatedContainer(
+                  duration: AppConstants.animationDurationMedium,
+                  curve: Curves.easeInOutCubic,
+                  width: isSmallScreen
+                      ? size.width // Mobile: takes full width
+                      : size.width - sideMenuWidth, // Desktop/Tablet: takes remaining width
                   child: Column(
                     children: [
+                      // Dashboard AppBar for larger screens (since Scaffold AppBar is null)
+                      if (!isSmallScreen)
+                        DashboardAppBar(
+                          showProfileCompletion: !isPhase2Complete,
+                          // No menu button needed here as sidebar is persistent
+                          // You might add other actions here if needed
+                        ),
                       // Phase 2 Completion Banner
-                      if (!isPhase2Complete && !_isLoadingProfile) // Only show if not loading and Phase 2 incomplete
+                      if (!isPhase2Complete && !_isLoadingProfile)
                         Container(
                           padding: const EdgeInsets.all(AppConstants.paddingMedium),
                           margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
@@ -315,9 +401,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: () {
-                                    // Navigate to the Phase 2 Setup screen if not already there
                                     if (_selectedTabIndex != phase2SetupTabIndex) {
-                                      _onTabSelected(phase2SetupTabIndex); // Programmatically select the Phase 2 setup tab
+                                      _onTabSelected(phase2SetupTabIndex);
                                     }
                                   },
                                   style: TextButton.styleFrom(
@@ -349,11 +434,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                               ),
                             )
                           : Expanded(
-                              // Apply blur and absorb pointer based on absorbAndBlurContent
                               child: AbsorbPointer(
                                 absorbing: absorbAndBlurContent,
                                 child: AnimatedOpacity(
-                                  opacity: absorbAndBlurContent ? 0.4 : 1.0, // Visually indicate disabled state more distinctly
+                                  opacity: absorbAndBlurContent ? 0.4 : 1.0,
                                   duration: AppConstants.animationDurationMedium,
                                   child: ImageFiltered(
                                     imageFilter: absorbAndBlurContent

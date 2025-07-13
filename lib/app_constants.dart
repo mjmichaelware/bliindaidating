@@ -79,6 +79,9 @@ class AppConstants {
   // Explicit shade for complementaryColor2
   static const Color complementaryColor2Shade700 = Color(0xFF2E7D32); // Darker shade of complementaryColor2
 
+  // NEW: Success Color (used for online indicator, cosmic credits)
+  static const Color successColor = AppConstants.complementaryColor2; // Reusing an existing green for consistency
+
   // Background and surface colors for dark theme
   static const Color backgroundColor = Colors.black; // As per your current theme
   static const Color surfaceColor = Color(0xFF1A1A1A); // Darker surface for cards/containers

@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async'; // Required for StreamSubscription and ChangeNotifier
 import 'package:provider/provider.dart'; // Import for state management
+import 'package:flutter/foundation.dart'; // For debugPrint
 
-// Local imports - Ensure these files exist in your project structure
+// Local imports for core project components
 import 'package:bliindaidating/app_constants.dart'; // Import app_constants for theme
+import 'package:bliindaidating/theme/app_theme.dart'; // IMPORTANT: Import AppTheme from its dedicated file
 import 'package:bliindaidating/controllers/theme_controller.dart'; // Import ThemeController
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile for redirect logic
 import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for redirect logic
@@ -339,7 +341,8 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     final themeController = Provider.of<ThemeController>(context);
     return MaterialApp.router(
       title: AppConstants.appName,
-      theme: themeController.currentTheme,
+      // IMPORTANT: Use the AppTheme class for consistent theming
+      theme: themeController.isDarkMode ? AppTheme.galaxyTheme : AppTheme.lightTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );
