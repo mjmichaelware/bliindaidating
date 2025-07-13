@@ -37,6 +37,7 @@ import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 // Re-importing the custom painters from landing_page for consistency
 import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains NebulaBackgroundPainter, ParticleFieldPainter
 
+
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
 
@@ -52,7 +53,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   int _selectedTabIndex = 0; // Default to Newsfeed (index 0)
 
   // State for the collapsible side menu
-  bool _isSideMenuCollapsed = false; // Initial state for desktop, will be overridden by responsive logic
+  // This state is now managed by MainDashboardScreen for the persistent sidebar
+  bool _isSideMenuCollapsed = false;
 
   // Animation controllers for the cosmic background
   late AnimationController _backgroundNebulaController;
@@ -234,7 +236,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     // Responsive breakpoints
     final bool isSmallScreen = size.width < 600; // Mobile
     final bool isMediumScreen = size.width >= 600 && size.width < 1000; // Tablet
-    // final bool isLargeScreen = size.width >= 1000; // Desktop
+    final bool isLargeScreen = size.width >= 1000; // Desktop
 
     final profileService = Provider.of<ProfileService>(context);
     final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
@@ -285,8 +287,9 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                 Navigator.of(context).pop(); // Close drawer after selection
               },
               isPhase2Complete: isPhase2Complete,
-              onCollapseToggle: _onSideMenuCollapseToggle, // This won't be used on mobile, but passed for consistency
+              onCollapseToggle: _onSideMenuCollapseToggle, // This won't be used in drawer mode
               isInitiallyCollapsed: false, // Mobile drawer is always initially expanded when opened
+              isDrawerMode: true, // Explicitly set to true for drawer behavior
             )
           : null,
       body: Stack(
@@ -342,6 +345,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                     isPhase2Complete: isPhase2Complete,
                     onCollapseToggle: _onSideMenuCollapseToggle, // Pass callback
                     isInitiallyCollapsed: isMediumScreen, // Start collapsed on tablet, expanded on desktop
+                    isDrawerMode: false, // Explicitly set to false for persistent sidebar behavior
                   ),
                 // Main Content Area - dynamically sized
                 AnimatedContainer(

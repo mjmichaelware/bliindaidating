@@ -582,108 +582,8 @@ class _SideMenuCategoryItemState extends State<_SideMenuCategoryItem> with Singl
 // If you wish to re-implement theme switching, please ensure your ThemeController
 // has a 'setTheme(bool isDark)' method or provide the ThemeController code.
 
-// --- Cosmic Credits Widget (Enhanced) ---
-class _CosmicCreditsWidget extends StatelessWidget {
-  final Animation<double> expandAnimation;
-  final bool isCollapsed;
-
-  const _CosmicCreditsWidget({
-    super.key,
-    required this.expandAnimation,
-    required this.isCollapsed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final themeController = Provider.of<ThemeController>(context);
-    final isDarkMode = themeController.isDarkMode;
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color successColor = AppConstants.complementaryColor2; // Green for success
-
-    return AnimatedBuilder(
-      animation: expandAnimation,
-      builder: (context, child) {
-        final double expandFactor = expandAnimation.value;
-        return FadeTransition(
-          opacity: AlwaysStoppedAnimation<double>(expandFactor),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppConstants.cardColor.withOpacity(0.6 * expandFactor),
-                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-                border: Border.all(color: successColor.withOpacity(0.3 * expandFactor)),
-                boxShadow: [
-                  BoxShadow(
-                    color: successColor.withOpacity(0.1 * expandFactor),
-                    blurRadius: 10 * expandFactor,
-                    spreadRadius: 2 * expandFactor,
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.all(AppConstants.paddingSmall),
-              child: Row(
-                children: [
-                  Icon(Icons.monetization_on, size: AppConstants.fontSizeTitle * (0.8 + 0.2 * expandFactor), color: successColor),
-                  SizedBox(width: AppConstants.spacingMedium * expandFactor),
-                  Expanded(
-                    child: ClipRect(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: expandFactor,
-                        child: Opacity(
-                          opacity: expandFactor,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Cosmic Credits',
-                                style: TextStyle(
-                                  color: successColor,
-                                  fontSize: AppConstants.fontSizeMedium,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Inter',
-                                ),
-                              ),
-                              TweenAnimationBuilder<int>(
-                                tween: IntTween(begin: 0, end: 15423),
-                                duration: const Duration(seconds: 2),
-                                builder: (context, value, child) {
-                                  return Text(
-                                    '$value CC',
-                                    style: TextStyle(
-                                      color: successColor,
-                                      fontSize: AppConstants.fontSizeLarge,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Inter',
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (!isCollapsed)
-                    IconButton(
-                      icon: Icon(Icons.add_circle, color: successColor, size: AppConstants.fontSizeExtraLarge),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Adding credits... (simulated)')),
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
+// --- Cosmic Credits Widget (REMOVED as requested) ---
+// This widget has been removed as per your instruction.
 
 // --- Main Dashboard Side Menu Widget ---
 class DashboardSideMenu extends StatefulWidget {
@@ -692,10 +592,9 @@ class DashboardSideMenu extends StatefulWidget {
   final int selectedTabIndex;
   final ValueChanged<int> onTabSelected;
   final bool isPhase2Complete;
-
-  // Added callbacks for expand/collapse state
   final ValueChanged<bool> onCollapseToggle;
-  final bool isInitiallyCollapsed; // To set initial state for desktop
+  final bool isInitiallyCollapsed;
+  final bool isDrawerMode; // NEW: Indicates if it's operating as a Drawer
 
   const DashboardSideMenu({
     super.key,
@@ -706,6 +605,7 @@ class DashboardSideMenu extends StatefulWidget {
     this.isPhase2Complete = false,
     required this.onCollapseToggle,
     this.isInitiallyCollapsed = false,
+    this.isDrawerMode = false, // Default to false (persistent sidebar)
   });
 
   @override
@@ -726,7 +626,8 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with TickerProvid
   @override
   void initState() {
     super.initState();
-    _isCollapsed = widget.isInitiallyCollapsed; // Set initial state from prop
+    // If in drawer mode, force it to be expanded
+    _isCollapsed = widget.isDrawerMode ? false : widget.isInitiallyCollapsed;
 
     _expandController = AnimationController(
       vsync: this,
@@ -742,7 +643,7 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with TickerProvid
 
     _generateParticles(50, _backgroundParticles);
 
-    // Initial state of the animation controller
+    // Initial state of the animation controller based on _isCollapsed
     if (_isCollapsed) {
       _expandController.value = 0.0; // Fully collapsed
     } else {
@@ -800,8 +701,11 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with TickerProvid
     return AnimatedBuilder(
       animation: _expandAnimation,
       builder: (context, child) {
-        final double currentWidth = minMenuWidth + (maxMenuWidth - minMenuWidth) * _expandAnimation.value;
-        final bool isCurrentlyCollapsed = _expandAnimation.value < 0.5; // Visual check for collapsed state
+        // In drawer mode, width is always maxMenuWidth and it's never collapsed visually
+        final double currentWidth = widget.isDrawerMode
+            ? maxMenuWidth
+            : minMenuWidth + (maxMenuWidth - minMenuWidth) * _expandAnimation.value;
+        final bool isCurrentlyCollapsed = widget.isDrawerMode ? false : _expandAnimation.value < 0.5; // Visual check for collapsed state
 
         return Container(
           width: currentWidth,
@@ -847,26 +751,27 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with TickerProvid
               // Actual menu content
               Column(
                 children: [
-                  // Toggle Button (top right)
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppConstants.paddingSmall),
-                      child: IconButton(
-                        icon: AnimatedRotation(
-                          turns: isCurrentlyCollapsed ? 0.0 : 0.25, // Rotate 90 degrees when expanded
-                          duration: AppConstants.animationDurationMedium,
-                          child: Icon(
-                            isCurrentlyCollapsed ? Icons.arrow_forward_ios : Icons.arrow_back_ios,
-                            color: textColor.withOpacity(0.7),
-                            size: AppConstants.fontSizeLarge,
+                  // Toggle Button (top right) - Only show for persistent sidebar, not for drawer
+                  if (!widget.isDrawerMode)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                        child: IconButton(
+                          icon: AnimatedRotation(
+                            turns: isCurrentlyCollapsed ? 0.0 : 0.25, // Rotate 90 degrees when expanded
+                            duration: AppConstants.animationDurationMedium,
+                            child: Icon(
+                              isCurrentlyCollapsed ? Icons.arrow_forward_ios : Icons.arrow_back_ios,
+                              color: textColor.withOpacity(0.7),
+                              size: AppConstants.fontSizeLarge,
+                            ),
                           ),
+                          onPressed: _toggleCollapse,
+                          tooltip: isCurrentlyCollapsed ? 'Expand Menu' : 'Collapse Menu',
                         ),
-                        onPressed: _toggleCollapse,
-                        tooltip: isCurrentlyCollapsed ? 'Expand Menu' : 'Collapse Menu',
                       ),
                     ),
-                  ),
                   // Profile Header
                   _SideMenuProfileHeader(
                     userProfile: widget.userProfile,
@@ -1161,24 +1066,9 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with TickerProvid
                             ),
                           ],
                         ),
-
-                        // Settings (Direct Link)
-                        _SideMenuItem(
-                          icon: Icons.settings,
-                          title: 'Settings',
-                          routeName: '/settings',
-                          isEnabled: true,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                        ),
+                        // Removed 'Settings' direct item as requested
                       ],
                     ),
-                  ),
-
-                  // Cosmic Credits (always visible, but content animates)
-                  _CosmicCreditsWidget(
-                    expandAnimation: _expandAnimation,
-                    isCollapsed: isCurrentlyCollapsed,
                   ),
 
                   // Logout Button
