@@ -14,6 +14,10 @@ class ProfileService extends ChangeNotifier {
   UserProfile? _userProfile;
   UserProfile? get userProfile => _userProfile;
 
+  // Added: Flag to indicate initial profile load status
+  bool _isProfileLoaded = false;
+  bool get isProfileLoaded => _isProfileLoaded;
+
   ProfileService(); // Parameterless constructor
 
   void setUserProfile(UserProfile? profile) {
@@ -24,8 +28,23 @@ class ProfileService extends ChangeNotifier {
 
   void clearProfile() {
     _userProfile = null;
+    _isProfileLoaded = true; // Mark as loaded even if cleared
     notifyListeners();
     debugPrint('ProfileService: User profile cleared.');
+  }
+
+  /// Initializes the profile service by attempting to fetch the current user's profile.
+  /// This should be called once on app startup.
+  Future<void> initializeProfile() async {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser != null) {
+      await fetchUserProfile(currentUser.id);
+    } else {
+      _userProfile = null; // Ensure no stale profile if no user logged in
+    }
+    _isProfileLoaded = true; // Mark as loaded after initial check
+    notifyListeners(); // Notify listeners that initial load is complete
+    debugPrint('ProfileService: Initial profile load complete. User: ${currentUser?.id}, Profile exists: ${_userProfile != null}');
   }
 
   Future<String> uploadAnalysisPhoto(String userId, dynamic file) async {
@@ -53,7 +72,7 @@ class ProfileService extends ChangeNotifier {
       }
 
       await Supabase.instance.client.storage
-          .from('profile_pictures')
+          .from('profile_pictures') // Ensure this bucket exists in Supabase Storage
           .uploadBinary(path, bytes,
             fileOptions: const FileOptions(upsert: true),
           );
@@ -93,7 +112,7 @@ class ProfileService extends ChangeNotifier {
       await Supabase.instance.client
           .from('user_profiles')
           .update(profile.toJson())
-          .eq('user_id', profile.userId);
+          .eq('id', profile.userId); // Corrected: Use 'id' matching UserProfile.userId
 
       setUserProfile(profile);
       debugPrint('Profile updated successfully for user: ${profile.userId}');
@@ -111,7 +130,7 @@ class ProfileService extends ChangeNotifier {
       final response = await Supabase.instance.client
           .from('user_profiles')
           .select()
-          .eq('user_id', userId)
+          .eq('id', userId) // Corrected: Use 'id' matching UserProfile.userId
           .single();
 
       if (response != null) {
@@ -121,9 +140,11 @@ class ProfileService extends ChangeNotifier {
       }
       return null;
     } on PostgrestException catch (e) {
-      if (e.code == '22P02') {
-        debugPrint('Profile not found for user $userId (likely first login).');
-        setUserProfile(null);
+      // Supabase's PostgREST returns 'PGRST116' (or a message indicating '0 rows')
+      // when .single() finds no matching record. This is expected for new users.
+      if (e.code == 'PGRST116' || e.message.contains('0 rows')) {
+        debugPrint('Profile not found for user $userId (likely first login or not yet created).');
+        setUserProfile(null); // Clear local profile if not found and notify
         return null;
       }
       debugPrint('Supabase Error fetching profile: ${e.message}');

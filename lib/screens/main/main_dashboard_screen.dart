@@ -126,7 +126,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       }
 
       _profileSubscription = Supabase.instance.client
-          .from('profiles')
+          .from('user_profiles') // Corrected table name from 'profiles' to 'user_profiles'
           .stream(primaryKey: ['id'])
           .eq('id', currentUser.id)
           .listen((List<Map<String, dynamic>> data) async {
@@ -138,7 +138,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
             }
           });
-          debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullName}');
+          // Using fullLegalName or displayName as per your model
+          debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullLegalName ?? 'N/A'}');
         }
       });
     } on PostgrestException catch (e) {
@@ -197,7 +198,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final profileService = Provider.of<ProfileService>(context);
     final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
 
-    const int phase2SetupTabIndex = 4;
+    const int phase2SetupTabIndex = 4; // Assuming Phase2SetupScreen is at index 4
 
     final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete && _selectedTabIndex != phase2SetupTabIndex);
 

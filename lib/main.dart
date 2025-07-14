@@ -106,7 +106,7 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => ThemeController()),
-          // CRITICAL FIX: ProfileService no longer takes SupabaseClient in its constructor
+          // ProfileService uses its parameterless constructor
           ChangeNotifierProvider(create: (context) => ProfileService()),
           // This line is correct, assuming AuthService constructor is `AuthService(ProfileService profileService)`
           ChangeNotifierProvider(create: (context) => AuthService(context.read<ProfileService>())),
@@ -151,6 +151,10 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     _authService = context.read<AuthService>();
     _profileService = context.read<ProfileService>();
 
+    // Initialize the profile service on app start.
+    // This will fetch the profile if a user is already logged in from a previous session.
+    _profileService.initializeProfile();
+
     // Listen to authentication state changes
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final AuthChangeEvent event = data.event;
@@ -158,15 +162,16 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
       debugPrint('Auth State Change Event: $event');
 
       if (event == AuthChangeEvent.signedIn && session != null) {
-        // Load the user profile after successful sign-in
-        _profileService.loadUserProfile(session.user!.id);
+        // When signed in, trigger a profile load.
+        // The `initializeProfile` might have already handled `initialSession`,
+        // but this ensures it's loaded on explicit `signedIn` events too.
+        _profileService.fetchUserProfile(session.user!.id);
       } else if (event == AuthChangeEvent.signedOut) {
         // Clear the user profile in the service when signed out
         _profileService.clearProfile();
       }
-      // No need to explicitly call notifyListeners() on _router here because
-      // GoRouterRefreshStream already listens to onAuthStateChange and notifies.
-      // Also, _profileService is a ChangeNotifier and is part of Listenable.merge.
+      // `_profileService` is part of `Listenable.merge` below, so its `notifyListeners()`
+      // calls will trigger router refresh. No explicit `_router.refresh()` needed here.
     });
 
 
@@ -258,15 +263,23 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('  Is Auth Path: $isAuthPath');
         debugPrint('  Is On Public Initial Page: $isOnPublicInitialPage');
         debugPrint('  Is On Public Info Path: $isOnPublicInfoPath');
+        debugPrint('  Is Profile Service Loaded: ${profileService.isProfileLoaded}');
 
 
-        // ALLOW PUBLIC INFO PATHS WITHOUT REDIRECTION, REGARDLESS OF LOGIN OR PROFILE COMPLETION
+        // 1. ALLOW PUBLIC INFO PATHS WITHOUT REDIRECTION, REGARDLESS OF LOGIN OR PROFILE COMPLETION
         if (isOnPublicInfoPath) {
           debugPrint('  Redirect decision: On public info path. Allowing navigation.');
           return null;
         }
 
-        // 1. If not logged in, redirect to landing or auth pages (unless already there)
+        // 2. If ProfileService hasn't finished its initial load, wait.
+        // This prevents redirects based on stale or uninitialized profile data.
+        if (!profileService.isProfileLoaded) {
+          debugPrint('  Redirect decision: Profile service not loaded yet. Waiting...');
+          return state.matchedLocation; // Stay on the current path until loaded
+        }
+
+        // 3. If not logged in, redirect to landing or auth pages (unless already there)
         if (!loggedIn) {
           if (!isAuthPath && !isOnPublicInitialPage) {
             debugPrint('  Redirect decision: Not logged in and on protected page. Redirecting to /');
@@ -279,13 +292,13 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         // --- User is logged in from here ---
 
         // At this point, `profileService.userProfile` should be populated
-        // if `loadUserProfile` was called successfully after sign-in.
+        // if `initializeProfile` was called successfully after sign-in.
         final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
         final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
         debugPrint('  Is Phase 1 Complete: $isPhase1Complete');
         debugPrint('  Is Phase 2 Complete: $isPhase2Complete');
 
-        // 2. If logged in but Phase 1 is NOT complete, redirect to /profile_setup
+        // 4. If logged in but Phase 1 is NOT complete, redirect to /profile_setup
         if (!isPhase1Complete) {
           // If we are already going to profile_setup, allow it. Otherwise, redirect.
           if (!goingToProfileSetup) {
@@ -298,12 +311,10 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         // --- User is logged in AND Phase 1 is complete from here ---
 
-        // 3. If Phase 2 is NOT complete:
-        //    Allow navigation to /home (dashboard) and /questionnaire-phase2.
-        //    Redirect from other protected paths (like auth or phase1 setup) to /home.
+        // 5. If Phase 2 is NOT complete:
+        //    If trying to access auth paths, initial public pages, or phase1 setup, send to /home.
+        //    The /home screen (MainDashboardScreen) should then guide the user to Phase 2.
         if (!isPhase2Complete) {
-          // If trying to access auth paths, initial public pages, or phase1 setup, send to /home.
-          // The /home screen (MainDashboardScreen) should then guide the user to Phase 2.
           if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup) {
             debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on auth/public/phase1 page. Redirecting to /home.');
             return '/home';
@@ -321,7 +332,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         // --- User is logged in AND BOTH phases are complete from here ---
 
-        // 4. If logged in AND both phases are complete:
+        // 6. If logged in AND both phases are complete:
         //    Redirect from auth/public/setup pages to /home (dashboard)
         if (isAuthPath || isOnPublicInitialPage || goingToProfileSetup || goingToPhase2Setup) {
           debugPrint('  Redirect decision: Logged in, BOTH phases complete, on auth/public/setup page. Redirecting to /home');
@@ -344,7 +355,28 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Provider.of<ThemeController>(context);
+    // Watch the ProfileService for changes (e.g., when profile is loaded)
+    final profileService = Provider.of<ProfileService>(context);
+    final themeController = Provider.of<ThemeController>(context); // Access ThemeController
+
+    // Show a loading indicator until the initial profile load is complete
+    // This prevents GoRouter from trying to redirect based on an uninitialized profile state
+    if (!profileService.isProfileLoaded) {
+      debugPrint('MyApp: Profile service not loaded, showing loading indicator.');
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(
+              color: themeController.isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Once profile is loaded, use GoRouter for navigation
+    debugPrint('MyApp: Profile service loaded, building MaterialApp.router.');
     return MaterialApp.router(
       title: AppConstants.appName,
       theme: themeController.isDarkMode ? AppTheme.galaxyTheme : AppTheme.lightTheme,
