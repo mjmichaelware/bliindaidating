@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/models/user_profile.dart';
-// import 'package:bliindaidating/services/openai_service.dart'; // No longer directly used for data fetching
 import 'package:bliindaidating/data/dummy_data.dart'; // Import dummy data
 import 'dart:ui'; // For ImageFilter.blur
 

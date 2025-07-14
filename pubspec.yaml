@@ -25,6 +25,8 @@ dependencies:
   http: ^1.2.1 # FIXED: ADDED HTTP PACKAGE
   uuid: ^4.4.0 # FIXED: ADDED UUID PACKAGE
   cross_file: ^0.3.3+1 # NEW: Add this line for XFile in profile_service.dart
+  faker: ^2.1.0 # Or the latest version
+
 
   # --- JSON Serialization Dependencies ---  <-- ADD THESE LINES
 json_annotation: ^4.9.0 # Updated to meet json_serializable's requirement

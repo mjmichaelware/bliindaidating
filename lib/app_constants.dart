@@ -1,11 +1,33 @@
 // lib/app_constants.dart
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // IMPORTANT: Add this import
+import 'package:intl/intl.dart';
+import 'dart:io' show Platform; // IMPORTANT: Add this import for Platform detection
 
 class AppConstants {
   static const String appName = 'Blind AI Dating';
   static const String appNamePrivacyPolicy = 'BliindAI Dating';
+
+  // --- API Base URL ---
+  static String get baseUrl {
+    // For Android emulator, use 10.0.2.2 to access your host machine's localhost
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000';
+    }
+    // For iOS simulator, localhost/127.0.0.1 typically works
+    else if (Platform.isIOS) {
+      return 'http://127.0.0.1:8000';
+    }
+    // For Flutter Web, 'localhost' often works directly, or 127.0.0.1
+    // For desktop platforms (Linux, Windows, macOS), 127.0.0.1 also works
+    else {
+      return 'http://127.0.0.1:8000';
+    }
+    // Remember: For physical Android devices, you'd need your host machine's actual IP address
+    // (e.g., 'http://192.168.1.100:8000') and ensure devices are on same Wi-Fi.
+  }
+  // --- END API Base URL ---
+
 
   // Landing Page Taglines
   static const String landingHeadline1 = 'Tired of loneliness? Craving real connection?';

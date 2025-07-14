@@ -18,6 +18,10 @@ import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/personality_and_self_reflection_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/physical_attributes_and_health_form.dart';
 
+// Import the AI Profile Generator Widget
+import 'package:bliindaidating/profile/ai_profile_generator_widget.dart'; // <--- ADDED THIS LINE
+
+
 // --- Custom Painter for Animated Nebula Background (similar to landing page but adapted) ---
 class Phase2NebulaBackgroundPainter extends CustomPainter {
   final Animation<double> animation;
@@ -137,6 +141,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     LifestyleAndValuesForm(),
     PersonalityAndSelfReflectionForm(),
     PhysicalAttributesAndHealthForm(),
+    AiProfileGeneratorWidget(), // <--- ADDED THE AI WIDGET HERE
   ];
 
   @override

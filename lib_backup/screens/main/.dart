@@ -23,7 +23,6 @@ import 'package:bliindaidating/app_constants.dart'; // AppConstants import
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
 // NEW: OpenAI Integration Imports
-import 'package:bliindaidating/services/openai_service.dart';
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 
@@ -62,7 +61,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
 
   final ProfileService _profileService = ProfileService();
-  final OpenAIService _openAIService = OpenAIService(); // NEW: Instantiate OpenAIService
 
 
   @override

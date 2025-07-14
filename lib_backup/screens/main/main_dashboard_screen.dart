@@ -13,7 +13,6 @@ import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 
 // OpenAI Integration Imports (already confirmed to exist and be populated)
-import 'package:bliindaidating/services/openai_service.dart';
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 
@@ -49,7 +48,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   int _selectedTabIndex = 0; // Default to Newsfeed (index 0)
 
   final ProfileService _profileService = ProfileService();
-  final OpenAIService _openAIService = OpenAIService(); // Instantiate OpenAIService
 
 
   @override

@@ -1,7 +1,6 @@
 // supabase/functions/match-users/index.ts
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+// This function integrates Google Generative AI by making direct REST API calls,
+// avoiding the JSR client library to resolve deployment issues.
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -20,64 +19,106 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 🔥🔥🔥 FIX: Get OpenAI API Key from Supabase Secrets (Environment Variables) 🔥🔥🔥
-    // This is the correct way to access your secret.
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
 
-    if (!OPENAI_API_KEY) {
-      // Log this error clearly if the secret isn't found
-      console.error('Edge Function Error: OPENAI_API_KEY environment variable is not set.');
-      throw new Error('OpenAI API key is not configured as a Supabase Secret.');
+    if (!GOOGLE_API_KEY) {
+      console.error('Edge Function Error: GOOGLE_AI_STUDIO_API_KEY environment variable is not set.');
+      throw new Error('Google AI Studio API key is not configured as a Supabase Secret.');
     }
 
-    // Parse the request body to get the 'prompt_text'
-    const { prompt_text } = await req.json();
+    const {
+      prompt_text,
+      model_name = 'gemini-pro',       // Default to 'gemini-pro' for text generation
+      task_type = 'GENERATE_CONTENT',  // 'GENERATE_CONTENT' or 'EMBED_CONTENT'
+      response_format = 'text',        // For GENERATE_CONTENT: 'text' or 'json'. instruct in prompt for json
+      output_dimensionality = 768,     // For EMBED_CONTENT: must match your DB column (e.g., 768)
+      temperature = 0.7,               // For GENERATE_CONTENT
+      max_tokens = 1000                // For GENERATE_CONTENT
+    } = await req.json();
 
     if (!prompt_text) {
       throw new Error('prompt_text is required in the request body.');
     }
 
-    // Call the OpenAI Chat Completions API
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // Or 'gpt-4o' for better JSON generation
-        messages: [{ role: 'user', content: prompt_text }],
-        temperature: 0.7,
-        // Increased max_tokens for potentially larger JSON outputs (e.g., multiple newsfeed items/profiles)
-        max_tokens: 1000,
-        response_format: { type: "json_object" } // Instruct OpenAI to return JSON
-      }),
-    });
+    let aiResponseContent; // This will hold the result from Gemini
 
-    const openaiData = await openaiResponse.json();
+    const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/';
 
-    if (!openaiResponse.ok) {
-      console.error('OpenAI API Error:', openaiData);
-      throw new Error(`OpenAI API request failed: ${openaiData.error?.message || JSON.stringify(openaiData)}`);
+    if (task_type === 'GENERATE_CONTENT') {
+      const url = `${BASE_API_URL}models/${model_name}:generateContent?key=${GOOGLE_API_KEY}`;
+      const requestBody = {
+        contents: [{ role: 'user', parts: [{ text: prompt_text }] }],
+        generationConfig: {
+          temperature: temperature,
+          maxOutputTokens: max_tokens,
+        },
+      };
+
+      const aiResponse = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        console.error('Gemini API Error:', aiResponse.status, errorText);
+        throw new Error(`Gemini API error: ${aiResponse.status} - ${errorText}`);
+      }
+
+      const data = await aiResponse.json();
+      // Gemini's generateContent response structure has candidates[0].content.parts[0].text
+      aiResponseContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      if (response_format === 'json') {
+          try {
+              aiResponseContent = JSON.parse(aiResponseContent);
+          } catch (e) {
+              console.error('Failed to parse AI response as JSON (check Gemini prompt):', aiResponseContent, e);
+              throw new Error('AI did not return valid JSON despite request for JSON format.');
+          }
+      }
+
+    } else if (task_type === 'EMBED_CONTENT') {
+      const embeddingModelName = 'text-embedding-004'; // Recommended Google embedding model
+      const url = `${BASE_API_URL}models/${embeddingModelName}:embedContent?key=${GOOGLE_API_KEY}`;
+      const requestBody = {
+        content: { parts: [{ text: prompt_text }] },
+        taskType: "SEMANTIC_SIMILARITY",
+        outputDimensionality: output_dimensionality,
+      };
+
+      const aiResponse = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        console.error('Gemini Embedding API Error:', aiResponse.status, errorText);
+        throw new Error(`Gemini Embedding API error: ${aiResponse.status} - ${errorText}`);
+      }
+
+      const data = await aiResponse.json();
+      // Gemini's embedContent response structure has embedding.values
+      aiResponseContent = data.embedding?.values;
+
+      if (!aiResponseContent || !Array.isArray(aiResponseContent)) {
+          throw new Error('Invalid embedding response from Gemini API.');
+      }
+
+    } else {
+      throw new Error('Invalid task_type provided. Must be GENERATE_CONTENT or EMBED_CONTENT.');
     }
 
-    // OpenAI's response will contain the JSON string within the content.
-    // We need to extract that string and return it directly.
-    const aiContentString = openaiData.choices[0]?.message?.content;
-
-    if (!aiContentString) {
-      throw new Error('No content received from OpenAI.');
-    }
-
-    // The AI is instructed to return a JSON array as a string.
-    // We will return this string directly to the Flutter app.
-    // The Flutter app's _parseAIJsonResponse will then parse this string.
-    const responseData = {
-      ai_response: aiContentString // This will be the JSON array string
-    };
-
+    // Return the AI's response
     return new Response(
-      JSON.stringify(responseData),
+      JSON.stringify({ ai_response: aiResponseContent }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
 

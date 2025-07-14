@@ -16,7 +16,6 @@ import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 
 // OpenAI Integration Imports (already confirmed to exist and be populated)
-import 'package:bliindaidating/services/openai_service.dart';
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 
@@ -66,14 +65,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   final List<Offset> _deepSpaceParticles = [];
   final math.Random _random = math.Random();
 
-  final OpenAIService _openAIService = OpenAIService(); // Instantiate OpenAIService
 
 
   @override
   void initState() {
     super.initState();
     _loadUserProfileAndSubscribe();
-    _fetchAIDummyData();
 
     // Initialize background animation controllers
     _backgroundNebulaController = AnimationController(vsync: this, duration: const Duration(seconds: 40))..repeat();
@@ -163,47 +160,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     }
   }
 
-
-  Future<void> _fetchAIDummyData() async {
-    debugPrint('--- Fetching AI Dummy Data (from MainDashboardScreen) ---');
-    try {
-      final List<UserProfile> dummyProfiles = await _openAIService.generateDummyUserProfiles(3);
-      debugPrint('AI Generated Dummy Profiles:');
-      for (var profile in dummyProfiles) {
-        debugPrint('  - ${profile.displayName ?? profile.fullName ?? 'Unnamed User'} (${profile.userId}) - Looking For: ${profile.lookingFor}, Interests: ${profile.hobbiesAndInterests.join(', ')}');
-      }
-
-      final List<NewsfeedItem> newsfeedItems = await _openAIService.generateNewsfeedItems(
-        5,
-        userLocation: 'Snyderville, Utah',
-        userRadius: 50,
-      );
-      debugPrint('AI Generated Newsfeed Items:');
-      for (var item in newsfeedItems) {
-        debugPrint('  - [${item.type.name}] ${item.username ?? ''}: ${item.content}');
-      }
-
-      final List<AIEngagementPrompt> aiPrompts = await _openAIService.generateAIEngagementPrompts(3);
-      debugPrint('AI Generated Engagement Prompts:');
-      for (var prompt in aiPrompts) {
-        debugPrint('  - ${prompt.tip}');
-      }
-
-      if (dummyProfiles.isNotEmpty) {
-        final List<Map<String, dynamic>> dummyMatches = await _openAIService.generateDummyMatches(2, dummyProfiles);
-        debugPrint('AI Generated Dummy Matches:');
-        for (var match in dummyMatches) {
-          debugPrint('  - Match between ${match['user1Id']} and ${match['user2Id']} - Score: ${match['compatibilityScore']}, Reason: ${match['reason']}');
-        }
-      }
-      debugPrint('--- AI Dummy Data Fetch Complete ---');
-    } catch (e) {
-      debugPrint('Error fetching AI dummy data: $e');
-      if (kDebugMode) {
-        print('Detailed AI Dummy Data Error: ${e.toString()}');
-      }
-    }
-  }
 
   void _onTabSelected(int index) {
     setState(() {
