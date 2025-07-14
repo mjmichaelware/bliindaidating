@@ -28,6 +28,9 @@ class AppConstants {
   }
   // --- END API Base URL ---
 
+  // Admin Email - ADDED THIS LINE TO FIX COMPILATION ERROR
+  static const String adminEmail = 'your_admin_email@example.com';
+
 
   // Landing Page Taglines
   static const String landingHeadline1 = 'Tired of loneliness? Craving real connection?';
