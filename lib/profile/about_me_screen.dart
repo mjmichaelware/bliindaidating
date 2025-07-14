@@ -32,7 +32,6 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
   final TextEditingController _addressZipController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
 
-  // REMOVED: final ProfileService _profileService = ProfileService(); // Don't instantiate directly here
   final ImagePicker _picker = ImagePicker();
 
   UserProfile? _userProfile;
@@ -87,6 +86,20 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
     super.dispose();
   }
 
+  void _onInterestSelected(String interest) {
+    setState(() {
+      if (!_selectedInterests.contains(interest)) {
+        _selectedInterests.add(interest);
+      }
+    });
+  }
+
+  void _onInterestDeselected(String interest) {
+    setState(() {
+      _selectedInterests.remove(interest);
+    });
+  }
+
   Future<void> _loadProfile() async {
     setState(() { _isLoading = true; });
     final currentUser = Supabase.instance.client.auth.currentUser;
@@ -114,7 +127,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
           _sexualOrientation = profile.sexualOrientation;
           _lookingFor = profile.lookingFor;
           _selectedInterests.clear();
-          // FIXED: Use profile.hobbiesAndInterests directly as it's already a List<String>
+          // Use profile.hobbiesAndInterests directly as it's already a List<String>
           _selectedInterests.addAll(profile.hobbiesAndInterests);
           _profilePictureUrl = profile.profilePictureUrl;
           _newPickedImage = null; // Clear any previously picked image on load
@@ -170,13 +183,7 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) { // Validate all fields
-      if (_dateOfBirth == null) { // Manual validation for date picker
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select your Date of Birth.')),
-          );
-        }
-      }
+      // Manual validation for date picker is handled below as it's not a TextFormField
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please correct the errors in the form.')),
@@ -221,39 +228,48 @@ class _AboutMeScreenState extends State<AboutMeScreen> {
         setState(() { _isLoading = false; });
         return;
       }
+    } else if (finalProfilePictureUrl != null && !finalProfilePictureUrl.startsWith('http')) {
+      // This handles a scenario where _profilePictureUrl might be a local path initially (though unlikely here)
+      // or if you have a logic to clear the image and need to explicitly set URL to null.
+      // For this screen, it's mostly about new uploads or retaining existing URL.
+      finalProfilePictureUrl = null; // Ensure it's null if no valid URL and no new image
     }
 
     try {
       // AboutMeScreen is for updating an existing profile, so we always call updateProfile
-      // Use the profileService from Provider
-      await profileService.updateProfile(
-        userId: currentUser.id, // Pass userId as it's now required
+      // We must ensure _userProfile is not null, which _loadProfile should guarantee.
+      if (_userProfile == null) {
+        throw Exception('User profile not loaded, cannot save changes.');
+      }
+
+      // Create a new UserProfile object using copyWith,
+      // updating only the fields that are modified by this screen.
+      final UserProfile profileToUpdate = _userProfile!.copyWith(
         fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
         displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
         dateOfBirth: _dateOfBirth,
         genderIdentity: _gender,
         bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
         profilePictureUrl: finalProfilePictureUrl,
-        hobbiesAndInterests: _selectedInterests.isNotEmpty ? _selectedInterests : null,
+        hobbiesAndInterests: _selectedInterests, // This replaces the entire list
         lookingFor: _lookingFor,
         phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : null,
         locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : null,
         sexualOrientation: _sexualOrientation,
         heightCm: double.tryParse(_heightController.text.trim()),
-
-        // For update, only pass fields that are explicitly edited on this screen.
-        // Other fields not listed here will retain their existing values in the database.
-        // The ProfileService.updateProfile method handles removing nulls to prevent overwriting.
+        // All other fields from the UserProfile model that are not directly
+        // editable on this AboutMeScreen will be carried over from the
+        // existing _userProfile via the copyWith method.
       );
+
+      await profileService.updateProfile(profileToUpdate);
 
       debugPrint('Profile for ${currentUser.id} updated successfully.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!')),
         );
-        // If you want to refresh the UI with the *newly uploaded* image URL
-        // after a successful save, you might re-load the profile or update
-        // _profilePictureUrl with finalProfilePictureUrl directly.
+        // After successful save, update the UI's displayed image URL and clear picked image data.
         setState(() {
           _profilePictureUrl = finalProfilePictureUrl;
           _newPickedImage = null; // Clear picked image after successful upload

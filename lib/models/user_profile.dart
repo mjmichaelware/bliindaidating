@@ -2,7 +2,6 @@ import 'dart:convert'; // Essential for jsonEncode and jsonDecode
 import 'package:flutter/foundation.dart'; // For debugPrint
 
 class UserProfile {
-  // Renamed 'id' to 'userId' for consistency with errors
   final String userId;
   final String email;
   final String? displayName;
@@ -47,11 +46,13 @@ class UserProfile {
   final String? communicationStyle;
   final String? mentalHealthDisclosures;
   final String? petOwnership;
-  final String? travelFrequencyOrFavoriteDestinations; // Corrected field name
+  final String? travelFrequencyOrFavoriteDestinations;
   final Map<String, bool> profileVisibilityPreferences;
   final Map<String, bool> pushNotificationPreferences;
   final bool isPhase1Complete;
   final bool isPhase2Complete;
+  final Map<String, dynamic> questionnaireAnswers;
+  final Map<String, dynamic> personalityAssessmentResults;
 
   // Deprecated fields (for migration purposes, not actively used for new data)
   final String? addressZip;
@@ -65,11 +66,9 @@ class UserProfile {
   final String? loveLanguagesNew; // Remains String? as it's a raw deprecated string
   final String? locationCity;
   final String? locationState;
-  final String? questionnaireAnswersRaw;
-  final String? personalityAssessmentResultsRaw;
 
   UserProfile({
-    required this.userId, // Renamed from id
+    required this.userId,
     required this.email,
     this.displayName,
     this.bio,
@@ -118,6 +117,8 @@ class UserProfile {
     this.pushNotificationPreferences = const {},
     this.isPhase1Complete = false,
     this.isPhase2Complete = false,
+    this.questionnaireAnswers = const {},
+    this.personalityAssessmentResults = const {},
     this.addressZip,
     this.gender,
     this.height,
@@ -129,12 +130,9 @@ class UserProfile {
     this.loveLanguagesNew,
     this.locationCity,
     this.locationState,
-    this.questionnaireAnswersRaw,
-    this.personalityAssessmentResultsRaw,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    // Helper to safely decode JSON string to List<String>
     List<String> _decodeStringList(dynamic value) {
       if (value == null) return [];
       if (value is List) {
@@ -153,7 +151,6 @@ class UserProfile {
       return [];
     }
 
-    // Helper to safely decode JSON string to Map<String, bool>
     Map<String, bool> _decodeStringBoolMap(dynamic value) {
       if (value == null) return {};
       if (value is Map) {
@@ -172,13 +169,29 @@ class UserProfile {
       return {};
     }
 
-    // --- Handle deprecated fields for migration/fallback ---
+    Map<String, dynamic> _decodeStringDynamicMap(dynamic value) {
+      if (value == null) return {};
+      if (value is Map) {
+        return Map<String, dynamic>.from(value);
+      }
+      if (value is String && value.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(value);
+          if (decoded is Map) {
+            return Map<String, dynamic>.from(decoded);
+          }
+        } catch (e) {
+          debugPrint('Error decoding string to Map<String, dynamic>: $e. Value: "$value"');
+        }
+      }
+      return {};
+    }
+
     final String? resolvedFullLegalName = json['full_legal_name'] as String? ?? json['full_name'] as String?;
     final String? resolvedGenderIdentity = json['gender_identity'] as String? ?? json['gender'] as String?;
     final double? resolvedHeightCm = (json['height_cm'] as num?)?.toDouble() ?? (json['height'] as num?)?.toDouble();
     final String? resolvedLocationZipCode = json['location_zip_code'] as String? ?? json['address_zip'] as String?;
 
-    // --- Handle hobbies and interests with migration logic ---
     List<String> resolvedHobbiesAndInterests = [];
     if (json['hobbies_and_interests'] != null) {
       resolvedHobbiesAndInterests = _decodeStringList(json['hobbies_and_interests']);
@@ -188,7 +201,6 @@ class UserProfile {
       resolvedHobbiesAndInterests = _decodeStringList(json['interests']);
     }
 
-    // --- Handle love languages with migration logic ---
     List<String> resolvedLoveLanguages = [];
     if (json['love_languages'] != null) {
       resolvedLoveLanguages = _decodeStringList(json['love_languages']);
@@ -197,7 +209,7 @@ class UserProfile {
     }
 
     return UserProfile(
-      userId: json['id'] as String, // Uses 'id' from JSON, assigns to 'userId'
+      userId: json['id'] as String,
       email: json['email'] as String,
       displayName: json['display_name'] as String?,
       bio: json['bio'] as String?,
@@ -246,12 +258,14 @@ class UserProfile {
       pushNotificationPreferences: _decodeStringBoolMap(json['push_notification_preferences']),
       isPhase1Complete: json['is_phase_1_complete'] as bool? ?? false,
       isPhase2Complete: json['is_phase_2_complete'] as bool? ?? false,
+      questionnaireAnswers: _decodeStringDynamicMap(json['questionnaire_answers']),
+      personalityAssessmentResults: _decodeStringDynamicMap(json['personality_assessment_results']),
 
       // Deprecated fields (populated for backward compatibility if needed, but not actively used)
       addressZip: json['address_zip'] as String?,
       gender: json['gender'] as String?,
       height: (json['height'] as num?)?.toDouble(),
-      interests: json['interests'] as String?, // Stays as raw string from DB
+      interests: json['interests'] as String?,
       governmentIdFrontUrl: json['government_id_front_url'] as String?,
       governmentIdBackUrl: json['government_id_back_url'] as String?,
       fullName: json['full_name'] as String?,
@@ -259,15 +273,12 @@ class UserProfile {
       loveLanguagesNew: json['love_languages_new'] as String?,
       locationCity: json['location_city'] as String?,
       locationState: json['location_state'] as String?,
-      questionnaireAnswersRaw: json['questionnaire_answers'] as String?,
-      personalityAssessmentResultsRaw: json['personality_assessment_results'] as String?,
     );
   }
 
-  // Helper method to convert UserProfile to JSON for updates/inserts
   Map<String, dynamic> toJson() {
     return {
-      'id': userId, // Uses 'userId' to create 'id' in JSON for DB
+      'id': userId,
       'email': email,
       'display_name': displayName,
       'bio': bio,
@@ -288,7 +299,7 @@ class UserProfile {
       'languages_spoken': jsonEncode(languagesSpoken),
       'desired_occupation': desiredOccupation,
       'education_level': educationLevel,
-      'hobbies_and_interests': jsonEncode(hobbiesAndInterests),
+      'hobbies_and_interests': jsonEncode(hobbiesAndInterests), // CORRECTED: Capital 'I'
       'love_languages': jsonEncode(loveLanguages),
       'favorite_media': jsonEncode(favoriteMedia),
       'maritalStatus': maritalStatus,
@@ -316,12 +327,13 @@ class UserProfile {
       'push_notification_preferences': jsonEncode(pushNotificationPreferences),
       'is_phase_1_complete': isPhase1Complete,
       'is_phase_2_complete': isPhase2Complete,
-      // Deprecated fields are typically not included in toJson for new data consistency
+      'questionnaire_answers': jsonEncode(questionnaireAnswers),
+      'personality_assessment_results': jsonEncode(personalityAssessmentResults),
     };
   }
 
   UserProfile copyWith({
-    String? userId, // Renamed from id
+    String? userId,
     String? email,
     String? displayName,
     String? bio,
@@ -365,11 +377,13 @@ class UserProfile {
     String? communicationStyle,
     String? mentalHealthDisclosures,
     String? petOwnership,
-    String? travelFrequencyOrFavoriteDestinations, // Corrected parameter name
+    String? travelFrequencyOrFavoriteDestinations,
     Map<String, bool>? profileVisibilityPreferences,
     Map<String, bool>? pushNotificationPreferences,
     bool? isPhase1Complete,
     bool? isPhase2Complete,
+    Map<String, dynamic>? questionnaireAnswers,
+    Map<String, dynamic>? personalityAssessmentResults,
     String? addressZip,
     String? gender,
     double? height,
@@ -381,11 +395,9 @@ class UserProfile {
     String? loveLanguagesNew,
     String? locationCity,
     String? locationState,
-    String? questionnaireAnswersRaw,
-    String? personalityAssessmentResultsRaw,
   }) {
     return UserProfile(
-      userId: userId ?? this.userId, // Renamed from id
+      userId: userId ?? this.userId,
       email: email ?? this.email,
       displayName: displayName ?? this.displayName,
       bio: bio ?? this.bio,
@@ -429,13 +441,13 @@ class UserProfile {
       communicationStyle: communicationStyle ?? this.communicationStyle,
       mentalHealthDisclosures: mentalHealthDisclosures ?? this.mentalHealthDisclosures,
       petOwnership: petOwnership ?? this.petOwnership,
-      travelFrequencyOrFavoriteDestinations: travelFrequencyOrFavoriteDestinations ?? this.travelFrequencyOrFavoriteDestinations, // Corrected parameter name
+      travelFrequencyOrFavoriteDestinations: travelFrequencyOrFavoriteDestinations ?? this.travelFrequencyOrFavoriteDestinations,
       profileVisibilityPreferences: profileVisibilityPreferences ?? this.profileVisibilityPreferences,
       pushNotificationPreferences: pushNotificationPreferences ?? this.pushNotificationPreferences,
       isPhase1Complete: isPhase1Complete ?? this.isPhase1Complete,
       isPhase2Complete: isPhase2Complete ?? this.isPhase2Complete,
-
-      // Deprecated fields
+      questionnaireAnswers: questionnaireAnswers ?? this.questionnaireAnswers,
+      personalityAssessmentResults: personalityAssessmentResults ?? this.personalityAssessmentResults,
       addressZip: addressZip ?? this.addressZip,
       gender: gender ?? this.gender,
       height: height ?? this.height,
@@ -447,8 +459,6 @@ class UserProfile {
       loveLanguagesNew: loveLanguagesNew ?? this.loveLanguagesNew,
       locationCity: locationCity ?? this.locationCity,
       locationState: locationState ?? this.locationState,
-      questionnaireAnswersRaw: questionnaireAnswersRaw ?? this.questionnaireAnswersRaw,
-      personalityAssessmentResultsRaw: personalityAssessmentResultsRaw ?? this.personalityAssessmentResultsRaw,
     );
   }
 }

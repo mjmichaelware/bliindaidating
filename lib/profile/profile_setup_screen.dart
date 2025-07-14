@@ -8,7 +8,7 @@ import 'package:bliindaidating/app_constants.dart'; // Ensure AppConstants is im
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:cross_file/cross_file.dart'; // Import XFile
-import 'package:image_picker/image_picker.dart'; // Import ImagePicker for XFile
+import 'package:image_picker/image_picker.dart'; // Corrected import for ImagePicker
 import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'dart:io'; // For File, if needed for platform-specific image handling
 
@@ -21,6 +21,7 @@ import 'package:bliindaidating/screens/profile_setup/widgets/identity_id_form.da
 import 'package:bliindaidating/screens/profile_setup/widgets/preferences_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/consent_form.dart';
 
+// ... rest of your file remains the same as previously corrected ...
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -223,7 +224,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _gender = userProfile.genderIdentity ?? userProfile.gender; // Prioritize new field
         _sexualOrientation = userProfile.sexualOrientation;
         _lookingFor = userProfile.lookingFor;
-        // FIXED: Directly use hobbiesAndInterests as it's the List<String> field
+        // Directly use hobbiesAndInterests as it's the List<String> field
         _selectedInterests = List.from(userProfile.hobbiesAndInterests);
         _agreedToTerms = userProfile.agreedToTerms;
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
@@ -241,25 +242,25 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showBio = userProfile.bio != null;
         _showSexualOrientation = userProfile.sexualOrientation != null;
         _showHeight = userProfile.heightCm != null || userProfile.height != null;
-        // FIXED: Check hobbiesAndInterests.isNotEmpty OR interests string is not empty
+        // Check hobbiesAndInterests.isNotEmpty OR interests string is not empty
         _showInterests = userProfile.hobbiesAndInterests.isNotEmpty || (userProfile.interests?.isNotEmpty ?? false);
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.locationZipCode != null || userProfile.addressZip != null;
         _showEthnicity = userProfile.ethnicity != null; // NEW: check for ethnicity
-        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        // Directly use .isNotEmpty as these are List<String> fields
         _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty;
         _showEducationLevel = userProfile.educationLevel != null; // NEW
         _showDesiredOccupation = userProfile.desiredOccupation != null; // NEW
-        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        // Directly use .isNotEmpty as these are List<String> fields
         _showLoveLanguages = userProfile.loveLanguages.isNotEmpty;
-        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        // Directly use .isNotEmpty as these are List<String> fields
         _showFavoriteMedia = userProfile.favoriteMedia.isNotEmpty;
         _showMaritalStatus = userProfile.maritalStatus != null; // NEW
         _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null; // NEW
         _showWillingToRelocate = userProfile.willingToRelocate != null; // NEW
         _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null; // NEW
         _showLoveRelationshipGoals = userProfile.relationshipGoals != null; // NEW
-        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        // Directly use .isNotEmpty as these are List<String> fields
         _showDealbreakersBoundaries = userProfile.dealbreakers.isNotEmpty;
         _showAstrologicalSign = userProfile.astrologicalSign != null; // NEW
         _showAttachmentStyle = userProfile.attachmentStyle != null; // NEW
@@ -274,7 +275,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showDrinkingHabits = userProfile.drinkingHabits != null; // NEW
         _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null; // NEW
         _showSleepSchedule = userProfile.sleepSchedule != null; // NEW
-        // FIXED: Directly use .isNotEmpty as these are List<String> fields
+        // Directly use .isNotEmpty as these are List<String> fields
         _showPersonalityTraits = userProfile.personalityTraits.isNotEmpty;
 
       }
@@ -337,9 +338,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         return;
       }
     } else if (_imagePreviewPath != null && _imagePreviewPath!.startsWith('http')) {
+      // If no new image picked but there's an existing URL, retain it.
       uploadedPhotoPath = _imagePreviewPath;
     } else {
       debugPrint('ProfileSetupScreen: No analysis photo provided, continuing without upload.');
+      uploadedPhotoPath = null; // Explicitly set to null if no image is present/uploaded
     }
 
     try {
@@ -351,10 +354,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       // Determine if it's an insert or update operation
       if (existingProfile == null) {
         // INSERT SCENARIO
-        await profileService.insertProfile(
+        final UserProfile newProfile = UserProfile(
           userId: currentUser.id,
           email: currentUser.email!,
-          // Core Identity & Consent (Phase 1)
+          createdAt: DateTime.now(), // FIX: Provide the createdAt timestamp
           fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
           displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
           profilePictureUrl: uploadedPhotoPath,
@@ -364,47 +367,65 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           genderIdentity: _gender,
           sexualOrientation: _sexualOrientation,
           heightCm: double.tryParse(_heightController.text.trim()),
-          hobbiesAndInterests: _selectedInterests.isNotEmpty ? _selectedInterests : null,
+          hobbiesAndInterests: _selectedInterests, // Use directly, it's a List<String>
           lookingFor: _lookingFor,
           isPhase1Complete: true, // Mark Phase 1 complete upon successful initial setup
           agreedToTerms: _agreedToTerms,
           agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
+          bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
+          isPhase2Complete: false, // Default to false for new profile
 
-          // For insert, carry over relevant defaults or nulls for other phases
-          ethnicity: null, // Default to null for insert if not part of initial screen
-          languagesSpoken: null,
-          desiredOccupation: null,
+          // Ensure all other required fields for UserProfile are provided or have sensible defaults.
+          // Your UserProfile constructor has default values for many List<String> and Map fields,
+          // so explicitly setting them to `const []` or `const {}` is good for clarity,
+          // but if the constructor defaults handle `null`, you might omit them if you're sure.
+          // For simplicity and safety, I'm keeping them explicit here based on your provided model structure.
+          ethnicity: null,
+          languagesSpoken: const [],
           educationLevel: null,
-          loveLanguages: null,
-          favoriteMedia: null,
+          desiredOccupation: null,
+          loveLanguages: const [],
+          favoriteMedia: const [],
           maritalStatus: null,
           hasChildren: null,
           wantsChildren: null,
-          relationshipGoals: null,
-          dealbreakers: null,
-          bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
-          religionOrSpiritualBeliefs: null,
-          politicalViews: null,
-          diet: null,
-          smokingHabits: null,
-          drinkingHabits: null,
-          exerciseFrequencyOrFitnessLevel: null,
-          sleepSchedule: null,
-          personalityTraits: null,
-          questionnaireAnswers: null,
-          personalityAssessmentResults: null,
           willingToRelocate: null,
           monogamyVsPolyamoryPreferences: null,
+          relationshipGoals: null,
+          dealbreakers: const [],
           astrologicalSign: null,
           attachmentStyle: null,
           communicationStyle: null,
           mentalHealthDisclosures: null,
           petOwnership: null,
           travelFrequencyOrFavoriteDestinations: null,
-          profileVisibilityPreferences: null,
-          pushNotificationPreferences: null,
-          isPhase2Complete: false, // Default to false for new profile
+          politicalViews: null,
+          religionOrSpiritualBeliefs: null,
+          diet: null,
+          smokingHabits: null,
+          drinkingHabits: null,
+          exerciseFrequencyOrFitnessLevel: null,
+          sleepSchedule: null,
+          personalityTraits: const [],
+          questionnaireAnswers: const {},
+          personalityAssessmentResults: const {},
+          profileVisibilityPreferences: const {}, // Ensure this is not null if required
+          pushNotificationPreferences: const {}, // Ensure this is not null if required
+
+          // Deprecated fields should generally not be set for new profiles unless specifically for migration logic
+          addressZip: null,
+          gender: null,
+          height: null,
+          interests: null,
+          governmentIdFrontUrl: null,
+          governmentIdBackUrl: null,
+          fullName: null,
+          hobbiesAndInterestsNew: null,
+          loveLanguagesNew: null,
+          locationCity: null,
+          locationState: null,
         );
+        await profileService.insertProfile(newProfile);
         debugPrint('User profile ${currentUser.id} inserted successfully in Supabase.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -413,28 +434,35 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         }
       } else {
         // UPDATE SCENARIO
-        await profileService.updateProfile(
-          userId: currentUser.id, // Required for update
-          fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
-          displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
-          profilePictureUrl: uploadedPhotoPath,
-          dateOfBirth: _dateOfBirth,
-          phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : null,
-          locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : null,
-          genderIdentity: _gender,
-          sexualOrientation: _sexualOrientation,
-          heightCm: double.tryParse(_heightController.text.trim()),
-          hobbiesAndInterests: _selectedInterests.isNotEmpty ? _selectedInterests : null,
-          lookingFor: _lookingFor,
-          isPhase1Complete: true, // Mark Phase 1 complete upon successful initial setup
+        // Create a new UserProfile object using copyWith,
+        // updating only the fields that are modified by this screen.
+        final UserProfile updatedProfile = existingProfile.copyWith(
+          // For update, createdAt should not be changed, it's the creation timestamp.
+          // It's implicitly carried over by copyWith if not provided here.
+          // However, if you have an 'updatedAt' field, you might want to set that:
+          updatedAt: DateTime.now(), // Consider adding an `updatedAt` field update here
+
+          fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : existingProfile.fullLegalName,
+          displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : existingProfile.displayName,
+          profilePictureUrl: uploadedPhotoPath ?? existingProfile.profilePictureUrl, // Update if new path, otherwise keep existing
+          dateOfBirth: _dateOfBirth ?? existingProfile.dateOfBirth,
+          phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : existingProfile.phoneNumber,
+          locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : existingProfile.locationZipCode,
+          genderIdentity: _gender ?? existingProfile.genderIdentity,
+          sexualOrientation: _sexualOrientation ?? existingProfile.sexualOrientation,
+          heightCm: double.tryParse(_heightController.text.trim()) ?? existingProfile.heightCm,
+          hobbiesAndInterests: _selectedInterests, // This will replace the entire list
+          lookingFor: _lookingFor ?? existingProfile.lookingFor,
+          isPhase1Complete: true, // Ensure this is true after completing this setup phase
           agreedToTerms: _agreedToTerms,
           agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
-          bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
-          // Only include parameters for fields you want to explicitly update from this screen.
-          // Other fields not touched by this screen will retain their existing values from the database.
-          // Example of explicitly setting a list to empty if the user cleared it:
-          // languagesSpoken: _someLanguagesList.isNotEmpty ? _someLanguagesList : [],
+          bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : existingProfile.bio,
+          // Other fields are implicitly carried over by copyWith if not explicitly set here.
+          // Ensure that if a field can be "cleared" by user input (e.g., text field becoming empty),
+          // you explicitly set it to `null` or an empty string/list if that's the desired behavior.
+          // For text fields, `_controller.text.trim().isNotEmpty ? _controller.text.trim() : null` handles clearing.
         );
+        await profileService.updateProfile(updatedProfile);
         debugPrint('User profile ${currentUser.id} updated successfully in Supabase.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

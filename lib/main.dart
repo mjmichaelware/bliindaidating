@@ -1,5 +1,3 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -108,10 +106,9 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => ThemeController()),
-          // IMPORTANT: ProfileService needs to be created before AuthService
-          // because AuthService depends on ProfileService.
+          // CRITICAL FIX: ProfileService no longer takes SupabaseClient in its constructor
           ChangeNotifierProvider(create: (context) => ProfileService()),
-          // FIX: Pass the ProfileService instance to AuthService constructor
+          // This line is correct, assuming AuthService constructor is `AuthService(ProfileService profileService)`
           ChangeNotifierProvider(create: (context) => AuthService(context.read<ProfileService>())),
         ],
         child: const BlindAIDatingApp(),
@@ -126,7 +123,7 @@ Future<void> main() async {
           body: Center(
             child: Text(
               'Failed to start app: ${e.toString()}',
-              textAlign: TextAlign.center, // Added for better display of long error messages
+              textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.red, fontFamily: 'Inter'),
             ),
           ),
@@ -145,19 +142,33 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
-  // Keep references to the services that GoRouter's refreshListenable will monitor.
-  // These are initialized in initState after the context is available.
   late final AuthService _authService;
   late final ProfileService _profileService;
-
 
   @override
   void initState() {
     super.initState();
-    // Access the service instances from the provider tree.
-    // Use `context.read` here because we just need the instance, not to listen for rebuilds.
     _authService = context.read<AuthService>();
     _profileService = context.read<ProfileService>();
+
+    // Listen to authentication state changes
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final AuthChangeEvent event = data.event;
+      final Session? session = data.session;
+      debugPrint('Auth State Change Event: $event');
+
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        // Load the user profile after successful sign-in
+        _profileService.loadUserProfile(session.user!.id);
+      } else if (event == AuthChangeEvent.signedOut) {
+        // Clear the user profile in the service when signed out
+        _profileService.clearProfile();
+      }
+      // No need to explicitly call notifyListeners() on _router here because
+      // GoRouterRefreshStream already listens to onAuthStateChange and notifies.
+      // Also, _profileService is a ChangeNotifier and is part of Listenable.merge.
+    });
+
 
     _router = GoRouter(
       initialLocation: '/',
@@ -218,9 +229,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
         GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
       ],
-      redirect: (context, state) async { // Keeping it async as before, even if profile fetch is removed.
-        // Use context.read to access services in redirect, as it's a top-level callback
-        // and doesn't need to rebuild with the widget tree. The refreshListenable handles re-evaluation.
+      redirect: (context, state) async {
         final authService = context.read<AuthService>();
         final profileService = context.read<ProfileService>();
 
@@ -269,11 +278,8 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         // --- User is logged in from here ---
 
-        // IMPORTANT CHANGE: Do NOT fetch profile here.
-        // The AuthService's listener already fetches the profile and ProfileService
-        // notifies its listeners, which in turn triggers this redirect.
-        // So, profileService.userProfile should be up-to-date.
-
+        // At this point, `profileService.userProfile` should be populated
+        // if `loadUserProfile` was called successfully after sign-in.
         final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
         final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
         debugPrint('  Is Phase 1 Complete: $isPhase1Complete');
@@ -331,8 +337,8 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
   @override
   void dispose() {
-    // No explicit dispose needed for GoRouter itself, its refreshListenable handles subscription.
-    // The services are managed by Provider, so their dispose methods will be called by Provider.
+    // No explicit stream subscription to cancel here as it's handled by GoRouterRefreshStream
+    // and Provider disposes ChangeNotifiers when no longer needed.
     super.dispose();
   }
 
@@ -341,7 +347,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     final themeController = Provider.of<ThemeController>(context);
     return MaterialApp.router(
       title: AppConstants.appName,
-      // IMPORTANT: Use the AppTheme class for consistent theming
       theme: themeController.isDarkMode ? AppTheme.galaxyTheme : AppTheme.lightTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,

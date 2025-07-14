@@ -19,7 +19,7 @@ import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/physical_attributes_and_health_form.dart';
 
 // Import the AI Profile Generator Widget
-import 'package:bliindaidating/profile/ai_profile_generator_widget.dart'; // <--- ADDED THIS LINE
+import 'package:bliindaidating/profile/ai_profile_generator_widget.dart';
 
 
 // --- Custom Painter for Animated Nebula Background (similar to landing page but adapted) ---
@@ -141,7 +141,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     LifestyleAndValuesForm(),
     PersonalityAndSelfReflectionForm(),
     PhysicalAttributesAndHealthForm(),
-    AiProfileGeneratorWidget(), // <--- ADDED THE AI WIDGET HERE
+    AiProfileGeneratorWidget(),
   ];
 
   @override
@@ -231,14 +231,20 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     final profileService = Provider.of<ProfileService>(context, listen: false);
 
     try {
-      // CORRECTED: Call updateProfile directly to set isPhase2Complete
-      // Pass the required userId parameter
-      await profileService.updateProfile(
-        userId: currentUser.id, // <--- ADDED THIS LINE
+      // 1. Fetch the existing user profile
+      UserProfile? existingProfile = await profileService.fetchUserProfile(currentUser.id);
+
+      if (existingProfile == null) {
+        throw Exception('User profile not found. Cannot complete Phase 2.');
+      }
+
+      // 2. Create an updated UserProfile object using copyWith
+      final UserProfile updatedProfile = existingProfile.copyWith(
         isPhase2Complete: true,
-        // You might want to pass other collected Phase 2 data here
-        // e.g., educationLevel: '...', familyBackground: '...', etc.
       );
+
+      // 3. Call updateProfile with the new UserProfile object
+      await profileService.updateProfile(updatedProfile);
 
       debugPrint('Phase 2 Profile Setup Complete for user ${currentUser.id}');
       if (mounted) {
@@ -249,8 +255,6 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
           ),
         );
         // Navigate back to the main dashboard
-        // After successful update, the redirect in main.dart should
-        // correctly send them to /home if both phases are complete.
         context.go('/home');
       }
     } on PostgrestException catch (e) {
@@ -324,10 +328,9 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
             padding: const EdgeInsets.only(right: AppConstants.paddingMedium),
             child: TextButton(
               onPressed: _isSaving ? null : () {
-                // CORRECTED: Assuming you want to allow closing and seeing dashboard
+                // Assuming you want to allow closing and seeing dashboard
                 // This will pop the current route, but the main.dart redirect
                 // might still push it back if the logic isn't relaxed.
-                // The main.dart changes will make this work as intended for "browse at leisure".
                 context.pop();
               },
               style: TextButton.styleFrom(
@@ -488,7 +491,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                             isPrimary: false, // Not the main action
                             isDarkMode: isDarkMode,
                           ),
-                        
+
                         // Spacer to push buttons to ends if only one is visible
                         if (_currentPage == 0 && _phase2SubForms.length > 1)
                           const Spacer(),
