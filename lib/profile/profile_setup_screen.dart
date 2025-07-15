@@ -454,7 +454,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           hobbiesAndInterests: _selectedInterests, // This will replace the entire list
           lookingFor: _lookingFor ?? existingProfile.lookingFor,
           isPhase1Complete: true, // Ensure this is true after completing this setup phase
-          agreedToTerms: _agreedToTerms,
+          agreedToTerms: _agreedToTerms, // CORRECTED LINE
           agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
           bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : existingProfile.bio,
           // Other fields are implicitly carried over by copyWith if not explicitly set here.
@@ -462,7 +462,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           // you explicitly set it to `null` or an empty string/list if that's the desired behavior.
           // For text fields, `_controller.text.trim().isNotEmpty ? _controller.text.trim() : null` handles clearing.
         );
-        await profileService.updateProfile(updatedProfile);
+        // CORRECTED LINE: Use named argument 'profile'
+        await profileService.updateProfile(profile: updatedProfile);
         debugPrint('User profile ${currentUser.id} updated successfully in Supabase.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

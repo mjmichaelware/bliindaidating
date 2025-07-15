@@ -1,5 +1,3 @@
-// lib/screens/main/main_dashboard_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,11 +9,11 @@ import 'dart:math' as math; // For math.Random and other math functions
 
 // Local imports for core project components
 import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/controllers/theme_controller.dart'; // Corrected import
+import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 
-// OpenAI Integration Imports (already confirmed to exist and be populated)
+// OpenAI Integration Imports
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
 
@@ -34,7 +32,7 @@ import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 
 // Import the new Dashboard Overview Screen
-import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart'; // NEW IMPORT
+import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart';
 
 // Re-importing the custom painters from landing_page for consistency
 import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains NebulaBackgroundPainter, ParticleFieldPainter
@@ -189,7 +187,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ThemeController>(context); // Corrected type
+    final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
     final size = MediaQuery.of(context).size;
 
@@ -201,7 +199,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final profileService = Provider.of<ProfileService>(context);
     final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
 
-    final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete); // Blur if loading or Phase 2 incomplete
+    // The blur effect remains, but we no longer use AbsorbPointer to block ALL interactions
+    final bool showContentBlur = _isLoadingProfile || (!isPhase2Complete);
 
     final List<Widget> _dashboardScreens = const [
       DashboardOverviewScreen(), // Index 0
@@ -383,19 +382,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                               ),
                             )
                           : Expanded(
-                              child: AbsorbPointer(
-                                absorbing: absorbAndBlurContent,
-                                child: AnimatedOpacity(
-                                  opacity: absorbAndBlurContent ? 0.4 : 1.0,
-                                  duration: AppConstants.animationDurationMedium,
-                                  child: ImageFiltered(
-                                    imageFilter: absorbAndBlurContent
-                                        ? ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0)
-                                        : ImageFilter.blur(sigmaX: 0.0, sigmaY: 0.0),
-                                    child: DashboardContentSwitcher(
-                                      selectedTabIndex: _selectedTabIndex,
-                                      screens: _dashboardScreens,
-                                    ),
+                              child: ImageFiltered( // Keep ImageFiltered for visual blur
+                                imageFilter: showContentBlur
+                                    ? ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0)
+                                    : ImageFilter.blur(sigmaX: 0.0, sigmaY: 0.0),
+                                child: AnimatedOpacity( // CORRECTED: Changed Opacity to AnimatedOpacity
+                                  opacity: showContentBlur ? 0.4 : 1.0,
+                                  duration: AppConstants.animationDurationMedium, // Now 'duration' is a valid parameter
+                                  child: DashboardContentSwitcher(
+                                    selectedTabIndex: _selectedTabIndex,
+                                    screens: _dashboardScreens,
                                   ),
                                 ),
                               ),

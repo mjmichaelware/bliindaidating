@@ -243,7 +243,8 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
       );
 
       // 3. Call updateProfile with the new UserProfile object
-      await profileService.updateProfile(updatedProfile);
+      // CORRECTED LINE: Use named argument 'profile'
+      await profileService.updateProfile(profile: updatedProfile); // Line 246
 
       debugPrint('Phase 2 Profile Setup Complete for user ${currentUser.id}');
       if (mounted) {

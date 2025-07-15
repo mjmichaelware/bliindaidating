@@ -1,11 +1,13 @@
 // lib/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Still needed for AuthException
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart'; // Import Provider
 
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
+import 'package:bliindaidating/services/auth_service.dart'; // Import your AuthService
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,10 +47,25 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     super.dispose();
   }
 
+  void _showError(String message) {
+    if (mounted) { // Ensure widget is still in the tree before calling setState or accessing context
+      setState(() => _errorMessage = message);
+      _shakeController.forward(from: 0);
+      debugPrint('LoginScreen: Displaying error: $message');
+    }
+  }
+
   Future<void> _attemptLogin() async {
+    // Prevent multiple clicks while an operation is in progress
+    if (_isLoading) {
+      debugPrint('LoginScreen: _attemptLogin called but already loading. Ignoring.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+      _errorMessage = null; // Clear previous error messages
+      debugPrint('LoginScreen: Setting _isLoading to true.');
     });
 
     final email = _emailController.text.trim();
@@ -56,44 +73,42 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
     if (email.isEmpty || password.isEmpty) {
       _showError('Please enter both email and password.');
-      setState(() { _isLoading = false; });
+      setState(() { _isLoading = false; }); // Must reset _isLoading here
+      debugPrint('LoginScreen: Email or password empty.');
       return;
     }
 
     try {
-      debugPrint('LoginScreen: Attempting login for email: $email');
-      final AuthResponse response = await Supabase.instance.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      debugPrint('LoginScreen: Accessing AuthService...');
+      // Access the AuthService via Provider
+      final authService = Provider.of<AuthService>(context, listen: false);
 
-      if (response.user != null) {
-        debugPrint('LoginScreen: User logged in successfully: ${response.user!.email}');
-        if (mounted) {
-          // Router redirect will handle navigation to /home
-        }
-      } else {
-        debugPrint('LoginScreen: Supabase signInWithPassword returned null user. User: ${response.user?.id}, Session: ${response.session?.accessToken != null ? 'Exists' : 'Null'}'); // Corrected to accessToken
-        _showError('Login failed. Please check your credentials.');
-      }
+      debugPrint('LoginScreen: Calling authService.signIn for email: $email');
+      // Await the signIn method from AuthService
+      await authService.signIn(email: email, password: password);
+
+      debugPrint('LoginScreen: authService.signIn completed. GoRouter redirect should handle navigation.');
+      // NO MANUAL NAVIGATION HERE (e.g., context.go('/home')).
+      // The GoRouter's redirect logic (in main.dart) will automatically
+      // detect the logged-in state change via AuthService's notifyListeners
+      // and navigate to the appropriate screen (e.g., dashboard or profile setup).
     } on AuthException catch (e) {
       debugPrint('LoginScreen: Supabase Auth error during login: ${e.message}');
       _showError('Login failed: ${e.message}');
-    } catch (e) {
-      debugPrint('LoginScreen: Unexpected error during login: $e');
-      setState(() {
-        _errorMessage = 'An unexpected error occurred: ${e.toString()}';
-      });
+    } catch (e, stack) { // Catch all other exceptions, including synchronous ones
+      debugPrint('LoginScreen: UNEXPECTED ERROR during login: $e\n$stack');
+      _showError('An unexpected error occurred. Please try again.');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      // Always reset loading state when the operation finishes, regardless of success or failure.
+      if (mounted) { // Check if the widget is still in the tree
+        setState(() {
+          _isLoading = false;
+          debugPrint('LoginScreen: Setting _isLoading to false in finally block.');
+        });
+      } else {
+        debugPrint('LoginScreen: Widget no longer mounted, cannot set _isLoading to false.');
+      }
     }
-  }
-
-  void _showError(String message) {
-    setState(() => _errorMessage = message);
-    _shakeController.forward(from: 0);
   }
 
   Widget _inputField({
@@ -129,6 +144,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('LoginScreen: build method called. _isLoading: $_isLoading');
     final isSmall = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
@@ -217,9 +233,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       GlowingButton(
                         text: 'Login to My Cosmos',
                         icon: Icons.login,
-                        onPressed: _isLoading ? null : _attemptLogin,
+                        onPressed: _isLoading ? null : _attemptLogin, // Button disabled when _isLoading is true
                         gradientColors: [Colors.blue.shade700, Colors.cyan.shade600],
-                        disabled: _isLoading,
+                        disabled: _isLoading, // Pass disabled state to GlowingButton
                       ),
                       const SizedBox(height: 16),
                       TextButton(
@@ -235,6 +251,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                       TextButton(
                         onPressed: () {
                           debugPrint('LoginScreen: Forgot password clicked');
+                          context.go('/forgot-password'); // Ensure this navigates correctly
                         },
                         child: Text(
                           'Forgot Password?',

@@ -1,220 +1,274 @@
-import 'package:flutter/foundation.dart'; // For debugPrint
+// lib/services/profile_service.dart
+import 'package:flutter/foundation.dart'; // For kIsWeb
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Ensure this path is correct
-import 'package:image_picker/image_picker.dart'; // For XFile
-import 'dart:typed_data'; // For Uint8List
-import 'package:http/http.dart' as http; // Import for HTTP requests
-import 'dart:convert'; // For jsonDecode
-import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for base URL
+import 'package:image_picker/image_picker.dart'; // Keep this, as it's cross-platform for picking
+import 'dart:typed_data';
+import 'dart:async'; // For Completer
+import 'package:flutter/services.dart'; // For ByteData
+import 'package:bliindaidating/models/user_profile.dart';
+import 'package:uuid/uuid.dart';
 
-// Conditional import for File:
-import 'dart:io' if (dart.library.html) 'dart:html' as html;
-import 'dart:io' as io; // Explicitly import dart:io as 'io'
+// REMOVE these specific imports, as we now use a unified factory
+// import 'package:bliindaidating/platform_utils/platform_io_helpers.dart';
+// import 'package:bliindaidating/platform_utils/platform_html_helpers.dart';
 
-class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now, as it's common.
-  final SupabaseClient _supabaseClient;
+// NEW: Import our new unified platform helper factory and the abstract interface
+import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
+import 'package:bliindaidating/platform_utils/abstract_platform_helpers.dart';
 
+class ProfileService with ChangeNotifier {
+  final SupabaseClient _supabase;
   UserProfile? _userProfile;
   bool _isProfileLoaded = false;
+  bool _isLoading = false;
 
-  ProfileService(this._supabaseClient);
+  // NEW: Instantiate the single abstract platform helper from the factory
+  final AbstractPlatformHelpers _platformHelpers = getPlatformHelpers();
 
-  // Getters
+  ProfileService(this._supabase);
+
   UserProfile? get userProfile => _userProfile;
   bool get isProfileLoaded => _isProfileLoaded;
+  bool get isLoading => _isLoading;
 
-  // Method to set the user profile
-  void setUserProfile(UserProfile? profile) {
-    _userProfile = profile;
-    _isProfileLoaded = true; // Mark as loaded if profile is set
+  void _setLoading(bool value) {
+    _isLoading = value;
     notifyListeners();
-    debugPrint('ProfileService: User profile updated to: ${profile?.id}');
   }
 
-  // Method to clear the user profile (on sign out)
+  void _setProfileLoaded(bool value) {
+    _isProfileLoaded = value;
+    notifyListeners();
+  }
+
   void clearProfile() {
     _userProfile = null;
-    _isProfileLoaded = true; // Mark as loaded even if cleared
+    _isProfileLoaded = false;
     notifyListeners();
-    debugPrint('ProfileService: User profile cleared.');
+    debugPrint('ProfileService: Profile cleared.');
   }
 
-  /// Initializes the profile service by attempting to fetch the current user's profile.
-  /// This should be called once on app startup.
   Future<void> initializeProfile() async {
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser != null) {
-      await fetchUserProfile(id: currentUser.id); // Changed to named parameter
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      await fetchUserProfile(id: user.id);
     } else {
-      _userProfile = null; // Ensure no stale profile if no user logged in
+      clearProfile();
+      _setProfileLoaded(true);
     }
-    _isProfileLoaded = true; // Mark as loaded after initial check
-    notifyListeners(); // Notify listeners that initial load is complete
-    debugPrint('ProfileService: Initial profile load complete. User: ${currentUser?.id}, Profile exists: ${_userProfile != null}');
   }
 
   Future<UserProfile?> fetchUserProfile({required String id}) async {
+    _setLoading(true);
+    debugPrint('ProfileService: Attempting to fetch user profile for ID: $id');
     try {
-      debugPrint('ProfileService: Attempting to fetch profile for user ID: $id');
-      final response = await _supabaseClient
-          .from('user_profiles') // Corrected table name
-          .select()
-          .eq('id', id)
-          .single();
-
-      if (response != null) {
-        final Map<String, dynamic> data = response;
-        debugPrint('ProfileService: Raw data fetched: $data');
-        final profile = UserProfile.fromJson(data);
-        setUserProfile(profile); // Set the fetched profile
-        debugPrint('ProfileService: User profile fetched and set for ID: ${profile.id}');
-        return profile;
-      } else {
-        debugPrint('ProfileService: No profile found for user $id (response was null).');
-        _isProfileLoaded = true; // Mark as loaded even if null, to prevent endless retries
-        return null;
-      }
+      final response = await _supabase.from('profiles').select().eq('id', id).single();
+      _userProfile = UserProfile.fromJson(response);
+      debugPrint('ProfileService: User profile fetched: ${_userProfile?.toJson()}');
+      return _userProfile;
     } on PostgrestException catch (e) {
-      if (e.message.contains('rows not found') || e.code == 'PGRST116') { // Added PGRST116 check
-        debugPrint('ProfileService: Profile not found for user $id (likely first login or not yet created).');
-        _isProfileLoaded = true; // Mark as loaded even if not found
-        setUserProfile(null); // Clear local profile if not found
+      if (e.code == 'PGRST116') {
+        debugPrint('ProfileService: Profile not found for ID $id. This is expected for new users.');
+        _userProfile = UserProfile(
+          id: id,
+          email: _supabase.auth.currentUser?.email ?? 'N/A',
+          createdAt: DateTime.now().toUtc(),
+        );
+        return _userProfile;
+      } else {
+        debugPrint('ProfileService: Postgrest error fetching profile: ${e.message}');
+        _userProfile = null;
         return null;
       }
-      debugPrint('ProfileService Error fetching profile: ${e.message}');
+    } catch (e, stack) {
+      debugPrint('ProfileService: Unexpected error fetching profile: $e\n$stack');
+      _userProfile = null;
+      return null;
+    } finally {
+      _setProfileLoaded(true);
+      _setLoading(false);
+    }
+  }
+
+  Future<void> updateProfile({required UserProfile profile}) async {
+    _setLoading(true);
+    try {
+      final response = await _supabase.from('profiles').upsert(profile.toJson()).select().single();
+      _userProfile = UserProfile.fromJson(response);
+      debugPrint('ProfileService: Profile updated: ${_userProfile?.toJson()}');
+      notifyListeners();
+    } on PostgrestException catch (e) {
+      debugPrint('ProfileService: Postgrest error updating profile: ${e.message}');
       rethrow;
-    } catch (e) {
-      debugPrint('ProfileService Generic error fetching profile: $e');
+    } catch (e, stack) {
+      debugPrint('ProfileService: Unexpected error updating profile: $e\n$stack');
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<String?> uploadProfileAvatar(Uint8List fileBytes, String fileName) async {
+    try {
+      final String path = _supabase.auth.currentUser!.id;
+      final String filePath = '$path/$fileName';
+
+      final String publicUrl = await _supabase.storage.from('avatars').uploadBinary(
+            filePath,
+            fileBytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+          );
+      debugPrint('ProfileService: Avatar uploaded to: $publicUrl');
+
+      await _supabase.from('profiles').update({
+        'profile_picture_url': publicUrl,
+      }).eq('id', _supabase.auth.currentUser!.id);
+
+      _userProfile = _userProfile?.copyWith(profilePictureUrl: publicUrl);
+      notifyListeners();
+      return publicUrl;
+    } catch (e, stack) {
+      debugPrint('ProfileService: Error uploading avatar: $e\n$stack');
       rethrow;
     }
   }
 
-  Future<String> uploadAnalysisPhoto(String userId, dynamic file) async {
+  // This method will pick an image and prepare it for upload
+  // *** SIMPLIFIED: Now uses ImagePicker consistently across all platforms. ***
+  Future<Uint8List?> pickAndPrepareAvatar() async {
     try {
-      final String path = 'analysis_photos/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
-      Uint8List bytes;
-      if (file is XFile) {
-        bytes = await file.readAsBytes();
-      } else if (file is io.File) { // Explicitly check for dart:io.File
-        bytes = await file.readAsBytes();
-      } else if (file is html.File) { // Explicitly check for dart:html.File
-        final reader = html.FileReader();
-        reader.readAsArrayBuffer(file);
-        await reader.onLoadEnd.first; // Wait for the file to be read
-        if (reader.result is Uint8List) {
-          bytes = reader.result as Uint8List;
-        } else {
-          throw Exception("Failed to read HTML file as Uint8List.");
-        }
-      } else if (file is Uint8List) {
-        bytes = file;
+      if (image != null) {
+        debugPrint('ProfileService: Image picked: ${image.path}');
+        return await image.readAsBytes();
       } else {
-        throw Exception("Unsupported file type for uploadAnalysisPhoto");
+        debugPrint('ProfileService: No image selected.');
+        return null;
+      }
+    } catch (e, stack) {
+      debugPrint('ProfileService: Error picking or preparing avatar: $e\n$stack');
+      rethrow;
+    }
+  }
+
+  Future<void> handleAvatarUpload() async {
+    _setLoading(true);
+    try {
+      final Uint8List? imageBytes = await pickAndPrepareAvatar();
+      if (imageBytes != null) {
+        final String fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.png';
+        await uploadProfileAvatar(imageBytes, fileName);
+        debugPrint('ProfileService: Avatar upload process completed successfully.');
+      } else {
+        debugPrint('ProfileService: No image bytes received for upload.');
+      }
+    } catch (e) {
+      debugPrint('ProfileService: Failed to handle avatar upload process: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<String?> uploadAnalysisPhoto(String userId, String imagePath) async {
+    _setLoading(true);
+    try {
+      Uint8List? fileBytes;
+      String fileName = 'analysis_photo_${DateTime.now().millisecondsSinceEpoch}.png';
+
+      // *** CORRECTED: Explicitly handle web case as `readFileAsBytes` isn't meant for web paths. ***
+      if (kIsWeb) {
+        debugPrint('ProfileService: uploadAnalysisPhoto: `imagePath` is not directly readable on web. '
+                     'Consider refactoring to accept Uint8List directly or use a web-specific picker first.');
+        throw UnsupportedError('uploadAnalysisPhoto with imagePath not directly supported for local file paths on web. '
+                               'Provide Uint8List directly or use a web file picker first.');
+      } else {
+        // Use the unified `_platformHelpers` instance and its `readFileAsBytes` method for IO platforms.
+        fileBytes = await _platformHelpers.readFileAsBytes(imagePath);
       }
 
-      await Supabase.instance.client.storage
-          .from('profile_pictures') // Ensure this bucket exists in Supabase Storage
-          .uploadBinary(path, bytes,
-            fileOptions: const FileOptions(upsert: true),
+      if (fileBytes == null) {
+        debugPrint('ProfileService: No file bytes to upload for analysis photo.');
+        return null;
+      }
+
+      final String path = userId;
+      final String filePath = '$path/$fileName';
+
+      final String publicUrl = await _supabase.storage.from('analysis_photos').uploadBinary(
+            filePath,
+            fileBytes,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
           );
-
-      final String publicUrl = Supabase.instance.client.storage.from('profile_pictures').getPublicUrl(path);
-
-      debugPrint('Analysis photo uploaded to: $publicUrl');
+      debugPrint('ProfileService: Analysis photo uploaded to: $publicUrl');
       return publicUrl;
-    } on StorageException catch (e) {
-      debugPrint('Storage Error uploading analysis photo: ${e.message}');
+    } catch (e, stack) {
+      debugPrint('ProfileService: Error uploading analysis photo: $e\n$stack');
       rethrow;
-    } catch (e) {
-      debugPrint('General Error uploading analysis photo: $e');
-      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
   Future<void> insertProfile(UserProfile profile) async {
+    _setLoading(true);
     try {
-      debugPrint('ProfileService: Attempting to insert profile for user ID: ${profile.id}');
-      await _supabaseClient
-          .from('user_profiles') // Corrected table name
-          .insert(profile.toJson());
-
-      setUserProfile(profile);
-      debugPrint('Profile inserted successfully for user: ${profile.id}');
+      await _supabase.from('profiles').insert(profile.toJson());
+      _userProfile = profile;
+      notifyListeners();
+      debugPrint('ProfileService: Profile inserted.');
     } on PostgrestException catch (e) {
-      debugPrint('Supabase Error inserting profile: ${e.message}');
+      debugPrint('ProfileService: Postgrest error inserting profile: ${e.message}');
       rethrow;
-    } catch (e) {
-      debugPrint('General Error inserting profile: $e');
+    } catch (e, stack) {
+      debugPrint('ProfileService: Unexpected error inserting profile: $e\n$stack');
       rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  Future<void> updateProfile(UserProfile profile) async {
+  Future<List<UserProfile>> fetchAllUserProfiles() async {
+    _setLoading(true);
     try {
-      debugPrint('ProfileService: Attempting to update profile for user ID: ${profile.id}');
-      await _supabaseClient
-          .from('user_profiles') // Corrected table name
-          .update(profile.toJson())
-          .eq('id', profile.id);
-
-      setUserProfile(profile);
-      debugPrint('Profile updated successfully for user: ${profile.id}');
-    } on PostgrestException catch (e) {
-      debugPrint('Supabase Error updating profile: ${e.message}');
-      rethrow;
-    } catch (e) {
-      debugPrint('General Error updating profile: $e');
-      rethrow;
-    }
-  }
-
-  /// NEW: Fetches a list of all user profiles from the backend.
-  /// This is used for displaying profiles in Discovery/Matches.
-  Future<List<UserProfile>> fetchAllUserProfiles({int limit = 10, int offset = 0}) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/user-profiles/?limit=$limit&offset=$offset');
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        if (data['profiles'] is List) {
-          return List<UserProfile>.from(
-            (data['profiles'] as List).map((json) => UserProfile.fromJson(json))
-          );
-        }
-        debugPrint('Backend returned unexpected format for /user-profiles: ${response.body}');
-        return [];
-      } else {
-        debugPrint('Failed to fetch all user profiles: ${response.statusCode} - ${response.body}');
-        return [];
-      }
-    } catch (e) {
-      debugPrint('Error fetching all user profiles: $e');
+      final response = await _supabase.from('profiles').select();
+      final List<UserProfile> profiles = (response as List).map((json) => UserProfile.fromJson(json)).toList();
+      debugPrint('ProfileService: Fetched ${profiles.length} user profiles.');
+      return profiles;
+    } catch (e, stack) {
+      debugPrint('ProfileService: Error fetching all user profiles: $e\n$stack');
       return [];
+    } finally {
+      _setLoading(false);
     }
   }
 
-  /// NEW: Triggers the backend to generate dummy users in Supabase.
-  Future<String?> generateDummyUsers(int count) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/generate-dummy-users/');
-    final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({'count': count});
-
+  Future<String> generateDummyUsers(int count) async {
+    _setLoading(true);
     try {
-      final response = await http.post(url, headers: headers, body: body);
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        return data['message']; // Returns the success message
-      } else {
-        debugPrint('Failed to generate dummy users: ${response.statusCode} - ${response.body}');
-        final Map<String, dynamic> errorData = jsonDecode(response.body);
-        return errorData['error'] ?? 'Unknown error generating dummy users';
+      final uuid = Uuid();
+      for (int i = 0; i < count; i++) {
+        final dummyId = uuid.v4();
+        final dummyEmail = 'dummy_user_${DateTime.now().millisecondsSinceEpoch}_$i@example.com';
+        final dummyProfile = UserProfile(
+          id: dummyId,
+          email: dummyEmail,
+          displayName: 'Dummy User $i',
+          createdAt: DateTime.now().toUtc(),
+          isPhase1Complete: true,
+          isPhase2Complete: true,
+        );
+        await _supabase.from('profiles').insert(dummyProfile.toJson());
+        debugPrint('Generated dummy user: $dummyEmail');
       }
-    } catch (e) {
-      debugPrint('Error generating dummy users: $e');
-      return 'Network error: $e';
+      return 'Successfully generated $count dummy users.';
+    } catch (e, stack) {
+      debugPrint('ProfileService: Error generating dummy users: $e\n$stack');
+      return 'Failed to generate dummy users: $e';
+    } finally {
+      _setLoading(false);
     }
   }
 }

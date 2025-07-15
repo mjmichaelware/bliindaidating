@@ -27,16 +27,15 @@ dependencies:
   cross_file: ^0.3.3+1 # NEW: Add this line for XFile in profile_service.dart
   faker: ^2.1.0 # Or the latest version
 
-
-  # --- JSON Serialization Dependencies ---  <-- ADD THESE LINES
-json_annotation: ^4.9.0 # Updated to meet json_serializable's requirement
+  # --- JSON Serialization Dependencies ---
+  json_annotation: ^4.9.0 # Corrected indentation here
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-  # --- Code Generation Dependencies ---  <-- ADD THESE LINES
+  # --- Code Generation Dependencies ---
   build_runner: ^2.4.8 # Ensure this is the latest stable version
   json_serializable: ^6.7.1 # Ensure this is the latest stable version
 

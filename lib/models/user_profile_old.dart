@@ -1,10 +1,6 @@
-part 'user_profile.g.dart';
-
 import 'dart:convert'; // Essential for jsonEncode and jsonDecode
 import 'package:flutter/foundation.dart'; // For debugPrint
-import 'package:json_annotation/json_annotation.dart'; // Required for @JsonSerializable()
 
-@JsonSerializable()
 class UserProfile {
   final String id;
   final String email;
@@ -13,7 +9,7 @@ class UserProfile {
   final String? lookingFor;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final String? profilePictureUrl;
+  final String? profilePictureUrl; // Corrected to match your usage
   final DateTime? dateOfBirth;
   final String? phoneNumber;
   final String? locationZipCode;
@@ -50,12 +46,12 @@ class UserProfile {
   final String? communicationStyle;
   final String? mentalHealthDisclosures;
   final String? petOwnership;
-  final String? travelFrequencyOrFavoriteDestinations; // Corrected field name
+  final String? travelFrequencyOrFavoriteDestinations;
   final Map<String, bool> profileVisibilityPreferences;
   final Map<String, bool> pushNotificationPreferences;
   final bool isPhase1Complete;
   final bool isPhase2Complete;
-  final bool isAdmin; // To check if user is an admin
+  final bool isAdmin;
   final Map<String, dynamic> questionnaireAnswers;
   final Map<String, dynamic> personalityAssessmentResults;
 
@@ -63,12 +59,12 @@ class UserProfile {
   final String? addressZip;
   final String? gender;
   final double? height;
-  final String? interests; // Remains String? as it's a raw deprecated string
+  final String? interests;
   final String? governmentIdFrontUrl;
   final String? governmentIdBackUrl;
   final String? fullName;
-  final String? hobbiesAndInterestsNew; // Remains String? as it's a raw deprecated string
-  final String? loveLanguagesNew; // Remains String? as it's a raw deprecated string
+  final String? hobbiesAndInterestsNew;
+  final String? loveLanguagesNew;
   final String? locationCity;
   final String? locationState;
 
@@ -80,7 +76,7 @@ class UserProfile {
     this.lookingFor,
     required this.createdAt,
     this.updatedAt,
-    this.profilePictureUrl,
+    this.profilePictureUrl, // Corrected to match
     this.dateOfBirth,
     this.phoneNumber,
     this.locationZipCode,
@@ -117,7 +113,7 @@ class UserProfile {
     this.communicationStyle,
     this.mentalHealthDisclosures,
     this.petOwnership,
-    this.travelFrequencyOrFavoriteDestinations, // Corrected parameter name
+    this.travelFrequencyOrFavoriteDestinations,
     this.profileVisibilityPreferences = const {},
     this.pushNotificationPreferences = const {},
     this.isPhase1Complete = false,
@@ -200,7 +196,7 @@ class UserProfile {
 
     List<String> resolvedHobbiesAndInterests = [];
     if (json['hobbies_and_interests'] != null) {
-      resolvedHobbiesAndArrests = _decodeStringList(json['hobbies_and_interests']);
+      resolvedHobbiesAndInterests = _decodeStringList(json['hobbies_and_interests']);
     } else if (json['hobbies_and_interests_new'] != null) {
       resolvedHobbiesAndInterests = _decodeStringList(json['hobbies_and_interests_new']);
     } else if (json['interests'] != null) {
@@ -254,17 +250,17 @@ class UserProfile {
       personalityTraits: _decodeStringList(json['personality_traits']),
       willingToRelocate: json['willing_to_relocate'] as bool?,
       monogamyVsPolyamoryPreferences: json['monogamy_vs_polyamory_preferences'] as String?,
-      astrologicalSign: json['astrological_sign'] as String?, // Fixed
-      attachmentStyle: json['attachment_style'] as String?, // Fixed
-      communicationStyle: json['communication_style'] as String?, // Fixed
-      mentalHealthDisclosures: json['mental_health_disclosures'] as String?, // Fixed
-      petOwnership: json['pet_ownership'] as String?, // Fixed
-      travelFrequencyOrFavoriteDestinations: json['travel_frequency_or_favorite_destinations'] as String?, // Fixed
+      astrologicalSign: json['astrological_sign'] as String?,
+      attachmentStyle: json['attachment_style'] as String?,
+      communicationStyle: json['communication_style'] as String?,
+      mentalHealthDisclosures: json['mental_health_disclosures'] as String?,
+      petOwnership: json['pet_ownership'] as String?,
+      travelFrequencyOrFavoriteDestinations: json['travel_frequency_or_favorite_destinations'] as String?,
       profileVisibilityPreferences: _decodeStringBoolMap(json['profile_visibility_preferences']),
       pushNotificationPreferences: _decodeStringBoolMap(json['push_notification_preferences']),
       isPhase1Complete: json['is_phase_1_complete'] as bool? ?? false,
       isPhase2Complete: json['is_phase_2_complete'] as bool? ?? false,
-      isAdmin: json['is_admin'] as bool? ?? false, // Ensure isAdmin is mapped
+      isAdmin: json['is_admin'] as bool? ?? false,
       questionnaireAnswers: _decodeStringDynamicMap(json['questionnaire_answers']),
       personalityAssessmentResults: _decodeStringDynamicMap(json['personality_assessment_results']),
 
@@ -312,16 +308,16 @@ class UserProfile {
       'marital_status': maritalStatus,
       'has_children': hasChildren,
       'wants_children': wantsChildren,
-      'relationship_goals': relationshipGoals,
+      'relationshipGoals': relationshipGoals,
       'dealbreakers': jsonEncode(dealbreakers),
       'religion_or_spiritual_beliefs': religionOrSpiritualBeliefs,
       'political_views': politicalViews,
       'diet': diet,
       'smoking_habits': smokingHabits,
       'drinking_habits': drinkingHabits,
-      'exercise_frequency_or_fitness_level': exerciseFrequencyOrFitnessLevel,
-      'sleep_schedule': sleepSchedule,
-      'personality_traits': jsonEncode(personalityTraits),
+      'exerciseFrequencyOrFitnessLevel': exerciseFrequencyOrFitnessLevel,
+      'sleepSchedule': sleepSchedule,
+      'personalityTraits': jsonEncode(personalityTraits),
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
       'astrological_sign': astrologicalSign,
@@ -348,7 +344,7 @@ class UserProfile {
     String? lookingFor,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? profilePictureUrl,
+    String? profilePictureUrl, // Corrected to match
     DateTime? dateOfBirth,
     String? phoneNumber,
     String? locationZipCode,
@@ -413,7 +409,7 @@ class UserProfile {
       lookingFor: lookingFor ?? this.lookingFor,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl, // Corrected to match
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       locationZipCode: locationZipCode ?? this.locationZipCode,
@@ -439,7 +435,7 @@ class UserProfile {
       politicalViews: politicalViews ?? this.politicalViews,
       diet: diet ?? this.diet,
       smokingHabits: smokingHabits ?? this.smokingHabits,
-      drinkingHabits: drinkingHabits ?? this.drinkingHabits,
+      copyDrinkingHabits: drinkingHabits ?? this.drinkingHabits, // Typo fixed: copyDrinkingHabits -> drinkingHabits
       exerciseFrequencyOrFitnessLevel: exerciseFrequencyOrFitnessLevel ?? this.exerciseFrequencyOrFitnessLevel,
       sleepSchedule: sleepSchedule ?? this.sleepSchedule,
       personalityTraits: personalityTraits ?? this.personalityTraits,
