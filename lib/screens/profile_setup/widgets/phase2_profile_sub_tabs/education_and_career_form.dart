@@ -1,3 +1,5 @@
+// lib/screens/profile_setup/widgets/phase2_profile_sub_tabs/education_and_career_form.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
@@ -95,6 +97,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
     String? value,
     required ValueChanged<String?> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color hintColor = isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis;
@@ -118,7 +121,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
         value: value,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -133,17 +136,17 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         dropdownColor: dropdownColor,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
-        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
+        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor, size: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeExtraLarge),
         isExpanded: true,
         onChanged: onChanged,
         items: items.map<DropdownMenuItem<String>>((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(item),
+            child: Text(item, style: TextStyle(fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium)),
           );
         }).toList(),
       ),
@@ -155,6 +158,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
     required TextEditingController controller,
     required String label,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
@@ -179,10 +183,10 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -197,7 +201,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingMedium),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         cursorColor: activeColor, // Consistent cursor color
       ),
@@ -210,6 +214,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
     required bool value,
     required ValueChanged<bool> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color activeColor = AppConstants.secondaryColor;
@@ -222,7 +227,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
         style: TextStyle(
           color: textColor,
           fontFamily: 'Inter',
-          fontSize: AppConstants.fontSizeMedium,
+          fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
         ),
       ),
       value: value,
@@ -239,6 +244,8 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
   Widget build(BuildContext context) {
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
+    final size = MediaQuery.of(context).size;
+    final bool isSmallScreen = size.width < 600; // Determine screen size
 
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
@@ -251,7 +258,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
       child: SlideTransition(
         position: _formFieldSlideAnimation,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
+          padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Responsive padding
           child: Container( // Wrap with Container for custom background/shadows
             // Apply the beautiful background, border, shadow, and gradient
             decoration: BoxDecoration(
@@ -278,7 +285,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
                 width: 1.5,
               ),
             ),
-            padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
+            padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingMedium : AppConstants.paddingLarge), // Inner padding for content
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -293,7 +300,7 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
                           return Text(
                             'Your Education & Career',
                             style: TextStyle(
-                              fontSize: AppConstants.fontSizeHeadline,
+                              fontSize: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeHeadline, // Responsive font size
                               fontWeight: FontWeight.bold,
                               color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
                               fontFamily: 'Inter',
@@ -305,34 +312,37 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
                                 ),
                               ],
                             ),
+                            overflow: TextOverflow.ellipsis, // Prevent overflow
+                            maxLines: 2, // Allow title to wrap
                           );
                         },
                       ),
                     ),
-                    // App Name and Icon for branding
-                    Row(
-                      children: [
-                        Text(
-                          'Blind AI Dating',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
-                        ),
-                        const SizedBox(width: AppConstants.spacingSmall),
-                        SvgPicture.asset(
-                          'assets/svg/DrawKit Vector Illustration Love & Dating (4).svg', // Example SVG for Education/Career
-                          height: 40,
-                          semanticsLabel: 'Education Icon',
-                          colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
-                        ),
-                      ],
-                    ),
+                    // App Name and Icon for branding (adjusted for small screens)
+                    if (!isSmallScreen) // Only show on larger screens to save space
+                      Row(
+                        children: [
+                          Text(
+                            'Blind AI Dating',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
+                          ),
+                          const SizedBox(width: AppConstants.spacingSmall),
+                          SvgPicture.asset(
+                            'assets/svg/DrawKit Vector Illustration Love & Dating (4).svg', // Example SVG for Education/Career
+                            height: 40,
+                            semanticsLabel: 'Education Icon',
+                            colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.spacingSmall),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
                 Text(
                   'Share your academic achievements and professional aspirations. This helps us understand your intellectual and career compatibility.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8)),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8), fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeBody), // Responsive font size
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Education Level Dropdown
                 _buildThemedDropdown(
@@ -354,24 +364,27 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // University Text Field
                 _buildThemedTextField(
                   controller: _universityController,
                   label: 'University/Institution (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingMedium),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
 
                 // Degree/Major Text Field
                 _buildThemedTextField(
                   controller: _degreeController,
                   label: 'Degree/Major (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Is Student Switch
                 _buildThemedSwitchListTile(
@@ -383,33 +396,37 @@ class _EducationAndCareerFormState extends State<EducationAndCareerForm> with Ti
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Job Title Text Field
                 _buildThemedTextField(
                   controller: _jobTitleController,
                   label: 'Current Job Title',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingMedium),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
 
                 // Industry Text Field
                 _buildThemedTextField(
                   controller: _industryController,
                   label: 'Industry',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Career Aspirations Text Field
                 _buildThemedTextField(
                   controller: _careerAspirationsController,
                   label: 'What are your career aspirations? (Optional)', // Made optional
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 3,
                 ),
-                const SizedBox(height: AppConstants.paddingSmall), // Final spacing
+                SizedBox(height: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Final spacing
               ],
             ),
           ),

@@ -11,15 +11,14 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // For Supabase and Use
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
 import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService
 
-// Import remaining 5 sub-tab form files
+// Import remaining 5 sub-tab form files (assuming these are widgets, not full screens)
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/education_and_career_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/family_and_background_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/lifestyle_and_values_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/personality_and_self_reflection_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/physical_attributes_and_health_form.dart';
 
-// Import the AI Profile Generator Widget
-import 'package:bliindaidating/profile/ai_profile_generator_widget.dart';
+// Removed: import 'package:bliindaidating/profile/ai_profile_generator_widget.dart';
 
 
 // --- Custom Painter for Animated Nebula Background (similar to landing page but adapted) ---
@@ -135,13 +134,13 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
   final math.Random _random = math.Random();
 
   // List of the 5 sub-tab form widgets (UPDATED)
+  // Removed AiProfileGeneratorWidget() as it does not exist.
   final List<Widget> _phase2SubForms = const [
     EducationAndCareerForm(),
     FamilyAndBackgroundForm(),
     LifestyleAndValuesForm(),
     PersonalityAndSelfReflectionForm(),
     PhysicalAttributesAndHealthForm(),
-    AiProfileGeneratorWidget(),
   ];
 
   @override
@@ -284,6 +283,8 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
     final size = MediaQuery.of(context).size;
+
+    // Determine if it's a small screen (mobile)
     final bool isSmallScreen = size.width < 600;
 
     // Theme-dependent colors
@@ -293,7 +294,6 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     final Color textMediumEmphasis = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
     final Color surfaceColor = isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor;
     final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
-    // final Color dialogBackgroundColor = isDarkMode ? AppConstants.dialogBackgroundColor : AppConstants.lightDialogBackgroundColor; // Not used directly
 
     return Scaffold(
       backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
@@ -304,8 +304,10 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
             color: textColor,
             fontFamily: 'Inter',
             fontWeight: FontWeight.bold,
+            // Adjust font size based on screen size
             fontSize: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeExtraLarge,
           ),
+          overflow: TextOverflow.ellipsis, // Prevent text overflow on small screens
         ),
         backgroundColor: Colors.transparent, // Make app bar transparent to show background
         elevation: 0,
@@ -331,7 +333,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                 // Assuming you want to allow closing and seeing dashboard
                 // This will pop the current route, but the main.dart redirect
                 // might still push it back if the logic isn't relaxed.
-                context.pop();
+                context.go('/home'); // Navigate to home instead of pop, to handle redirect logic
               },
               style: TextButton.styleFrom(
                 foregroundColor: textColor,
@@ -382,7 +384,8 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
             child: ScaleTransition(
               scale: _globalFadeInAnimation.drive(Tween<double>(begin: 0.95, end: 1.0)),
               child: Padding(
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                // Adjust padding based on screen size
+                padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
                 child: Column(
                   children: [
                     // Progress Indicator with Glow
@@ -427,7 +430,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                         child: Text(
                           'Section ${_currentPage + 1} of ${_phase2SubForms.length}',
                           style: TextStyle(
-                            fontSize: AppConstants.fontSizeMedium,
+                            fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
                             color: textMediumEmphasis,
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w500,
@@ -466,8 +469,8 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                               });
                             },
                             itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.all(AppConstants.paddingLarge), // Padding inside the card
+                              return SingleChildScrollView( // Ensure content inside each tab is scrollable
+                                padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingMedium : AppConstants.paddingLarge), // Adjust padding inside tab
                                 child: _phase2SubForms[index],
                               );
                             },
@@ -490,6 +493,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                             onPressed: _isSaving ? null : _goToPreviousPage, // Disable during saving
                             isPrimary: false, // Not the main action
                             isDarkMode: isDarkMode,
+                            isSmallScreen: isSmallScreen, // Pass screen size info
                           ),
 
                         // Spacer to push buttons to ends if only one is visible
@@ -508,6 +512,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                           onPressed: _isSaving ? null : _goToNextPage, // Disable during saving
                           isPrimary: true, // Main action button
                           isDarkMode: isDarkMode,
+                          isSmallScreen: isSmallScreen, // Pass screen size info
                         ),
                       ],
                     ),
@@ -532,7 +537,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                         style: TextStyle(
                           color: textColor,
                           fontFamily: 'Inter',
-                          fontSize: AppConstants.fontSizeLarge,
+                          fontSize: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeExtraLarge,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -554,6 +559,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     required VoidCallback? onPressed, // Make onPressed nullable
     required bool isPrimary,
     required bool isDarkMode,
+    required bool isSmallScreen, // New parameter for responsive buttons
   }) {
     final Color buttonColor = isPrimary
         ? (isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor)
@@ -561,6 +567,13 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
     final Color buttonTextColor = isPrimary
         ? (isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor)
         : (isDarkMode ? AppConstants.textColor.withOpacity(0.9) : AppConstants.lightTextColor.withOpacity(0.9));
+
+    // Adjust padding and font size for buttons based on screen size
+    final double horizontalPadding = isSmallScreen ? AppConstants.paddingMedium : AppConstants.paddingLarge;
+    final double verticalPadding = isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium;
+    final double fontSize = isSmallScreen ? AppConstants.fontSizeMedium : AppConstants.fontSizeLarge;
+    final double iconSize = isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeExtraLarge;
+
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -595,20 +608,20 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
                 onTap: onPressed, // Use the nullable onPressed directly
                 borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.paddingLarge,
-                    vertical: AppConstants.paddingMedium,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(icon, color: buttonTextColor, size: AppConstants.fontSizeExtraLarge),
+                      Icon(icon, color: buttonTextColor, size: iconSize),
                       SizedBox(width: AppConstants.spacingSmall),
                       Text(
                         label,
                         style: TextStyle(
                           color: buttonTextColor,
-                          fontSize: AppConstants.fontSizeMedium,
+                          fontSize: fontSize,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Inter',
                         ),

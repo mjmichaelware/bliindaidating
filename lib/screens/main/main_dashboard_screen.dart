@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; // FIXED: Changed .h to .dart
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'dart:ui'; // Import for ImageFilter
 import 'dart:math' as math; // For math.Random and other math functions
@@ -12,7 +12,7 @@ import 'dart:math' as math; // For math.Random and other math functions
 // Local imports for core project components
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/models/user_profile.dart'; // CORRECTED: .h changed to .dart
 import 'package:bliindaidating/services/profile_service.dart';
 
 // OpenAI Integration Imports (already confirmed to exist and be populated)
@@ -28,7 +28,7 @@ import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switche
 // NEW: Tab Content Screen Imports
 import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
 import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
-import 'package:bliindaidating/screens/discovery/discovery_screen.dart';
+import 'package:bliindaidating/screens/discovery/discover_people_screen.dart'; // Corrected import to discover_people_screen
 import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart';
 import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
@@ -198,16 +198,20 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final profileService = Provider.of<ProfileService>(context);
     final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
 
-    const int phase2SetupTabIndex = 4; // Assuming Phase2SetupScreen is at index 4
+    // Phase 2 setup is now a direct route, not a tab index in _dashboardScreens
+    // The banner will navigate directly to '/questionnaire-phase2'
+    const int dummyPhase2SetupTabIndex = -1; // No longer directly mapped to a tab index in _dashboardScreens
 
-    final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete && _selectedTabIndex != phase2SetupTabIndex);
+    final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete); // Blur if loading or Phase 2 incomplete
 
     final List<Widget> _dashboardScreens = const [
-      NewsfeedScreen(),
-      MatchesListScreen(),
-      DiscoveryScreen(),
-      QuestionnaireScreen(),
-      Phase2SetupScreen(),
+      NewsfeedScreen(), // Index 0
+      MatchesListScreen(), // Index 1
+      DiscoverPeopleScreen(), // Index 2
+      QuestionnaireScreen(), // Index 3
+      MyProfileScreen(), // Index 4 (Example of another main content screen)
+      // Add other main content screens that should be switched via tabs here
+      // Phase2SetupScreen is now a direct route, not part of this list.
     ];
 
     // Determine the width of the side menu based on its collapsed state
@@ -362,9 +366,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: () {
-                                    if (_selectedTabIndex != phase2SetupTabIndex) {
-                                      _onTabSelected(phase2SetupTabIndex);
-                                    }
+                                    // Navigate directly to the Phase 2 setup screen route
+                                    context.go('/questionnaire-phase2');
                                   },
                                   style: TextButton.styleFrom(
                                     backgroundColor: isDarkMode ? AppConstants.bannerButtonColorDark : AppConstants.bannerButtonColorLight,

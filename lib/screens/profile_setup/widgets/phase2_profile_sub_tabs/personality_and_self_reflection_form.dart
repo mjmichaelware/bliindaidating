@@ -1,3 +1,5 @@
+// lib/screens/profile_setup/widgets/phase2_profile_sub_tabs/personality_and_self_reflection_form.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
@@ -104,6 +106,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
     String? value,
     required ValueChanged<String?> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color hintColor = isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis;
@@ -127,7 +130,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
         value: value,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -142,17 +145,17 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         dropdownColor: dropdownColor,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
-        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
+        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor, size: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeExtraLarge),
         isExpanded: true,
         onChanged: onChanged,
         items: items.map<DropdownMenuItem<String>>((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(item),
+            child: Text(item, style: TextStyle(fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium)),
           );
         }).toList(),
       ),
@@ -164,6 +167,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
     required TextEditingController controller,
     required String label,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
@@ -188,10 +192,10 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -206,7 +210,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingMedium),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         cursorColor: activeColor,
       ),
@@ -219,6 +223,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
     required double value,
     required ValueChanged<double> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color activeColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
@@ -232,7 +237,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
           style: TextStyle(
             color: textColor,
             fontFamily: 'Inter',
-            fontSize: AppConstants.fontSizeMedium,
+            fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -243,10 +248,10 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
             thumbColor: activeColor,
             overlayColor: activeColor.withOpacity(0.2),
             valueIndicatorColor: activeColor,
-            valueIndicatorTextStyle: TextStyle(color: isDarkMode ? Colors.black : Colors.white, fontFamily: 'Inter'),
-            trackHeight: 4.0,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 20.0),
+            valueIndicatorTextStyle: TextStyle(color: isDarkMode ? Colors.black : Colors.white, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
+            trackHeight: isSmallScreen ? 3.0 : 4.0,
+            thumbShape: RoundSliderThumbShape(enabledThumbRadius: isSmallScreen ? 8.0 : 10.0),
+            overlayShape: RoundSliderOverlayShape(overlayRadius: isSmallScreen ? 16.0 : 20.0),
           ),
           child: Slider(
             value: value,
@@ -257,7 +262,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
             onChanged: onChanged,
           ),
         ),
-        const SizedBox(height: AppConstants.spacingSmall),
+        SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
       ],
     );
   }
@@ -268,6 +273,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
     required bool value,
     required ValueChanged<bool> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color activeColor = AppConstants.secondaryColor;
@@ -280,7 +286,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
         style: TextStyle(
           color: textColor,
           fontFamily: 'Inter',
-          fontSize: AppConstants.fontSizeMedium,
+          fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
         ),
       ),
       value: value,
@@ -298,6 +304,8 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
   Widget build(BuildContext context) {
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
+    final size = MediaQuery.of(context).size;
+    final bool isSmallScreen = size.width < 600; // Determine screen size
 
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
@@ -310,7 +318,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
       child: SlideTransition(
         position: _formFieldSlideAnimation,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
+          padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Responsive padding
           child: Container( // Wrap with Container for custom background/shadows
             // Apply the beautiful background, border, shadow, and gradient
             decoration: BoxDecoration(
@@ -337,7 +345,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                 width: 1.5,
               ),
             ),
-            padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
+            padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingMedium : AppConstants.paddingLarge), // Inner padding for content
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -352,7 +360,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                           return Text(
                             'Your Personality & Self-Reflection',
                             style: TextStyle(
-                              fontSize: AppConstants.fontSizeHeadline,
+                              fontSize: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeHeadline, // Responsive font size
                               fontWeight: FontWeight.bold,
                               color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
                               fontFamily: 'Inter',
@@ -364,34 +372,37 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                                 ),
                               ],
                             ),
+                            overflow: TextOverflow.ellipsis, // Prevent overflow
+                            maxLines: 2, // Allow title to wrap
                           );
                         },
                       ),
                     ),
-                    // App Name and Icon for branding
-                    Row(
-                      children: [
-                        Text(
-                          'Blind AI Dating',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
-                        ),
-                        const SizedBox(width: AppConstants.spacingSmall),
-                        SvgPicture.asset(
-                          'assets/svg/DrawKit Vector Illustration Love & Dating (8).svg', // Example SVG for Personality
-                          height: 40,
-                          semanticsLabel: 'Personality Icon',
-                          colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
-                        ),
-                      ],
-                    ),
+                    // App Name and Icon for branding (adjusted for small screens)
+                    if (!isSmallScreen) // Only show on larger screens to save space
+                      Row(
+                        children: [
+                          Text(
+                            'Blind AI Dating',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
+                          ),
+                          const SizedBox(width: AppConstants.spacingSmall),
+                          SvgPicture.asset(
+                            'assets/svg/DrawKit Vector Illustration Love & Dating (8).svg', // Example SVG for Personality
+                            height: 40,
+                            semanticsLabel: 'Personality Icon',
+                            colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.spacingSmall),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
                 Text(
                   'Dive deeper into your personality and how you reflect on yourself. This helps us understand your unique character and find truly compatible minds.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8)),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8), fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeBody), // Responsive font size
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Personality Type Dropdown
                 _buildThemedDropdown(
@@ -409,8 +420,9 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Decision-Making Style Dropdown
                 _buildThemedDropdown(
@@ -429,8 +441,9 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Astrological Sign Dropdown (NEW)
                 _buildThemedDropdown(
@@ -447,8 +460,9 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Attachment Style Dropdown (NEW)
                 _buildThemedDropdown(
@@ -464,8 +478,9 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Communication Style Dropdown (NEW)
                 _buildThemedDropdown(
@@ -481,8 +496,9 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Mental Health Disclosures Switch (NEW)
                 _buildThemedSwitchListTile(
@@ -494,20 +510,21 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Sliders for Big Five Personality Traits
                 Text(
                   'Rate yourself on these personality dimensions (1-10):',
                   style: TextStyle(
-                    fontSize: AppConstants.fontSizeMedium,
+                    fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                     fontFamily: 'Inter',
                   ),
                 ),
-                const SizedBox(height: AppConstants.spacingSmall),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
                 _buildThemedSlider(
                   label: 'Openness to Experience (Curious vs. Cautious)',
                   value: _opennessToExperience,
@@ -517,6 +534,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
                 _buildThemedSlider(
                   label: 'Conscientiousness (Organized vs. Easy-going)',
@@ -527,6 +545,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
                 _buildThemedSlider(
                   label: 'Extraversion (Outgoing vs. Solitary)',
@@ -537,6 +556,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
                 _buildThemedSlider(
                   label: 'Agreeableness (Friendly vs. Challenging)',
@@ -547,6 +567,7 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
                 _buildThemedSlider(
                   label: 'Neuroticism (Sensitive vs. Confident)',
@@ -557,44 +578,49 @@ class _PersonalityAndSelfReflectionFormState extends State<PersonalityAndSelfRef
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Strengths Text Field
                 _buildThemedTextField(
                   controller: _strengthsController,
                   label: 'What are your greatest strengths? (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 3,
                 ),
-                const SizedBox(height: AppConstants.spacingMedium),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
 
                 // Weaknesses Text Field
                 _buildThemedTextField(
                   controller: _weaknessesController,
                   label: 'What are areas you\'re working to improve? (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 3,
                 ),
-                const SizedBox(height: AppConstants.spacingMedium),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
 
                 // Self-Description Text Field
                 _buildThemedTextField(
                   controller: _selfDescriptionController,
                   label: 'Describe yourself in three words (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 1,
                 ),
-                const SizedBox(height: AppConstants.spacingMedium),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
 
                 // Life Philosophy Text Field
                 _buildThemedTextField(
                   controller: _lifePhilosophyController,
                   label: 'What\'s your guiding life philosophy or motto? (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 2,
                 ),
-                const SizedBox(height: AppConstants.paddingSmall), // Final spacing
+                SizedBox(height: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Final spacing
               ],
             ),
           ),

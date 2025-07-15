@@ -1,3 +1,5 @@
+// lib/screens/profile_setup/widgets/phase2_profile_sub_tabs/lifestyle_and_values_form.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
@@ -93,6 +95,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
     String? value,
     required ValueChanged<String?> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color hintColor = isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis;
@@ -116,7 +119,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
         value: value,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -131,17 +134,17 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         dropdownColor: dropdownColor,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
-        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
+        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor, size: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeExtraLarge),
         isExpanded: true,
         onChanged: onChanged,
         items: items.map<DropdownMenuItem<String>>((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(item),
+            child: Text(item, style: TextStyle(fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium)),
           );
         }).toList(),
       ),
@@ -153,6 +156,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
     required TextEditingController controller,
     required String label,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
@@ -177,10 +181,10 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -195,7 +199,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingMedium),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         cursorColor: activeColor,
       ),
@@ -208,6 +212,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
     required bool value,
     required ValueChanged<bool?> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color activeColor = AppConstants.secondaryColor;
@@ -220,7 +225,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
         style: TextStyle(
           color: textColor,
           fontFamily: 'Inter',
-          fontSize: AppConstants.fontSizeMedium,
+          fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
         ),
       ),
       value: value,
@@ -230,7 +235,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
       tileColor: tileColor, // Apply tile background
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadius)), // Rounded corners for tile
       controlAffinity: ListTileControlAffinity.leading, // Checkbox on the left
-      contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall, vertical: AppConstants.paddingExtraSmall), // Adjusted padding
+      contentPadding: EdgeInsets.symmetric(horizontal: isSmallScreen ? AppConstants.paddingExtraSmall : AppConstants.paddingSmall, vertical: AppConstants.paddingExtraSmall), // Adjusted padding
     );
   }
 
@@ -238,6 +243,8 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
   Widget build(BuildContext context) {
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
+    final size = MediaQuery.of(context).size;
+    final bool isSmallScreen = size.width < 600; // Determine screen size
 
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
@@ -250,7 +257,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
       child: SlideTransition(
         position: _formFieldSlideAnimation,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
+          padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Responsive padding
           child: Container( // Wrap with Container for custom background/shadows
             // Apply the beautiful background, border, shadow, and gradient
             decoration: BoxDecoration(
@@ -277,7 +284,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                 width: 1.5,
               ),
             ),
-            padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
+            padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingMedium : AppConstants.paddingLarge), // Inner padding for content
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -292,7 +299,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                           return Text(
                             'Your Lifestyle & Values',
                             style: TextStyle(
-                              fontSize: AppConstants.fontSizeHeadline,
+                              fontSize: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeHeadline, // Responsive font size
                               fontWeight: FontWeight.bold,
                               color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
                               fontFamily: 'Inter',
@@ -304,34 +311,37 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                                 ),
                               ],
                             ),
+                            overflow: TextOverflow.ellipsis, // Prevent overflow
+                            maxLines: 2, // Allow title to wrap
                           );
                         },
                       ),
                     ),
-                    // App Name and Icon for branding
-                    Row(
-                      children: [
-                        Text(
-                          'Blind AI Dating',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
-                        ),
-                        const SizedBox(width: AppConstants.spacingSmall),
-                        SvgPicture.asset(
-                          'assets/svg/DrawKit Vector Illustration Love & Dating (7).svg', // Example SVG for Lifestyle/Values
-                          height: 40,
-                          semanticsLabel: 'Lifestyle Icon',
-                          colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
-                        ),
-                      ],
-                    ),
+                    // App Name and Icon for branding (adjusted for small screens)
+                    if (!isSmallScreen) // Only show on larger screens to save space
+                      Row(
+                        children: [
+                          Text(
+                            'Blind AI Dating',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
+                          ),
+                          const SizedBox(width: AppConstants.spacingSmall),
+                          SvgPicture.asset(
+                            'assets/svg/DrawKit Vector Illustration Love & Dating (7).svg', // Example SVG for Lifestyle/Values
+                            height: 40,
+                            semanticsLabel: 'Lifestyle Icon',
+                            colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.spacingSmall),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
                 Text(
                   'Share insights into your daily life, social preferences, and what truly matters to you. This helps us find partners who align with your core values.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8)),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8), fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeBody), // Responsive font size
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Social Preference Dropdown
                 _buildThemedDropdown(
@@ -350,8 +360,9 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Fitness Level Dropdown (Maps to exerciseFrequencyOrFitnessLevel)
                 _buildThemedDropdown(
@@ -370,8 +381,9 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Dietary Preference Dropdown (Maps to diet)
                 _buildThemedDropdown(
@@ -395,47 +407,51 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Daily Routine Text Field
                 _buildThemedTextField(
                   controller: _dailyRoutineController,
                   label: 'Describe your typical daily routine (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 3,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Important Values Text Field
                 _buildThemedTextField(
                   controller: _importantValuesController,
                   label: 'What are 3-5 values most important to you in life and a partner?',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 3,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Stress Management Text Field
                 _buildThemedTextField(
                   controller: _stressManagementController,
                   label: 'How do you typically manage stress? (Optional)', // Made optional
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 2,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Habits Checkboxes
                 Text(
                   'Which of these habits apply to you?',
                   style: TextStyle(
-                    fontSize: AppConstants.fontSizeMedium,
+                    fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                     fontFamily: 'Inter',
                   ),
                 ),
-                const SizedBox(height: AppConstants.spacingSmall),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
                 Column(
                   children: [
                     _buildThemedCheckboxListTile(
@@ -451,6 +467,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                     _buildThemedCheckboxListTile(
                       title: 'Night Owl',
@@ -465,6 +482,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                     _buildThemedCheckboxListTile(
                       title: 'Organized',
@@ -479,6 +497,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                     _buildThemedCheckboxListTile(
                       title: 'Spontaneous',
@@ -493,6 +512,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                     _buildThemedCheckboxListTile(
                       title: 'Loves to cook',
@@ -507,6 +527,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                     _buildThemedCheckboxListTile(
                       title: 'Enjoys trying new restaurants',
@@ -521,6 +542,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                     _buildThemedCheckboxListTile(
                       title: 'Enjoys quiet nights in',
@@ -535,6 +557,7 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                     _buildThemedCheckboxListTile(
                       title: 'Loves to travel',
@@ -549,10 +572,11 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
                         });
                       },
                       isDarkMode: isDarkMode,
+                      isSmallScreen: isSmallScreen,
                     ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.paddingSmall), // Final spacing
+                SizedBox(height: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Final spacing
               ],
             ),
           ),
@@ -561,4 +585,3 @@ class _LifestyleAndValuesFormState extends State<LifestyleAndValuesForm> with Ti
     );
   }
 }
-

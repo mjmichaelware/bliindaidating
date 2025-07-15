@@ -1,3 +1,5 @@
+// lib/screens/profile_setup/widgets/phase2_profile_sub_tabs/family_and_background_form.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
@@ -94,6 +96,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
     String? value,
     required ValueChanged<String?> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color hintColor = isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis;
@@ -117,7 +120,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
         value: value,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -132,17 +135,17 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         dropdownColor: dropdownColor,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
-        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
+        icon: Icon(Icons.arrow_drop_down_rounded, color: hintColor, size: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeExtraLarge),
         isExpanded: true,
         onChanged: onChanged,
         items: items.map<DropdownMenuItem<String>>((String item) {
           return DropdownMenuItem<String>(
             value: item,
-            child: Text(item),
+            child: Text(item, style: TextStyle(fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium)),
           );
         }).toList(),
       ),
@@ -154,6 +157,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
     required TextEditingController controller,
     required String label,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
   }) {
@@ -178,10 +182,10 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: AppConstants.fontSizeMedium),
+        style: TextStyle(color: textColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter'),
+          labelStyle: TextStyle(color: hintColor, fontFamily: 'Inter', fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium),
           filled: true,
           fillColor: fillColor,
           border: OutlineInputBorder(
@@ -196,7 +200,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             borderSide: BorderSide(color: activeColor, width: 2.0), // Use activeColor for focused border
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingMedium),
+          contentPadding: EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium),
         ),
         cursorColor: activeColor, // Consistent cursor color
       ),
@@ -209,6 +213,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
     required bool value,
     required ValueChanged<bool> onChanged,
     required bool isDarkMode,
+    required bool isSmallScreen, // Added for responsiveness
   }) {
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color activeColor = AppConstants.secondaryColor;
@@ -221,7 +226,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
         style: TextStyle(
           color: textColor,
           fontFamily: 'Inter',
-          fontSize: AppConstants.fontSizeMedium,
+          fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeMedium,
         ),
       ),
       value: value,
@@ -238,6 +243,8 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
   Widget build(BuildContext context) {
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
+    final size = MediaQuery.of(context).size;
+    final bool isSmallScreen = size.width < 600; // Determine screen size
 
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color textHighEmphasis = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
@@ -250,7 +257,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
       child: SlideTransition(
         position: _formFieldSlideAnimation,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium), // Consistent padding
+          padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Responsive padding
           child: Container( // Wrap with Container for custom background/shadows
             // Apply the beautiful background, border, shadow, and gradient
             decoration: BoxDecoration(
@@ -277,7 +284,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                 width: 1.5,
               ),
             ),
-            padding: const EdgeInsets.all(AppConstants.paddingLarge), // Inner padding for content
+            padding: EdgeInsets.all(isSmallScreen ? AppConstants.paddingMedium : AppConstants.paddingLarge), // Inner padding for content
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -292,7 +299,7 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                           return Text(
                             'Your Family & Background',
                             style: TextStyle(
-                              fontSize: AppConstants.fontSizeHeadline,
+                              fontSize: isSmallScreen ? AppConstants.fontSizeLarge : AppConstants.fontSizeHeadline, // Responsive font size
                               fontWeight: FontWeight.bold,
                               color: Color.lerp(textHighEmphasis, secondaryColor, _glowPulseAnimation.value),
                               fontFamily: 'Inter',
@@ -304,43 +311,47 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                                 ),
                               ],
                             ),
+                            overflow: TextOverflow.ellipsis, // Prevent overflow
+                            maxLines: 2, // Allow title to wrap
                           );
                         },
                       ),
                     ),
-                    // App Name and Icon for branding
-                    Row(
-                      children: [
-                        Text(
-                          'Blind AI Dating',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
-                        ),
-                        const SizedBox(width: AppConstants.spacingSmall),
-                        SvgPicture.asset(
-                          'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg', // Example SVG for Family
-                          height: 40,
-                          semanticsLabel: 'Family Icon',
-                          colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
-                        ),
-                      ],
-                    ),
+                    // App Name and Icon for branding (adjusted for small screens)
+                    if (!isSmallScreen) // Only show on larger screens to save space
+                      Row(
+                        children: [
+                          Text(
+                            'Blind AI Dating',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.7)),
+                          ),
+                          const SizedBox(width: AppConstants.spacingSmall),
+                          SvgPicture.asset(
+                            'assets/svg/DrawKit Vector Illustration Love & Dating (10).svg', // Example SVG for Family
+                            height: 40,
+                            semanticsLabel: 'Family Icon',
+                            colorFilter: ColorFilter.mode(activeColor, BlendMode.srcIn),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.spacingSmall),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
                 Text(
                   'Share details about your family and upbringing. This helps us understand your values and background, contributing to deeper connections.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8)),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontFamily: 'Inter', color: textColor.withOpacity(0.8), fontSize: isSmallScreen ? AppConstants.fontSizeSmall : AppConstants.fontSizeBody), // Responsive font size
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Siblings Text Field
                 _buildThemedTextField(
                   controller: _siblingsController,
                   label: 'How many siblings do you have? (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Family Importance Dropdown
                 _buildThemedDropdown(
@@ -360,8 +371,9 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Parental Status Dropdown
                 _buildThemedDropdown(
@@ -381,8 +393,9 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Has Children Switch
                 _buildThemedSwitchListTile(
@@ -397,9 +410,10 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
                 if (_hasChildren) ...[
-                  const SizedBox(height: AppConstants.spacingMedium),
+                  SizedBox(height: isSmallScreen ? AppConstants.spacingSmall : AppConstants.spacingMedium), // Responsive spacing
                   // Children Status Dropdown (conditionally displayed)
                   _buildThemedDropdown(
                     label: 'Children live...',
@@ -417,9 +431,10 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                       });
                     },
                     isDarkMode: isDarkMode,
+                    isSmallScreen: isSmallScreen,
                   ),
                 ],
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Wants Children Switch (NEW FIELD)
                 _buildThemedSwitchListTile(
@@ -431,26 +446,29 @@ class _FamilyAndBackgroundFormState extends State<FamilyAndBackgroundForm> with 
                     });
                   },
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge), // Spacing after new switch
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Childhood Description Text Field
                 _buildThemedTextField(
                   controller: _childhoodDescriptionController,
                   label: 'Describe your childhood environment or upbringing (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 3,
                 ),
-                const SizedBox(height: AppConstants.spacingLarge),
+                SizedBox(height: isSmallScreen ? AppConstants.spacingMedium : AppConstants.spacingLarge), // Responsive spacing
 
                 // Cultural Background Text Field
                 _buildThemedTextField(
                   controller: _culturalBackgroundController,
                   label: 'Cultural background or traditions important to you (Optional)',
                   isDarkMode: isDarkMode,
+                  isSmallScreen: isSmallScreen,
                   maxLines: 2,
                 ),
-                const SizedBox(height: AppConstants.paddingSmall), // Final spacing
+                SizedBox(height: isSmallScreen ? AppConstants.paddingSmall : AppConstants.paddingMedium), // Final spacing
               ],
             ),
           ),
