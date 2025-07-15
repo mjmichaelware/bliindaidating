@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/services/questionaire_service.dart'; // Import QuestionnaireService
-import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for user context
-import 'package:bliindaidating/models/questionnaire/question.dart'; // Import Question model
-import 'package:bliindaidating/widgets/common/loading_indicator_widget.dart'; // Assuming you have this
-import 'package:bliindaidating/widgets/common/empty_state_widget.dart'; // Assuming you have this
-import 'package:bliindaidating/screens/questionnaire/widgets/answer_input_field.dart'; // Import your AnswerInputField
+import 'package:bliindaidating/services/questionnaire_service.dart'; // Corrected import
+import 'package:bliindaidating/widgets/common/loading_indicator_widget.dart';
+import 'package:bliindaidating/widgets/common/empty_state_widget.dart'; // FIXED: Added import for EmptyStateWidget
+import 'package:bliindaidating/widgets/questionnaire/answer_input_field.dart';
+import 'package:bliindaidating/widgets/questionnaire/question_card.dart'; // FIXED: Added import for QuestionCard
+import 'package:bliindaidating/widgets/questionnaire/question_progress_indicator.dart'; // FIXED: Added import for QuestionProgressIndicator
+import 'package:bliindaidating/models/questionnaire/question.dart'; // Import the Question model
+import 'package:go_router/go_router.dart'; // For navigation
+import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for currentUser.userId
 
 class QuestionnaireScreen extends StatefulWidget {
   const QuestionnaireScreen({super.key});
@@ -20,43 +23,34 @@ class QuestionnaireScreen extends StatefulWidget {
 
 class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
-  List<Question> _questions = []; // Dynamic list of questions
-  Map<String, String> _answers = {}; // Store answers by question ID
+  final TextEditingController _answerController = TextEditingController();
+  List<Question> _questions = []; // Will be fetched from service
   bool _isLoadingQuestions = true;
-  String? _errorLoadingQuestions;
+  String? _questionsError;
+
+  Map<String, String> _answers = {}; // Store answers by question ID
 
   @override
   void initState() {
     super.initState();
-    _fetchQuestions(); // Fetch questions on init
+    _fetchQuestionsAndInitialize();
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _fetchQuestions() async {
+  Future<void> _fetchQuestionsAndInitialize() async {
     setState(() {
       _isLoadingQuestions = true;
-      _errorLoadingQuestions = null;
+      _questionsError = null;
     });
     try {
       final questionnaireService = Provider.of<QuestionnaireService>(context, listen: false);
       final fetchedQuestions = await questionnaireService.fetchQuestions();
       setState(() {
         _questions = fetchedQuestions;
-        // Initialize answers map with any existing answers from user profile or empty strings
-        // For now, it initializes with empty strings. Later, you'd load from userProfile.questionnaireAnswers
-        for (var q in _questions) {
-          _answers[q.id] = ''; // Initialize with empty string
-        }
+        questionnaireService.totalQuestions = _questions.length; // Set total questions
       });
     } catch (e) {
       setState(() {
-        _errorLoadingQuestions = 'Failed to load questions: $e';
+        _questionsError = 'Failed to load questions: $e';
         debugPrint('Error fetching questions: $e');
       });
     } finally {
@@ -66,113 +60,95 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     }
   }
 
-  void _onAnswerChanged(String questionId, String answer) {
-    setState(() {
-      _answers[questionId] = answer;
-    });
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _answerController.dispose();
+    super.dispose();
   }
 
-  Future<void> _getAiSuggestion(String questionId, String questionText) async {
+  void _nextQuestion() {
     final questionnaireService = Provider.of<QuestionnaireService>(context, listen: false);
-    final profileService = Provider.of<ProfileService>(context, listen: false);
-
-    final currentUserProfile = profileService.userProfile;
-    if (currentUserProfile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete your basic profile first to get AI suggestions.')),
-      );
-      return;
-    }
-
-    // Prepare user context for the AI
-    final Map<String, dynamic> userContext = currentUserProfile.toJson();
-    // Add existing answers to context if helpful for AI
-    userContext['existing_answers'] = _answers;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Getting AI suggestion...')),
-    );
-
-    final suggestedAnswer = await questionnaireService.getAiSuggestedAnswer(questionText, userContext);
-
-    if (suggestedAnswer != null) {
-      setState(() {
-        _answers[questionId] = suggestedAnswer;
-      });
-      // Find the TextEditingController associated with this question and update it
-      // This requires a more robust way to manage controllers, e.g., a Map<String, TextEditingController>
-      // For now, this just updates the state, and the AnswerInputField will rebuild.
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to get AI suggestion. Try again.')),
-      );
-    }
-  }
-
-  void _goToNextPage() {
-    if (_currentPage < _questions.length - 1) { // Use _questions.length
+    if (_pageController.page!.toInt() < _questions.length - 1) {
       _pageController.nextPage(
         duration: AppConstants.animationDurationMedium,
-        curve: Curves.easeInOut,
+        curve: Curves.easeOut,
       );
+      questionnaireService.nextQuestion();
+      // Populate answer for the *new* current question if it exists
+      final nextQuestionId = _questions[_pageController.page!.toInt() + 1].id;
+      _answerController.text = _answers[nextQuestionId] ?? '';
     } else {
       _submitQuestionnaire();
     }
   }
 
-  void _goToPreviousPage() {
-    if (_currentPage > 0) {
+  void _previousQuestion() {
+    final questionnaireService = Provider.of<QuestionnaireService>(context, listen: false);
+    if (_pageController.page!.toInt() > 0) {
       _pageController.previousPage(
         duration: AppConstants.animationDurationMedium,
-        curve: Curves.easeInOut,
+        curve: Curves.easeOut,
       );
+      questionnaireService.previousQuestion();
+      // Populate answer for the *new* current question (which is the previous one)
+      final previousQuestionId = _questions[_pageController.page!.toInt() -1].id;
+      _answerController.text = _answers[previousQuestionId] ?? '';
     }
   }
 
-  Future<void> _submitQuestionnaire() async {
+  Future<void> _getAiSuggestion() async {
     final questionnaireService = Provider.of<QuestionnaireService>(context, listen: false);
     final profileService = Provider.of<ProfileService>(context, listen: false);
+    final currentQuestion = _questions[questionnaireService.currentQuestionIndex];
+    final currentUserProfile = profileService.userProfile;
 
-    final currentUser = profileService.userProfile;
-    if (currentUser == null) {
+    if (currentUserProfile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot submit: User profile not loaded.')),
+        const SnackBar(content: Text('User profile not loaded for AI suggestion.')),
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Submitting questionnaire...')),
-    );
+    final String userContext = currentUserProfile.bio ?? currentUserProfile.displayName ?? currentUserProfile.email;
 
     try {
-      await questionnaireService.submitAnswers(currentUser.userId, _answers);
-
-      // After successful submission, update the user's profile in ProfileService
-      // to reflect the new questionnaire answers and potentially phase completion.
-      final updatedProfile = currentUser.copyWith(
-        questionnaireAnswers: _answers,
-        // You might set isPhase2Complete = true here if this questionnaire is the final step
-        // For now, we assume it's an ongoing questionnaire not directly tied to phase completion.
+      final suggestedAnswer = await questionnaireService.getAiSuggestedAnswer(
+        currentQuestion.text,
+        userContext,
       );
-      await profileService.updateProfile(updatedProfile); // Persist updated profile to Supabase
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Questionnaire Submitted Successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      // You might want to navigate away or show a success screen
-      // context.go('/dashboard');
+      _answerController.text = suggestedAnswer;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to submit questionnaire: $e'),
-          backgroundColor: AppConstants.errorColor,
-        ),
+        SnackBar(content: Text('Failed to get AI suggestion: $e')),
       );
-      debugPrint('Error submitting questionnaire: $e');
+    }
+  }
+
+  void _submitQuestionnaire() async {
+    final questionnaireService = Provider.of<QuestionnaireService>(context, listen: false);
+    final profileService = Provider.of<ProfileService>(context, listen: false);
+    final currentUser = profileService.userProfile;
+
+    if (currentUser == null || currentUser.userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not logged in or profile ID missing.')),
+      );
+      return;
+    }
+
+    // Ensure the last answer is saved
+    final lastQuestionId = _questions[questionnaireService.currentQuestionIndex].id;
+    _answers[lastQuestionId] = _answerController.text;
+
+    try {
+      await questionnaireService.submitAnswers(currentUser.userId, _answers); // FIXED: Correct arguments
+      // Navigate to results screen or dashboard upon successful submission
+      context.go('/compatibility-results'); // Or '/home'
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to submit questionnaire: $e')),
+      );
     }
   }
 
@@ -180,245 +156,159 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   Widget build(BuildContext context) {
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
+    final questionnaireService = Provider.of<QuestionnaireService>(context); // Watch for progress updates
 
     final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
     final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color textMediumEmphasis = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color surfaceColor = isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor;
     final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
 
+    if (_isLoadingQuestions) {
+      return Scaffold(
+        backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+        body: Center(
+          child: LoadingIndicatorWidget(color: secondaryColor),
+        ),
+      );
+    }
 
-    return Container(
-      color: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
-      child: Column(
-        children: [
-          // Header / Progress Indicator
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppConstants.paddingSmall),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'AI Questionnaire Progress',
-                  style: TextStyle(
-                    fontSize: AppConstants.fontSizeLarge,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-                Text(
-                  'Page ${_currentPage + 1} of ${_questions.length}', // Use _questions.length
-                  style: TextStyle(
-                    fontSize: AppConstants.fontSizeMedium,
-                    color: textMediumEmphasis,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingMedium),
-          // Progress Bar
-          LinearProgressIndicator(
-            value: _questions.isEmpty ? 0 : (_currentPage + 1) / _questions.length, // Handle empty questions
-            backgroundColor: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
-            color: secondaryColor,
-            minHeight: 8.0,
-            borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
-          ),
-          const SizedBox(height: AppConstants.spacingLarge),
-
-          // Main Content Area for Questions
-          Expanded(
-            child: _isLoadingQuestions
-                ? const Center(child: LoadingIndicatorWidget())
-                : _errorLoadingQuestions != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _errorLoadingQuestions!,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppConstants.errorColor),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: AppConstants.spacingMedium),
-                            ElevatedButton(
-                              onPressed: _fetchQuestions,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppConstants.secondaryColor,
-                                foregroundColor: AppConstants.textColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
-                              ),
-                              child: const Text('Try Again'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : _questions.isEmpty
-                        ? Center(
-                            child: EmptyStateWidget(
-                              message: 'No questionnaire questions available.',
-                              onRefresh: _fetchQuestions,
-                            ),
-                          )
-                        : PageView.builder(
-                            controller: _pageController,
-                            itemCount: _questions.length, // Use _questions.length
-                            onPageChanged: (index) {
-                              setState(() {
-                                _currentPage = index;
-                              });
-                            },
-                            itemBuilder: (context, index) {
-                              final question = _questions[index];
-                              return _buildQuestionPage(
-                                context,
-                                question, // Pass the actual question object
-                                _answers[question.id] ?? '', // Pass current answer
-                                (answer) => _onAnswerChanged(question.id, answer), // Callback for answer change
-                                () => _getAiSuggestion(question.id, question.text), // Callback for AI suggestion
-                                isDarkMode,
-                              );
-                            },
-                          ),
-          ),
-          const SizedBox(height: AppConstants.spacingLarge),
-
-          // Navigation Buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    if (_questionsError != null) {
+      return Scaffold(
+        backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Previous Button
-              if (_currentPage > 0)
-                ElevatedButton.icon(
-                  onPressed: _goToPreviousPage,
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                  label: const Text('Previous'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor.withOpacity(0.8),
-                    foregroundColor: AppConstants.textColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppConstants.paddingLarge,
-                      vertical: AppConstants.paddingMedium,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-                    ),
-                  ),
-                ),
-              // Spacer to push buttons to ends if only one is visible
-              if (_currentPage == 0 && _questions.length > 1) // Use _questions.length
-                const Spacer(),
-
-              // Next / Submit Button
-              ElevatedButton.icon(
-                onPressed: _goToNextPage,
-                icon: Icon(_currentPage == _questions.length - 1 // Use _questions.length
-                    ? Icons.done_all_rounded
-                    : Icons.arrow_forward_ios_rounded),
-                label: Text(_currentPage == _questions.length - 1 // Use _questions.length
-                    ? 'Submit Questionnaire'
-                    : 'Next'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: secondaryColor,
-                  foregroundColor: AppConstants.textColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.paddingLarge,
-                    vertical: AppConstants.paddingMedium,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-                  ),
-                ),
+              Text(
+                _questionsError!,
+                style: TextStyle(color: AppConstants.errorColor),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppConstants.spacingMedium),
+              ElevatedButton(
+                onPressed: _fetchQuestionsAndInitialize,
+                child: const Text('Retry'),
               ),
             ],
           ),
+        ),
+      );
+    }
+
+    if (_questions.isEmpty) {
+      return Scaffold(
+        backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+        body: Center(
+          child: EmptyStateWidget( // Correctly imported and used
+            message: 'No questions available. Please check back later.',
+            onRefresh: _fetchQuestionsAndInitialize,
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('AI Questionnaire'),
+        backgroundColor: primaryColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {
+              context.go('/home'); // Allow user to exit questionnaire
+            },
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildQuestionPage(
-    BuildContext context,
-    Question question, // Pass Question object
-    String currentAnswer,
-    ValueChanged<String> onAnswerChanged,
-    VoidCallback onAiSuggestion,
-    bool isDarkMode,
-  ) {
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color textMediumEmphasis = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
-
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppConstants.paddingLarge),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            child: QuestionProgressIndicator( // Correctly imported and used
+              currentQuestion: questionnaireService.currentQuestionIndex + 1,
+              totalQuestions: questionnaireService.totalQuestions,
+              progressColor: secondaryColor,
+              backgroundColor: cardColor.withOpacity(0.5),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(), // Disable manual swiping
+              itemCount: _questions.length,
+              onPageChanged: (index) {
+                // This will be triggered by _nextQuestion and _previousQuestion
+                // The service state is already updated there.
+              },
+              itemBuilder: (context, index) {
+                final question = _questions[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+                  child: QuestionCard( // Correctly imported and used
+                    question: question.text,
+                    isDarkMode: isDarkMode,
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            child: AnswerInputField(
+              controller: _answerController,
+              onSubmitted: (answer) {
+                final currentQuestionId = _questions[questionnaireService.currentQuestionIndex].id;
+                _answers[currentQuestionId] = answer;
+                _nextQuestion();
+              },
+              onAiSuggest: _getAiSuggestion, // Added AI suggestion button callback
+              isDarkMode: isDarkMode,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Question ${question.id}', // Display question ID or number
-                  style: TextStyle(
-                    fontSize: AppConstants.fontSizeExtraLarge,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-                const SizedBox(height: AppConstants.spacingMedium),
-                Text(
-                  question.text, // Display the actual question text
-                  style: TextStyle(
-                    fontSize: AppConstants.fontSizeBody,
-                    color: textMediumEmphasis,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-                const SizedBox(height: AppConstants.spacingLarge),
-                // Use your AnswerInputField widget
-                AnswerInputField(
-                  initialValue: currentAnswer,
-                  onChanged: onAnswerChanged,
-                  isDarkMode: isDarkMode,
-                ),
-                const SizedBox(height: AppConstants.spacingMedium),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: onAiSuggestion,
-                    icon: Icon(Icons.auto_awesome, color: AppConstants.secondaryColor),
-                    label: Text(
-                      'AI Suggest Answer',
-                      style: TextStyle(color: AppConstants.secondaryColor, fontSize: AppConstants.fontSizeSmall),
+                if (questionnaireService.currentQuestionIndex > 0)
+                  ElevatedButton.icon(
+                    onPressed: _previousQuestion,
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                    label: const Text('Previous'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: cardColor,
+                      foregroundColor: textColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
                     ),
                   ),
+                const Spacer(), // Pushes buttons to ends
+                ElevatedButton.icon(
+                  onPressed: _nextQuestion,
+                  icon: Icon(questionnaireService.currentQuestionIndex == _questions.length - 1
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.arrow_forward_ios_rounded),
+                  label: Text(questionnaireService.currentQuestionIndex == _questions.length - 1
+                      ? 'Submit'
+                      : 'Next'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: secondaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium, vertical: AppConstants.paddingSmall),
+                  ),
                 ),
-                // Add more complex question widgets here based on question.type
-                // e.g., if (question.type == QuestionType.multipleChoice) { ... }
               ],
             ),
           ),
+          const SizedBox(height: AppConstants.paddingSmall), // Bottom padding
         ],
       ),
     );

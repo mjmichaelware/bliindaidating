@@ -1,48 +1,105 @@
 // lib/services/newsfeed_service.dart
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart'; // For debugPrint
-import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart'; // Assuming you'll have this model
 
-class NewsfeedService {
-  final String _baseUrl = AppConstants.baseUrl;
+import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
+import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart'; // Still import for NewsfeedItemType
+import 'dart:convert'; // For jsonEncode, jsonDecode
+import 'package:http/http.dart' as http; // For making HTTP requests
 
-  /// Generates news feed items by calling the backend AI endpoint.
-  /// userProfileSummary: A summary of the current user's profile.
-  /// recentActivity: A list of recent activities relevant to the news feed.
-  /// numItems: The number of news feed items to generate.
-  Future<List<String>> generateNewsFeedItems(String userProfileSummary, List<Map<String, dynamic>> recentActivity, {int numItems = 5}) async {
-    final url = Uri.parse('$_baseUrl/generate-news-feed/');
-    final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({
-      'user_profile_summary': userProfileSummary,
-      'recent_activity': recentActivity,
-      'num_items': numItems,
-    });
+/// A service to manage newsfeed items, including AI generation.
+class NewsfeedService extends ChangeNotifier {
+  List<String> _newsfeedItems = []; // Now stores strings from LLM
+  List<String> get newsfeedItems => _newsfeedItems;
 
+  NewsfeedService() {
+    // We won't fetch on init here, as newsfeed_screen calls refreshNewsfeed
+  }
+
+  // This method generates newsfeed items using an LLM
+  Future<List<String>> generateNewsFeedItems(
+      String userProfileSummary,
+      List<Map<String, dynamic>> recentActivity,
+      {int numItems = 3}) async {
+    debugPrint('NewsfeedService: Generating newsfeed items with LLM...');
     try {
-      final response = await http.post(url, headers: headers, body: body);
+      // Construct a detailed prompt for the LLM
+      final prompt = """
+      Generate a list of ${numItems} concise and engaging newsfeed items for a dating app user.
+      Each item should be a single, compelling sentence or a very short paragraph.
+      Focus on recent activity, profile completion, and discovery.
+      
+      User Profile Summary: "$userProfileSummary"
+      Recent App Activity: ${jsonEncode(recentActivity)}
+      
+      Examples of desired output:
+      - "You have a new match! Check out Jordan's profile."
+      - "Complete your Phase 2 questionnaire to unlock more compatible matches!"
+      - "Daily Prompt: What's your ideal weekend getaway?"
+      - "Alex just liked your profile! Send them a message."
+      - "New local event: 'Stargazing Night' happening this Saturday!"
+      
+      Return only a JSON array of strings, where each string is a newsfeed item.
+      Example: ["Item 1.", "Item 2.", "Item 3."]
+      """;
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        if (data['news_feed_items'] is List) {
-          // Assuming the backend returns a list of strings directly
-          return List<String>.from(data['news_feed_items']);
+      // Use the provided fetch call structure for LLM interaction
+      const apiKey = ""; // Canvas will automatically provide this in runtime
+      const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey";
+
+      final http.Response response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {'role': 'user', 'parts': [{'text': prompt}]}
+          ]
+        }),
+      );
+
+      final Map<String, dynamic> result = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && result['candidates'] != null && result['candidates'].isNotEmpty &&
+          result['candidates'][0]['content'] != null && result['candidates'][0]['content']['parts'] != null &&
+          result['candidates'][0]['content']['parts'].isNotEmpty) {
+        final String text = result['candidates'][0]['content']['parts'][0]['text'];
+        debugPrint('LLM Raw Response: $text');
+
+        // Attempt to parse the JSON string into a List<String>
+        try {
+          final dynamic decoded = jsonDecode(text);
+          if (decoded is List) {
+            _newsfeedItems = List<String>.from(decoded.map((e) => e.toString()));
+            notifyListeners();
+            debugPrint('NewsfeedService: Generated ${_newsfeedItems.length} newsfeed items via LLM.');
+            return _newsfeedItems;
+          } else {
+            debugPrint('LLM response was not a JSON list: $text');
+            // Fallback if LLM doesn't return perfect JSON array
+            _newsfeedItems = [text]; // Treat the whole response as one item
+            notifyListeners();
+            return _newsfeedItems;
+          }
+        } catch (e) {
+          debugPrint('Error parsing LLM response JSON: $e, Raw text: $text');
+          _newsfeedItems = [text]; // Fallback if parsing fails
+          notifyListeners();
+          return _newsfeedItems;
         }
-        debugPrint('Backend returned unexpected format for /generate-news-feed: ${response.body}');
-        return [];
       } else {
-        debugPrint('Failed to generate news feed items: ${response.statusCode} - ${response.body}');
-        return [];
+        debugPrint('LLM response was empty or malformed or bad status: ${response.statusCode}');
+        _newsfeedItems = ['Failed to generate newsfeed items. Please try again.'];
+        notifyListeners();
+        return _newsfeedItems;
       }
     } catch (e) {
-      debugPrint('Error generating news feed items: $e');
-      return [];
+      debugPrint('Error calling LLM for newsfeed: $e');
+      _newsfeedItems = ['Error generating newsfeed: $e'];
+      notifyListeners();
+      return _newsfeedItems;
     }
   }
 
-  // You might also add methods here to fetch news feed items from Supabase
-  // if you decide to persist them after generation.
-  // Future<List<NewsfeedItem>> fetchNewsFeedFromDb(String userId) async { ... }
+  // Method to refresh newsfeed (calls the generation method)
+  Future<List<String>> refreshNewsfeed(String userProfileSummary, List<Map<String, dynamic>> recentActivity) async {
+    return await generateNewsFeedItems(userProfileSummary, recentActivity);
+  }
 }

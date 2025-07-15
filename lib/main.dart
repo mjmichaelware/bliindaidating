@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async'; // Required for StreamSubscription and ChangeNotifier
 import 'package:provider/provider.dart'; // Import for state management
 import 'package:flutter/foundation.dart'; // For debugPrint
+// Conditional import for dart:io to avoid web issues if Platform is used directly
+// import 'dart:io' if (dart.library.html) 'dart:html'; // Example of conditional import, not strictly needed if Platform is avoided in shared code
 
 // Local imports for core project components
 import 'package:bliindaidating/app_constants.dart'; // Import app_constants for theme
@@ -14,6 +16,12 @@ import 'package:bliindaidating/controllers/theme_controller.dart'; // Import The
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile for redirect logic
 import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for redirect logic
 import 'package:bliindaidating/services/auth_service.dart'; // Import AuthService for redirect logic
+
+// NEW: Import the missing service classes
+import 'package:bliindaidating/services/newsfeed_service.dart';
+import 'package:bliindaidating/services/matches_service.dart';
+import 'package:bliindaidating/services/questionnaire_service.dart';
+import 'package:bliindaidating/services/discovery_service.dart'; // This service will need the Platform fix
 
 // Screens imports - Ensure all these paths are correct and these files exist.
 import 'package:bliindaidating/landing_page/landing_page.dart';
@@ -140,10 +148,13 @@ Future<void> main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => ThemeController()),
-          // ProfileService uses its parameterless constructor
           ChangeNotifierProvider(create: (context) => ProfileService()),
-          // This line is correct, assuming AuthService constructor is `AuthService(ProfileService profileService)`
           ChangeNotifierProvider(create: (context) => AuthService(context.read<ProfileService>())),
+          // NEW: Add providers for other services
+          ChangeNotifierProvider(create: (context) => NewsfeedService()),
+          ChangeNotifierProvider(create: (context) => MatchesService()),
+          ChangeNotifierProvider(create: (context) => QuestionnaireService()),
+          ChangeNotifierProvider(create: (context) => DiscoveryService()), // This service will need the Platform fix
         ],
         child: const BlindAIDatingApp(),
       ),

@@ -195,6 +195,13 @@ class AppConstants {
   static const double fontSizeHeadline = 28.0;
   static const double fontSizeBody = 16.0;
 
+  // Icon Sizes
+  static const double iconSizeSmall = 18.0;
+  static const double iconSizeMedium = 24.0;
+  static const double iconSizeLarge = 32.0; // This is the one that was missing/causing issues
+  static const double iconSizeExtraLarge = 48.0; // Re-adding this as it was in my previous comprehensive list
+
+
   // Animation Durations
   static const Duration animationDurationShort = Duration(milliseconds: 200);
   static const Duration animationDurationMedium = Duration(milliseconds: 500);

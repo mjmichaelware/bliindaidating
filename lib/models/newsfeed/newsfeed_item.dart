@@ -1,85 +1,66 @@
 // lib/models/newsfeed/newsfeed_item.dart
+
+import 'package:flutter/material.dart'; // Often needed for UI-related models, or remove if not.
+
+/// Enum to define different types of newsfeed items.
 enum NewsfeedItemType {
-  dateSuccess,
-  matchAnnounce,
-  eventNearby,
-  publicPost,
-  aiTip,
-  unknown,
+  general,
+  match, // Added
+  profileUpdate, // Added
+  dailyPrompt, // Added
+  event,
+  dateProposal,
+  dateFeedback,
+  adminMessage,
+  // Add more types as needed
 }
 
+/// Represents a single item in the user's newsfeed.
 class NewsfeedItem {
   final String id;
-  final NewsfeedItemType type;
-  final DateTime timestamp;
-  final bool isPublic;
+  final String title;
   final String content;
-  final String? avatarUrl; // Optional for AI tips, etc.
-  final String? username; // Optional for AI tips, etc.
-  final String? location; // Optional for AI tips, etc.
-  final String? title; // <--- ADDED THIS LINE: The missing 'title' field
-
-  // Specific fields for different types
-  final String? partnerName; // For date_success
-  final String? matchUsername; // For match_announce
-  final String? eventName; // For event_nearby
-  final DateTime? eventDate; // For event_nearby
-  final String? eventLocation; // For event_nearby
+  final String? imageUrl; // Added imageUrl
+  final DateTime timestamp;
+  final NewsfeedItemType type;
+  final String? relatedEntityId; // ID of the related entity (e.g., match ID, prompt ID)
 
   NewsfeedItem({
     required this.id,
-    required this.type,
-    required this.timestamp,
-    required this.isPublic,
+    required this.title,
     required this.content,
-    this.avatarUrl,
-    this.username,
-    this.location,
-    this.partnerName,
-    this.matchUsername,
-    this.eventName,
-    this.eventDate,
-    this.eventLocation,
-    this.title, // <--- ADDED TO CONSTRUCTOR
+    this.imageUrl, // Made optional
+    required this.timestamp,
+    required this.type,
+    this.relatedEntityId,
   });
 
+  // Factory constructor for creating a NewsfeedItem from a JSON map
   factory NewsfeedItem.fromJson(Map<String, dynamic> json) {
-    NewsfeedItemType type;
-    switch (json['type']) {
-      case 'date_success':
-        type = NewsfeedItemType.dateSuccess;
-        break;
-      case 'match_announce':
-        type = NewsfeedItemType.matchAnnounce;
-        break;
-      case 'event_nearby':
-        type = NewsfeedItemType.eventNearby;
-        break;
-      case 'public_post':
-        type = NewsfeedItemType.publicPost;
-        break;
-      case 'ai_tip':
-        type = NewsfeedItemType.aiTip;
-        break;
-      default:
-        type = NewsfeedItemType.unknown;
-    }
-
     return NewsfeedItem(
       id: json['id'] as String,
-      type: type,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      isPublic: (json['isPublic'] ?? true) as bool, // Default to true if not specified
+      title: json['title'] as String,
       content: json['content'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      username: json['username'] as String?,
-      location: json['location'] as String?,
-      partnerName: json['partnerName'] as String?,
-      matchUsername: json['matchUsername'] as String?,
-      eventName: json['eventName'] as String?,
-      eventDate: json['eventDate'] != null ? DateTime.parse(json['eventDate'] as String) : null,
-      eventLocation: json['eventLocation'] as String?,
-      title: json['title'] as String?, // <--- ADDED FROM JSON PARSING
+      imageUrl: json['image_url'] as String?, // Map to 'image_url' from JSON
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      type: NewsfeedItemType.values.firstWhere(
+        (e) => e.toString().split('.').last == json['type'],
+        orElse: () => NewsfeedItemType.general, // Default to general if type not found
+      ),
+      relatedEntityId: json['related_entity_id'] as String?,
     );
+  }
+
+  // Method for converting a NewsfeedItem to a JSON map
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'content': content,
+      'image_url': imageUrl, // Map to 'image_url' for JSON
+      'timestamp': timestamp.toIso8601String(),
+      'type': type.toString().split('.').last,
+      'related_entity_id': relatedEntityId,
+    };
   }
 }

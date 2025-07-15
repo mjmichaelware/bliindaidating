@@ -51,10 +51,10 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
         {"type": "viewed_event", "event_name": "Stargazing Night"},
       ];
 
-      final items = await newsfeedService.generateNewsFeedItems(
+      // Call refreshNewsfeed which internally calls generateNewsFeedItems
+      final List<String> items = await newsfeedService.refreshNewsfeed( // FIXED: Correctly assign the Future<List<String>>
         userProfileSummary,
         recentActivity,
-        numItems: 5, // Request 5 items
       );
       setState(() {
         _newsfeedItems = items;
@@ -161,5 +161,3 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
     );
   }
 }
-
-// Removed: Extension to format DateTime as NewsfeedItem model is no longer directly used here.
