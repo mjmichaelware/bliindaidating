@@ -1,51 +1,66 @@
+// lib/screens/info/date_ideas_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
 
 class DateIdeasScreen extends StatelessWidget {
   const DateIdeasScreen({super.key});
 
-  final List<String> _dateIdeas = const [
-    'Picnic at the park',
-    'Visit a local art gallery',
-    'Coffee and board games',
-    'Sunset walk on the beach',
-    'Attend a cooking class',
-    'Explore a new hiking trail',
-    'Visit a farmer’s market',
-    'Go to a live music show',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Date Ideas of the Week'),
-        backgroundColor: theme.colorScheme.primary,
+        title: Text(
+          'Date Ideas',
+          style: TextStyle(
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400,
+        iconTheme: IconThemeData(color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: _dateIdeas.length,
-        separatorBuilder: (_, __) => const Divider(color: Colors.white12),
-        itemBuilder: (context, index) {
-          return Card(
-            color: Colors.deepPurple.shade900,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: ListTile(
-              leading: const Icon(Icons.favorite_rounded, color: Colors.pinkAccent),
-              title: Text(
-                _dateIdeas[index],
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lightbulb_outline_rounded,
+                size: 80,
+                color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
               ),
-              trailing: IconButton(
-                icon: const Icon(Icons.share, color: Colors.deepPurpleAccent),
-                onPressed: () {
-                  // Share date idea logic can go here
-                },
+              const SizedBox(height: AppConstants.spacingMedium),
+              Text(
+                'This is the Date Ideas Screen (Placeholder)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  fontSize: AppConstants.fontSizeLarge,
+                  fontFamily: 'Inter',
+                ),
               ),
-            ),
-          );
-        },
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'Get inspired with creative and fun date suggestions.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  fontSize: AppConstants.fontSizeBody,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

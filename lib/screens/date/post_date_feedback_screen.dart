@@ -1,4 +1,5 @@
 // lib/screens/date/post_date_feedback_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
@@ -9,35 +10,55 @@ class PostDateFeedbackScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ThemeController>(context);
-    final isDarkMode = theme.isDarkMode;
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Date Feedback',
+          'Post-Date Feedback',
           style: TextStyle(
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
             fontFamily: 'Inter',
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(
-          color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor,
-        ),
+        backgroundColor: isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400,
+        iconTheme: IconThemeData(color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
       ),
-      body: Container(
-        color: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
-        child: Center(
-          child: Text(
-            'Post-Date Feedback Questions (To be implemented)',
-            style: TextStyle(
-              color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
-              fontSize: AppConstants.fontSizeLarge,
-              fontFamily: 'Inter',
-            ),
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.rate_review_rounded,
+                size: 80,
+                color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
+              ),
+              const SizedBox(height: AppConstants.spacingMedium),
+              Text(
+                'This is the Post-Date Feedback Screen (Placeholder)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  fontSize: AppConstants.fontSizeLarge,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'Provide feedback on your recent dates to help improve matching.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  fontSize: AppConstants.fontSizeBody,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ],
           ),
         ),
       ),

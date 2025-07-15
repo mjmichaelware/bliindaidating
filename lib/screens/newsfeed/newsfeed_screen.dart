@@ -1,9 +1,16 @@
+// lib/screens/newsfeed/newsfeed_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
-import 'package:bliindaidating/data/dummy_data.dart'; // Import dummy data
+// Removed: import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart'; // No longer directly using NewsfeedItem model
+// Removed: import 'package:bliindaidating/data/dummy_data.dart'; // No longer using dummy data
+
+import 'package:bliindaidating/services/newsfeed_service.dart'; // Import NewsfeedService
+import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for user data
+import 'package:bliindaidating/widgets/common/loading_indicator_widget.dart'; // Assuming you have this
+import 'package:bliindaidating/widgets/common/empty_state_widget.dart'; // Assuming you have this
 
 class NewsfeedScreen extends StatefulWidget {
   const NewsfeedScreen({super.key});
@@ -13,33 +20,52 @@ class NewsfeedScreen extends StatefulWidget {
 }
 
 class _NewsfeedScreenState extends State<NewsfeedScreen> {
-  // Removed OpenAIService instance
-  List<NewsfeedItem> _newsfeedItems = [];
+  List<String> _newsfeedItems = []; // Changed to List<String> as backend returns strings
   bool _isLoading = true;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadDummyNewsfeedItems(); // Call local dummy data loader
+    _fetchNewsfeedItems(); // Fetch newsfeed items from the backend
   }
 
-  Future<void> _loadDummyNewsfeedItems() async {
+  Future<void> _fetchNewsfeedItems() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
-      // Simulate loading delay
-      await Future.delayed(const Duration(seconds: 2));
+      final newsfeedService = Provider.of<NewsfeedService>(context, listen: false);
+      final profileService = Provider.of<ProfileService>(context, listen: false);
+
+      // Get current user's profile summary for AI context
+      final currentUserProfile = profileService.userProfile;
+      final String userProfileSummary = currentUserProfile?.bio ?? "A user on the dating app.";
+
+      // Mock recent activity for demonstration. In a real app, this would come from
+      // your app's activity tracking or Supabase.
+      final List<Map<String, dynamic>> recentActivity = [
+        {"type": "liked_profile", "target_display_name": "Alex"},
+        {"type": "new_match", "target_display_name": "Jordan"},
+        {"type": "viewed_event", "event_name": "Stargazing Night"},
+      ];
+
+      final items = await newsfeedService.generateNewsFeedItems(
+        userProfileSummary,
+        recentActivity,
+        numItems: 5, // Request 5 items
+      );
       setState(() {
-        _newsfeedItems = dummyNewsfeedItems; // Use hardcoded dummy data
-        _isLoading = false;
+        _newsfeedItems = items;
       });
     } catch (e) {
-      debugPrint('Error loading dummy newsfeed items: $e');
+      debugPrint('Error fetching newsfeed items: $e');
       setState(() {
         _errorMessage = 'Failed to load newsfeed: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
         _isLoading = false;
       });
     }
@@ -51,31 +77,53 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
     final isDarkMode = theme.isDarkMode;
 
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary));
+      return Center(
+        child: LoadingIndicatorWidget(
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+      );
     }
 
     if (_errorMessage != null) {
       return Center(
-        child: Text(
-          _errorMessage!,
-          style: TextStyle(color: AppConstants.errorColor),
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage!,
+            style: TextStyle(color: AppConstants.errorColor),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppConstants.spacingMedium),
+            ElevatedButton(
+              onPressed: _fetchNewsfeedItems,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppConstants.secondaryColor,
+                foregroundColor: AppConstants.textColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
+              ),
+              child: const Text('Try Again'),
+            ),
+          ],
         ),
       );
     }
 
     if (_newsfeedItems.isEmpty) {
       return Center(
-        child: Text(
-          'No newsfeed items to display yet. Check back later!',
-          style: TextStyle(color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis),
-          textAlign: TextAlign.center,
+        child: EmptyStateWidget(
+          message: 'No newsfeed items to display yet. Check back later!',
+          onRefresh: _fetchNewsfeedItems,
+          icon: Icons.rss_feed, // Example icon
         ),
       );
     }
 
     return RefreshIndicator(
-      onRefresh: _loadDummyNewsfeedItems, // Still allow refresh to reload dummy data
+      onRefresh: _fetchNewsfeedItems, // Now refreshes from backend
       color: AppConstants.primaryColor,
       backgroundColor: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
       child: ListView.builder(
@@ -83,10 +131,9 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
         itemCount: _newsfeedItems.length,
         itemBuilder: (context, index) {
           final item = _newsfeedItems[index];
-          // You can create different widgets based on item.type if needed
           return Card(
             margin: EdgeInsets.only(bottom: AppConstants.spacingMedium),
-            color: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
+            color: isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             ),
@@ -96,32 +143,15 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Assuming the string content is the main news item
                   Text(
-                    item.title ?? 'Newsfeed Update', // Use the title field
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    item, // Display the string directly
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: AppConstants.spacingSmall),
-                  Text(
-                    item.content,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
-                    ),
-                  ),
-                  SizedBox(height: AppConstants.spacingSmall),
-                  // Example of displaying username/date if available
-                  if (item.username != null || item.timestamp != null)
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        '— ${item.username ?? 'System'} ${item.timestamp != null ? 'on ${item.timestamp!.toLocal().toShortString()}' : ''}',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
-                        ),
-                      ),
-                    ),
+                  // If you later want more structured news items, you'd need a NewsfeedItem model
+                  // and parse the backend response into that model.
                 ],
               ),
             ),
@@ -132,9 +162,4 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
   }
 }
 
-// Extension to format DateTime to a short string for display (optional)
-extension on DateTime {
-  String toShortString() {
-    return '$month/$day/$year';
-  }
-}
+// Removed: Extension to format DateTime as NewsfeedItem model is no longer directly used here.

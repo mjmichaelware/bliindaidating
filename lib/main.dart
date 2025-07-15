@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,31 +23,63 @@ import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 
 // Existing profile setup screens from your tree
-import 'package:bliindaidating/profile/profile_setup_screen.dart'; // This is Phase 1 setup
+import 'package:bliindaidating/profile/profile_setup_screen.dart'; // Corrected Path for Phase 1 setup
 import 'package:bliindaidating/profile/profile_tabs_screen.dart';
 import 'package:bliindaidating/profile/about_me_screen.dart';
 import 'package:bliindaidating/profile/availability_screen.dart';
 import 'package:bliindaidating/profile/interests_screen.dart';
+import 'package:bliindaidating/profile/intentions_screen.dart'; // NEW: Added from your side menu list
 
+// Friends & Events screens
 import 'package:bliindaidating/friends/local_events_screen.dart';
-import 'package:bliindaidating/matching/penalty_display_screen.dart';
+import 'package:bliindaidating/friends/friends_match_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/friends/event_details_screen.dart'; // NEW: Added from your side menu list (placeholder)
 
+// Matching & Penalties screens
+import 'package:bliindaidating/matching/penalty_display_screen.dart';
+import 'package:bliindaidating/matching/compatibility_insights_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/matching/date_proposal_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/matching/match_display_screen.dart'; // NEW: Added from your side menu list
+
+// Info & Support screens
 import 'package:bliindaidating/screens/info/about_us_screen.dart';
 import 'package:bliindaidating/screens/info/privacy_screen.dart';
 import 'package:bliindaidating/screens/info/terms_screen.dart';
+import 'package:bliindaidating/screens/info/activity_feed_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/screens/info/blocked_users_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/screens/info/date_ideas_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/screens/info/guided_tour_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/screens/info/safety_tips_screen.dart'; // NEW: Added from your side menu list
+import 'package:bliindaidating/screens/info/user_progress_screen.dart'; // NEW: Added from your side menu list
 
-import 'package:bliindaidating/screens/discovery/discovery_screen.dart';
+// Discovery, Matches, Settings, Feedback, Admin, Notifications, Daily Prompts
+import 'package:bliindaidating/screens/discovery/discover_people_screen.dart'; // Renamed from discovery_screen.dart
 import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
-import 'package:bliindaidating/screens/settings/settings_screen.dart';
+import 'package:bliindaidating/screens/settings/settings_screen.dart'; // Main settings screen
 import 'package:bliindaidating/screens/feedback_report/feedback_screen.dart';
 import 'package:bliindaidating/screens/feedback_report/report_screen.dart';
 import 'package:bliindaidating/screens/admin/admin_dashboard_screen.dart';
-
-// Existing NEW IMPORTS for screens (ENSURE THESE ARE CORRECT)
 import 'package:bliindaidating/screens/notifications/notifications_screen.dart';
+import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart'; // NEW: Added for Daily Prompts
+import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart'; // NEW: Added for Newsfeed
+
+// Profile View/Edit
 import 'package:bliindaidating/screens/profile/profile_view_screen.dart'; // For /profile/:userId dynamic route
-import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // ADDED: For /my-profile static route
-import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // ADDED: For /questionnaire-phase2 route
+import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // For /my-profile static route
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // For /questionnaire-phase2
+import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart'; // NEW: For /questionnaire (ongoing)
+
+// Other Dashboard/Specific screens
+import 'package:bliindaidating/screens/dashboard/compatibility_results_screen.dart'; // NEW
+import 'package:bliindaidating/screens/dashboard/daily_personality_question_screen.dart'; // NEW
+import 'package:bliindaidating/screens/dashboard/suggested_profiles_screen.dart'; // NEW
+import 'package:bliindaidating/screens/date/post_date_feedback_screen.dart'; // NEW
+import 'package:bliindaidating/screens/date/scheduled_date_details_screen.dart'; // NEW (if needed as route)
+import 'package:bliindaidating/screens/date/scheduled_dates_list_screen.dart'; // NEW
+import 'package:bliindaidating/screens/favorites/favorites_list_screen.dart'; // NEW
+import 'package:bliindaidating/screens/premium/referral_screen.dart'; // NEW
+import 'package:bliindaidating/screens/quiz/personality_quiz_screen.dart'; // NEW
+import 'package:bliindaidating/screens/settings/app_settings_screen.dart'; // NEW: Specific app settings
 
 
 // Define the environment variables at the top level using const String.fromEnvironment
@@ -199,25 +233,65 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/about_me', builder: (context, state) => const AboutMeScreen()),
         GoRoute(path: '/availability', builder: (context, state) => const AvailabilityScreen()),
         GoRoute(path: '/interests', builder: (context, state) => const InterestsScreen()),
+        GoRoute(path: '/intentions', builder: (context, state) => const IntentionsScreen()), // NEW Route
 
         // Friends & Events
-        GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])),
+        GoRoute(path: '/events', builder: (context, state) => const LocalEventsScreen(events: [])), // Existing
+        GoRoute(path: '/friends-match', builder: (context, state) => const FriendsMatchScreen()), // NEW Route
+        GoRoute(
+          path: '/event-details',
+          builder: (context, state) => const EventDetailsScreen(eventId: 'dummyEventId'), // FIX: Provide dummy eventId
+        ),
 
         // Matching & Penalties
-        GoRoute(path: '/penalties', builder: (context, state) => const PenaltyDisplayScreen()),
+        GoRoute(path: '/penalties', builder: (context, state) => const PenaltyDisplayScreen()), // Existing
+        GoRoute(path: '/compatibility-insights', builder: (context, state) => const CompatibilityInsightsScreen()), // NEW Route
+        GoRoute(path: '/date-proposal', builder: (context, state) => const DateProposalScreen()), // NEW Route
+        GoRoute(path: '/match-display', builder: (context, state) => const MatchDisplayScreen()), // NEW Route
 
         // Discovery Routes
-        GoRoute(path: '/discovery', builder: (context, state) => const DiscoveryScreen()),
+        GoRoute(path: '/discovery', builder: (context, state) => const DiscoverPeopleScreen()), // Renamed widget
 
         // Matches Routes
         GoRoute(path: '/matches', builder: (context, state) => const MatchesListScreen()),
 
-        // Settings, Feedback, Admin, Notifications
+        // Settings, Feedback, Admin, Notifications, Daily Prompts
         GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
         GoRoute(path: '/feedback', builder: (context, state) => const FeedbackScreen()),
         GoRoute(path: '/report', builder: (context, state) => const ReportScreen()),
         GoRoute(path: '/admin', builder: (context, state) => const AdminDashboardScreen()),
         GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
+        GoRoute(path: '/daily-prompts', builder: (context, state) => const DailyPromptsScreen()), // NEW Route
+        GoRoute(path: '/newsfeed', builder: (context, state) => const NewsfeedScreen()), // NEW Route (was missing)
+
+        // Info & Support Routes
+        GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
+        GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
+        GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
+        GoRoute(path: '/activity-feed', builder: (context, state) => const ActivityFeedScreen()), // NEW Route
+        GoRoute(path: '/blocked-users', builder: (context, state) => const BlockedUsersScreen()), // NEW Route
+        GoRoute(path: '/date-ideas', builder: (context, state) => const DateIdeasScreen()), // NEW Route
+        GoRoute(path: '/guided-tour', builder: (context, state) => const GuidedTourScreen()), // NEW Route
+        GoRoute(path: '/safety-tips', builder: (context, state) => const SafetyTipsScreen()), // NEW Route
+        GoRoute(path: '/user-progress', builder: (context, state) => const UserProgressScreen()), // NEW Route
+
+        // Other Dashboard/Specific screens
+        GoRoute(path: '/compatibility-results', builder: (context, state) => const CompatibilityResultsScreen()), // NEW Route
+        GoRoute(path: '/daily-personality-question', builder: (context, state) => const DailyPersonalityQuestionScreen()), // NEW Route
+        GoRoute(path: '/suggested-profiles', builder: (context, state) => const SuggestedProfilesScreen()), // NEW Route
+        GoRoute(path: '/post-date-feedback', builder: (context, state) => const PostDateFeedbackScreen()), // NEW Route
+        GoRoute(
+          path: '/scheduled-date-details',
+          builder: (context, state) => const ScheduledDateDetailsScreen(dateId: 'dummyDateId'), // FIX: Provide dummy dateId
+        ),
+        GoRoute(path: '/scheduled-dates-list', builder: (context, state) => const ScheduledDatesListScreen()), // NEW Route
+        GoRoute(path: '/favorites', builder: (context, state) => const FavoritesListScreen()), // NEW Route
+        GoRoute(path: '/referral', builder: (context, state) => const ReferralScreen()), // NEW Route
+        GoRoute(path: '/personality-quiz', builder: (context, state) => const PersonalityQuizScreen()), // NEW Route
+        GoRoute(path: '/app-settings', builder: (context, state) => const AppSettingsScreen()), // NEW Route
+
+        // Placeholder for the ongoing questionnaire
+        GoRoute(path: '/questionnaire', builder: (context, state) => const QuestionnaireScreen()), // NEW Route for ongoing questionnaire
 
         // Dynamic Profile View
         GoRoute(
@@ -228,11 +302,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
             return ProfileViewScreen(userId: userId);
           },
         ),
-
-        // Public Info Screens (Privacy Policy, Terms, About Us) - always visible
-        GoRoute(path: '/about-us', builder: (context, state) => const AboutUsScreen()),
-        GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
-        GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
       ],
       redirect: (context, state) async {
         final authService = context.read<AuthService>();
@@ -254,6 +323,9 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           '/about-us',
           '/privacy',
           '/terms',
+          '/date-ideas',
+          '/guided-tour',
+          '/safety-tips',
         ];
         final bool isOnPublicInfoPath = publicInfoPaths.contains(currentPath);
 
@@ -320,8 +392,10 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
             return '/home';
           }
           // If already on /home or /questionnaire-phase2, allow it.
-          if (goingToDashboard || goingToPhase2Setup) {
-             debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /home or /questionnaire-phase2. Allowing.');
+          // Also allow /questionnaire (the ongoing one) if Phase 2 is not complete,
+          // as it's part of the completion process.
+          if (goingToDashboard || goingToPhase2Setup || currentPath == '/questionnaire') {
+             debugPrint('  Redirect decision: Logged in, Phase 1 complete, Phase 2 NOT complete, on /home, /questionnaire-phase2, or /questionnaire. Allowing.');
              return null;
           }
           // For any other authenticated but not specific setup/dashboard page (e.g., /settings, /matches),

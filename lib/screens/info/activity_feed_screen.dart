@@ -1,38 +1,66 @@
+// lib/screens/info/activity_feed_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
 
 class ActivityFeedScreen extends StatelessWidget {
   const ActivityFeedScreen({super.key});
 
-  final List<String> activityItems = const [
-    'You updated your profile today.',
-    'You liked a new personality type match.',
-    'New event near you: “Coffee & Conversations”.',
-    'You completed a daily prompt.',
-    'Your profile was viewed 5 times this week.',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activity Feed'),
-        backgroundColor: theme.colorScheme.primary,
+        title: Text(
+          'Activity Feed',
+          style: TextStyle(
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400,
+        iconTheme: IconThemeData(color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: activityItems.length,
-        separatorBuilder: (_, __) => const Divider(color: Colors.white24),
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: const Icon(Icons.timeline_rounded, color: Colors.deepPurpleAccent),
-            title: Text(
-              activityItems[index],
-              style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white),
-            ),
-          );
-        },
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.history_toggle_off_rounded,
+                size: 80,
+                color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
+              ),
+              const SizedBox(height: AppConstants.spacingMedium),
+              Text(
+                'This is the Activity Feed Screen (Placeholder)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  fontSize: AppConstants.fontSizeLarge,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'View your recent app activities, likes, and interactions.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  fontSize: AppConstants.fontSizeBody,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

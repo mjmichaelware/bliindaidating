@@ -1,48 +1,65 @@
+// lib/screens/info/safety_tips_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
 
 class SafetyTipsScreen extends StatelessWidget {
   const SafetyTipsScreen({super.key});
 
-  final List<String> safetyTips = const [
-    'Always meet in public places.',
-    'Tell a friend or family member where you’re going.',
-    'Keep your phone charged and with you at all times.',
-    'Avoid sharing too much personal information upfront.',
-    'Trust your instincts — if something feels off, leave.',
-    'Arrange your own transportation to and from dates.',
-    'Limit alcohol consumption on first meetings.',
-    'Report any suspicious behavior through the app.',
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Safety Tips'),
-        backgroundColor: theme.colorScheme.primary,
+        title: Text(
+          'Safety Tips',
+          style: TextStyle(
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400,
+        iconTheme: IconThemeData(color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView.separated(
-          itemCount: safetyTips.length,
-          separatorBuilder: (_, __) => const Divider(color: Colors.white24),
-          itemBuilder: (context, index) {
-            final tip = safetyTips[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundColor: theme.colorScheme.primary,
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(color: Colors.white),
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.health_and_safety_rounded,
+                size: 80,
+                color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
+              ),
+              const SizedBox(height: AppConstants.spacingMedium),
+              Text(
+                'This is the Safety Tips Screen (Placeholder)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  fontSize: AppConstants.fontSizeLarge,
+                  fontFamily: 'Inter',
                 ),
               ),
-              title: Text(
-                tip,
-                style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white70),
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'Important guidelines to ensure your safety while using the app.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  fontSize: AppConstants.fontSizeBody,
+                  fontFamily: 'Inter',
+                ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );

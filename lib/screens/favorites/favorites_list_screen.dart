@@ -1,94 +1,67 @@
-import 'package:flutter/material.dart';
+// lib/screens/favorites/favorites_list_screen.dart
 
-class FavoritesListScreen extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
+// Note: This screen might eventually use LoadingIndicatorWidget and EmptyStateWidget
+// but for now, we'll keep it minimal to resolve the constructor error.
+
+class FavoritesListScreen extends StatelessWidget {
   const FavoritesListScreen({super.key});
 
   @override
-  State<FavoritesListScreen> createState() => _FavoritesListScreenState();
-}
-
-class _FavoritesListScreenState extends State<FavoritesListScreen> {
-  // For privacy, no pictures, just simple info
-  List<Map<String, String>> favorites = [
-    {
-      'username': 'stargazer42',
-      'age': '29',
-      'commonInterest': 'Travel',
-      'personality': 'Explorer',
-    },
-    {
-      'username': 'booklover',
-      'age': '34',
-      'commonInterest': 'Reading',
-      'personality': 'Introvert',
-    },
-    {
-      'username': 'foodie123',
-      'age': '26',
-      'commonInterest': 'Cooking',
-      'personality': 'Empath',
-    },
-  ];
-
-  void removeFavorite(int index) {
-    setState(() {
-      favorites.removeAt(index);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (favorites.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Favorites'),
-          backgroundColor: Colors.deepPurple.shade900,
-          centerTitle: true,
-        ),
-        body: Center(
-          child: Text(
-            'No favorites added yet.',
-            style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white54),
-          ),
-        ),
-      );
-    }
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorites'),
-        backgroundColor: Colors.deepPurple.shade900,
-        centerTitle: true,
+        title: Text(
+          'My Favorites',
+          style: TextStyle(
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400,
+        iconTheme: IconThemeData(color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
       ),
-      body: SafeArea(
-        child: ListView.separated(
-          padding: const EdgeInsets.all(24),
-          itemCount: favorites.length,
-          separatorBuilder: (_, __) => const Divider(color: Colors.white24),
-          itemBuilder: (context, index) {
-            final fav = favorites[index];
-
-            return ListTile(
-              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              tileColor: Colors.deepPurple.shade800.withAlpha(180),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                fav['username'] ?? '',
-                style: theme.textTheme.titleMedium?.copyWith(color: Colors.pink.shade300),
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.star_rounded,
+                size: 80,
+                color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
               ),
-              subtitle: Text(
-                'Age: ${fav['age']}, Common interest: ${fav['commonInterest']}, Personality: ${fav['personality']}',
-                style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white70),
+              const SizedBox(height: AppConstants.spacingMedium),
+              Text(
+                'This is the Favorites List Screen (Placeholder)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  fontSize: AppConstants.fontSizeLarge,
+                  fontFamily: 'Inter',
+                ),
               ),
-              trailing: IconButton(
-                icon: const Icon(Icons.remove_circle_outline_rounded, color: Colors.redAccent),
-                onPressed: () => removeFavorite(index),
-                tooltip: 'Remove from favorites',
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'View and manage your favorite profiles.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  fontSize: AppConstants.fontSizeBody,
+                  fontFamily: 'Inter',
+                ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       ),
     );

@@ -11,6 +11,59 @@ import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
 import 'package:bliindaidating/services/auth_service.dart'; // Import AuthService for sign out
 import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for completion status
 
+// NEW IMPORTS for all screens and categories to be linked
+// Corrected path for profile_setup_screen.dart
+import 'package:bliindaidating/profile/profile_setup_screen.dart'; // Corrected Path for Phase 1 setup
+
+// All other imports remain as they were in your last provided version.
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // For /home
+import 'package:bliindaidating/screens/discovery/discover_people_screen.dart'; // For /discovery
+import 'package:bliindaidating/screens/matches/matches_list_screen.dart'; // For /matches
+import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart'; // For /daily-prompts
+import 'package:bliindaidating/screens/notifications/notifications_screen.dart'; // For /notifications
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // For /questionnaire-phase2
+import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart'; // For /questionnaire
+
+// Friends & Events related screens
+import 'package:bliindaidating/friends/local_events_screen.dart'; // For /events
+import 'package:bliindaidating/friends/friends_match_screen.dart'; // For /friends-match
+import 'package:bliindaidating/friends/event_details_screen.dart'; // For /event-details (if dynamic)
+
+// Matching Insights related screens
+import 'package:bliindaidating/screens/dashboard/compatibility_results_screen.dart'; // For /compatibility-results
+import 'package:bliindaidating/screens/dashboard/daily_personality_question_screen.dart'; // For /daily-personality-question
+import 'package:bliindaidating/screens/quiz/personality_quiz_screen.dart'; // For /personality-quiz
+
+// Date Management related screens
+import 'package:bliindaidating/screens/date/scheduled_dates_list_screen.dart'; // For /scheduled-dates-list
+import 'package:bliindaidating/screens/date/post_date_feedback_screen.dart'; // For /post-date-feedback
+import 'package:bliindaidating/matching/date_proposal_screen.dart'; // For /date-proposal
+
+// Info & Support related screens
+import 'package:bliindaidating/screens/info/activity_feed_screen.dart'; // For /activity-feed
+import 'package:bliindaidating/screens/info/blocked_users_screen.dart'; // For /blocked-users
+import 'package:bliindaidating/screens/info/date_ideas_screen.dart'; // For /date-ideas
+import 'package:bliindaidating/screens/info/guided_tour_screen.dart'; // For /guided-tour
+import 'package:bliindaidating/screens/info/privacy_screen.dart'; // For /privacy
+import 'package:bliindaidating/screens/info/safety_tips_screen.dart'; // For /safety-tips
+import 'package:bliindaidating/screens/info/terms_screen.dart'; // For /terms
+import 'package:bliindaidating/screens/info/user_progress_screen.dart'; // For /user-progress
+import 'package:bliindaidating/screens/feedback_report/feedback_screen.dart'; // For /feedback
+import 'package:bliindaidating/screens/feedback_report/report_screen.dart'; // For /report
+import 'package:bliindaidating/screens/info/about_us_screen.dart'; // For /about-us
+
+// Settings related screens
+import 'package:bliindaidating/screens/settings/app_settings_screen.dart'; // For /app-settings
+import 'package:bliindaidating/screens/admin/admin_dashboard_screen.dart'; // For /admin
+import 'package:bliindaidating/screens/premium/referral_screen.dart'; // For /referral
+
+// Other specific screens that might be linked
+import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // For /my-profile
+import 'package:bliindaidating/screens/favorites/favorites_list_screen.dart'; // For /favorites
+import 'package:bliindaidating/matching/match_display_screen.dart'; // For /match-display
+import 'package:bliindaidating/screens/date/scheduled_date_details_screen.dart'; // For /scheduled-date-details
+
+
 // --- Custom Painter for Side Menu Background (Inspired by NebulaBackgroundPainter) ---
 class SideMenuBackgroundPainter extends CustomPainter {
   final Animation<double> animation;
@@ -580,14 +633,6 @@ class _SideMenuCategoryItemState extends State<_SideMenuCategoryItem> with Singl
   }
 }
 
-// --- Dynamic Theme Switcher Widget (REMOVED due to persistent error) ---
-// This widget has been removed as per your instruction to remove lines causing repeated errors.
-// If you wish to re-implement theme switching, please ensure your ThemeController
-// has a 'setTheme(bool isDark)' method or provide the ThemeController code.
-
-// --- Cosmic Credits Widget (REMOVED as requested) ---
-// This widget has been removed as per your instruction.
-
 // --- Main Dashboard Side Menu Widget ---
 class DashboardSideMenu extends StatefulWidget {
   final UserProfile? userProfile;
@@ -789,234 +834,388 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with TickerProvid
                     expandAnimation: _expandAnimation,
                     isCollapsed: isCurrentlyCollapsed,
                   ),
-                  Divider(color: AppConstants.borderColor.withOpacity(0.2), height: 1),
-
-                  // Navigation Items (using ListView for scrollability)
+                  // Menu Items
                   Expanded(
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
-                        // Top Level Items
+                        // Dashboard
                         _SideMenuItem(
-                          icon: Icons.dashboard,
-                          title: 'Dashboard Overview',
+                          icon: Icons.dashboard_rounded,
+                          title: 'Dashboard',
                           routeName: '/home',
                           isSelected: widget.selectedTabIndex == 0,
-                          isEnabled: isProfileFullyComplete, // Only enable if profile is complete
-                          isCollapsed: isCurrentlyCollapsed,
                           onTabSelected: widget.onTabSelected,
                           tabIndex: 0,
-                          expandAnimation: _expandAnimation,
-                        ),
-                        _SideMenuItem(
-                          icon: Icons.favorite,
-                          title: 'Matches',
-                          routeName: '/matches',
-                          isSelected: widget.selectedTabIndex == 1,
-                          isEnabled: isProfileFullyComplete, // Only enable if profile is complete
                           isCollapsed: isCurrentlyCollapsed,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 1,
                           expandAnimation: _expandAnimation,
                         ),
+                        // Discovery
                         _SideMenuItem(
-                          icon: Icons.explore,
+                          icon: Icons.travel_explore_rounded,
                           title: 'Discovery',
                           routeName: '/discovery',
-                          isSelected: widget.selectedTabIndex == 2,
-                          isEnabled: isProfileFullyComplete, // Only enable if profile is complete
+                          isSelected: widget.selectedTabIndex == 1,
+                          onTabSelected: widget.onTabSelected,
+                          tabIndex: 1,
                           isCollapsed: isCurrentlyCollapsed,
+                          expandAnimation: _expandAnimation,
+                        ),
+                        // Matches
+                        _SideMenuItem(
+                          icon: Icons.favorite_rounded,
+                          title: 'Matches',
+                          routeName: '/matches',
+                          isSelected: widget.selectedTabIndex == 2,
                           onTabSelected: widget.onTabSelected,
                           tabIndex: 2,
+                          isCollapsed: isCurrentlyCollapsed,
                           expandAnimation: _expandAnimation,
                         ),
+                        // News Feed
                         _SideMenuItem(
-                          icon: Icons.quiz,
-                          title: 'Questionnaire',
-                          routeName: '/questionnaire', // This route should lead to Phase2SetupScreen
+                          icon: Icons.rss_feed_rounded,
+                          title: 'News Feed',
+                          routeName: '/newsfeed',
                           isSelected: widget.selectedTabIndex == 3,
-                          isEnabled: isPhase1Complete, // Enable if Phase 1 is complete
-                          isCollapsed: isCurrentlyCollapsed,
                           onTabSelected: widget.onTabSelected,
                           tabIndex: 3,
+                          isCollapsed: isCurrentlyCollapsed,
                           expandAnimation: _expandAnimation,
                         ),
+                        // Daily Prompts
                         _SideMenuItem(
-                          icon: Icons.person_add,
-                          title: 'Profile Setup',
-                          routeName: '/profile_setup', // This route should lead to Phase1SetupScreen
+                          icon: Icons.lightbulb_outline_rounded,
+                          title: 'Daily Prompts',
+                          routeName: '/daily-prompts',
                           isSelected: widget.selectedTabIndex == 4,
-                          isEnabled: true, // Always enabled for initial setup/re-visiting
-                          isCollapsed: isCurrentlyCollapsed,
                           onTabSelected: widget.onTabSelected,
                           tabIndex: 4,
+                          isCollapsed: isCurrentlyCollapsed,
                           expandAnimation: _expandAnimation,
                         ),
+                        // Notifications
                         _SideMenuItem(
-                          icon: Icons.notifications,
+                          icon: Icons.notifications_rounded,
                           title: 'Notifications',
                           routeName: '/notifications',
                           isSelected: widget.selectedTabIndex == 5,
-                          isEnabled: true, // Notifications might be accessible even if profile incomplete
-                          isCollapsed: isCurrentlyCollapsed,
                           onTabSelected: widget.onTabSelected,
                           tabIndex: 5,
+                          isCollapsed: isCurrentlyCollapsed,
                           expandAnimation: _expandAnimation,
                         ),
+                        // Profile Setup (Phase 1) - always visible for review
                         _SideMenuItem(
-                          icon: Icons.event,
-                          title: 'Local Events',
-                          routeName: '/events',
+                          icon: Icons.account_circle_rounded,
+                          title: 'Profile Setup',
+                          routeName: '/profile_setup',
                           isSelected: widget.selectedTabIndex == 6,
-                          isEnabled: isProfileFullyComplete, // Only enable if profile is complete
-                          isCollapsed: isCurrentlyCollapsed,
                           onTabSelected: widget.onTabSelected,
                           tabIndex: 6,
-                          expandAnimation: _expandAnimation,
-                        ),
-                        _SideMenuItem(
-                          icon: Icons.gavel,
-                          title: 'Penalties',
-                          routeName: '/penalties',
-                          isSelected: widget.selectedTabIndex == 7,
-                          isEnabled: true, // Penalties might be accessible regardless of profile completion
                           isCollapsed: isCurrentlyCollapsed,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 7,
                           expandAnimation: _expandAnimation,
                         ),
+                        // Phase 2 Setup / Questionnaire (conditional visibility)
+                        // This should be the 'ongoing questionnaire'
+                        if (isPhase1Complete)
+                          _SideMenuItem(
+                            icon: Icons.quiz_rounded,
+                            title: 'AI Questionnaire',
+                            routeName: '/questionnaire', // New route for the ongoing questionnaire
+                            isSelected: widget.selectedTabIndex == 7,
+                            onTabSelected: widget.onTabSelected,
+                            tabIndex: 7,
+                            isCollapsed: isCurrentlyCollapsed,
+                            expandAnimation: _expandAnimation,
+                          ),
+                        // Conditional Phase 2 Setup (if not complete)
+                        if (isPhase1Complete && !isPhase2Complete)
+                          _SideMenuItem(
+                            icon: Icons.rocket_launch_rounded,
+                            title: 'Complete Phase 2',
+                            routeName: '/questionnaire-phase2', // Route for Phase 2 setup
+                            isSelected: widget.selectedTabIndex == 8,
+                            onTabSelected: widget.onTabSelected,
+                            tabIndex: 8,
+                            isCollapsed: isCurrentlyCollapsed,
+                            expandAnimation: _expandAnimation,
+                          ),
 
-                        // Settings and Feedback Category
+                        Divider(color: AppConstants.borderColor.withOpacity(0.2), height: AppConstants.spacingMedium),
+
+                        // --- Categories with Dropdowns ---
+
+                        // Friends & Events Category
                         _SideMenuCategoryItem(
-                          title: 'App Management',
-                          icon: Icons.settings,
+                          title: 'Friends & Events',
+                          icon: Icons.people_alt_rounded,
                           isCollapsed: isCurrentlyCollapsed,
                           expandAnimation: _expandAnimation,
                           children: [
                             _SideMenuItem(
-                              icon: Icons.settings,
-                              title: 'Settings',
-                              routeName: '/settings',
-                              isSelected: widget.selectedTabIndex == 8,
-                              isEnabled: true,
+                              icon: Icons.event_note_rounded,
+                              title: 'Local Events',
+                              routeName: '/events',
                               isCollapsed: isCurrentlyCollapsed,
-                              onTabSelected: widget.onTabSelected,
-                              tabIndex: 8,
                               expandAnimation: _expandAnimation,
                             ),
                             _SideMenuItem(
-                              icon: Icons.feedback,
-                              title: 'Feedback',
-                              routeName: '/feedback',
-                              isSelected: widget.selectedTabIndex == 9,
-                              isEnabled: true,
+                              icon: Icons.group_add_rounded,
+                              title: 'Friends Match',
+                              routeName: '/friends-match',
                               isCollapsed: isCurrentlyCollapsed,
-                              onTabSelected: widget.onTabSelected,
-                              tabIndex: 9,
                               expandAnimation: _expandAnimation,
                             ),
-                            _SideMenuItem(
-                              icon: Icons.flag,
-                              title: 'Report Issue',
-                              routeName: '/report',
-                              isSelected: widget.selectedTabIndex == 10,
-                              isEnabled: true,
-                              isCollapsed: isCurrentlyCollapsed,
-                              onTabSelected: widget.onTabSelected,
-                              tabIndex: 10,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            if (authService.currentUser?.email == AppConstants.adminEmail) // Admin check
-                              _SideMenuItem(
-                                icon: Icons.admin_panel_settings,
-                                title: 'Admin Panel',
-                                routeName: '/admin',
-                                isSelected: widget.selectedTabIndex == 11,
-                                isEnabled: true,
-                                isCollapsed: isCurrentlyCollapsed,
-                                onTabSelected: widget.onTabSelected,
-                                tabIndex: 11,
-                                expandAnimation: _expandAnimation,
-                              ),
                           ],
                         ),
 
-                        // Information Category
+                        // Matching Insights Category
                         _SideMenuCategoryItem(
-                          title: 'Information',
-                          icon: Icons.info,
+                          title: 'Matching Insights',
+                          icon: Icons.insights_rounded,
                           isCollapsed: isCurrentlyCollapsed,
                           expandAnimation: _expandAnimation,
                           children: [
                             _SideMenuItem(
-                              icon: Icons.info_outline,
-                              title: 'About Us',
-                              routeName: '/about-us',
-                              isSelected: widget.selectedTabIndex == 12,
-                              isEnabled: true,
+                              icon: Icons.auto_awesome_rounded,
+                              title: 'Compatibility Results',
+                              routeName: '/compatibility-results',
                               isCollapsed: isCurrentlyCollapsed,
-                              onTabSelected: widget.onTabSelected,
-                              tabIndex: 12,
                               expandAnimation: _expandAnimation,
                             ),
                             _SideMenuItem(
-                              icon: Icons.privacy_tip_outlined,
+                              icon: Icons.lightbulb_rounded,
+                              title: 'Daily Personality Q',
+                              routeName: '/daily-personality-question',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.sentiment_satisfied_alt_rounded,
+                              title: 'Personality Quiz',
+                              routeName: '/personality-quiz',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                          ],
+                        ),
+
+                        // Date Management Category
+                        _SideMenuCategoryItem(
+                          title: 'Date Management',
+                          icon: Icons.calendar_today_rounded,
+                          isCollapsed: isCurrentlyCollapsed,
+                          expandAnimation: _expandAnimation,
+                          children: [
+                            _SideMenuItem(
+                              icon: Icons.list_alt_rounded,
+                              title: 'Scheduled Dates',
+                              routeName: '/scheduled-dates-list',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.rate_review_rounded,
+                              title: 'Post-Date Feedback',
+                              routeName: '/post-date-feedback',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.date_range_rounded,
+                              title: 'Date Proposals',
+                              routeName: '/date-proposal',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                          ],
+                        ),
+
+                        // Info & Support Category
+                        _SideMenuCategoryItem(
+                          title: 'Info & Support',
+                          icon: Icons.info_rounded,
+                          isCollapsed: isCurrentlyCollapsed,
+                          expandAnimation: _expandAnimation,
+                          children: [
+                            _SideMenuItem(
+                              icon: Icons.history_toggle_off_rounded,
+                              title: 'Activity Feed',
+                              routeName: '/activity-feed',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.block_rounded,
+                              title: 'Blocked Users',
+                              routeName: '/blocked-users',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.lightbulb_outline_rounded,
+                              title: 'Date Ideas',
+                              routeName: '/date-ideas',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.tour_rounded,
+                              title: 'Guided Tour',
+                              routeName: '/guided-tour',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.security_rounded,
                               title: 'Privacy Policy',
                               routeName: '/privacy',
-                              isSelected: widget.selectedTabIndex == 13,
-                              isEnabled: true,
                               isCollapsed: isCurrentlyCollapsed,
-                              onTabSelected: widget.onTabSelected,
-                              tabIndex: 13,
                               expandAnimation: _expandAnimation,
                             ),
                             _SideMenuItem(
-                              icon: Icons.gavel_outlined,
+                              icon: Icons.health_and_safety_rounded,
+                              title: 'Safety Tips',
+                              routeName: '/safety-tips',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.gavel_rounded,
                               title: 'Terms of Service',
                               routeName: '/terms',
-                              isSelected: widget.selectedTabIndex == 14,
-                              isEnabled: true,
                               isCollapsed: isCurrentlyCollapsed,
-                              onTabSelected: widget.onTabSelected,
-                              tabIndex: 14,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.bar_chart_rounded,
+                              title: 'User Progress',
+                              routeName: '/user-progress',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.feedback_rounded,
+                              title: 'Feedback',
+                              routeName: '/feedback',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.report_rounded,
+                              title: 'Report a Problem',
+                              routeName: '/report',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.info_outline_rounded,
+                              title: 'About Us',
+                              routeName: '/about-us',
+                              isCollapsed: isCurrentlyCollapsed,
                               expandAnimation: _expandAnimation,
                             ),
                           ],
                         ),
+
+                        // Settings Category
+                        _SideMenuCategoryItem(
+                          title: 'Settings',
+                          icon: Icons.settings_rounded,
+                          isCollapsed: isCurrentlyCollapsed,
+                          expandAnimation: _expandAnimation,
+                          children: [
+                            _SideMenuItem(
+                              icon: Icons.app_settings_alt_rounded,
+                              title: 'App Settings',
+                              routeName: '/app-settings',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.vpn_key_rounded,
+                              title: 'Admin Dashboard',
+                              routeName: '/admin',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                            _SideMenuItem(
+                              icon: Icons.card_giftcard_rounded,
+                              title: 'Referral Program',
+                              routeName: '/referral',
+                              isCollapsed: isCurrentlyCollapsed,
+                              expandAnimation: _expandAnimation,
+                            ),
+                          ],
+                        ),
+
+                        Divider(color: AppConstants.borderColor.withOpacity(0.2), height: AppConstants.spacingMedium),
+
+                        // Logout Button
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppConstants.paddingSmall,
+                            vertical: AppConstants.paddingExtraSmall,
+                          ),
+                          child: AnimatedBuilder(
+                            animation: _expandAnimation,
+                            builder: (context, child) {
+                              final double expandFactor = _expandAnimation.value;
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () async {
+                                    await authService.signOut();
+                                    if (mounted) {
+                                      context.go('/login'); // Redirect to login after logout
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppConstants.paddingMedium,
+                                      vertical: AppConstants.paddingSmall,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.logout_rounded,
+                                          color: logoutButtonColor,
+                                          size: AppConstants.fontSizeExtraLarge,
+                                        ),
+                                        SizedBox(width: AppConstants.spacingMedium * expandFactor),
+                                        Expanded(
+                                          child: ClipRect(
+                                            child: Align(
+                                              alignment: Alignment.centerLeft,
+                                              widthFactor: expandFactor,
+                                              child: Opacity(
+                                                opacity: expandFactor,
+                                                child: Text(
+                                                  'Logout',
+                                                  style: TextStyle(
+                                                    color: logoutButtonColor,
+                                                    fontSize: AppConstants.fontSizeMedium,
+                                                    fontFamily: 'Inter',
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ],
-                    ),
-                  ),
-                  // Logout Button
-                  Padding(
-                    padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        await authService.signOut();
-                        if (mounted) {
-                          context.go('/'); // Redirect to landing page after logout
-                        }
-                      },
-                      icon: Icon(Icons.logout, color: textColor),
-                      label: AnimatedOpacity(
-                        opacity: isCurrentlyCollapsed ? 0.0 : 1.0,
-                        duration: AppConstants.animationDurationShort,
-                        child: Text(
-                          'Logout',
-                          style: TextStyle(color: textColor, fontFamily: 'Inter'),
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: logoutButtonColor,
-                        foregroundColor: textColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isCurrentlyCollapsed ? AppConstants.paddingSmall : AppConstants.paddingLarge,
-                          vertical: AppConstants.paddingMedium,
-                        ),
-                        minimumSize: Size(isCurrentlyCollapsed ? 50 : double.infinity, 50),
-                      ),
                     ),
                   ),
                 ],

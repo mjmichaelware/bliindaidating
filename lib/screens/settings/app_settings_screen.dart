@@ -1,77 +1,65 @@
-import 'package:flutter/material.dart';
+// lib/screens/settings/app_settings_screen.dart
 
-class AppSettingsScreen extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
+
+class AppSettingsScreen extends StatelessWidget {
   const AppSettingsScreen({super.key});
 
   @override
-  State<AppSettingsScreen> createState() => _AppSettingsScreenState();
-}
-
-class _AppSettingsScreenState extends State<AppSettingsScreen> {
-  bool _notificationsEnabled = true;
-  bool _privacyMode = false;
-  bool _darkMode = true;
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('App Settings'),
-        backgroundColor: theme.colorScheme.primary,
+        title: Text(
+          'App Settings',
+          style: TextStyle(
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400,
+        iconTheme: IconThemeData(color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
-          children: [
-            SwitchListTile(
-              title: const Text('Enable Notifications'),
-              subtitle: const Text('Get notified about matches and events'),
-              value: _notificationsEnabled,
-              onChanged: (val) {
-                setState(() {
-                  _notificationsEnabled = val;
-                });
-              },
-            ),
-            SwitchListTile(
-              title: const Text('Privacy Mode'),
-              subtitle: const Text('Hide profile temporarily from discovery'),
-              value: _privacyMode,
-              onChanged: (val) {
-                setState(() {
-                  _privacyMode = val;
-                });
-              },
-            ),
-            SwitchListTile(
-              title: const Text('Dark Mode'),
-              subtitle: const Text('Use dark theme for the app'),
-              value: _darkMode,
-              onChanged: (val) {
-                setState(() {
-                  _darkMode = val;
-                });
-                // You can implement theme switching logic here later
-              },
-            ),
-            const Divider(height: 40, color: Colors.white24),
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_rounded, color: Colors.deepPurpleAccent),
-              title: const Text('Privacy Policy'),
-              onTap: () {
-                // Implement navigation or modal for privacy policy
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.help_outline_rounded, color: Colors.deepPurpleAccent),
-              title: const Text('Help & Support'),
-              onTap: () {
-                // Implement navigation or modal for help & support
-              },
-            ),
-          ],
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.app_settings_alt_rounded,
+                size: 80,
+                color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
+              ),
+              const SizedBox(height: AppConstants.spacingMedium),
+              Text(
+                'This is the App Settings Screen (Placeholder)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  fontSize: AppConstants.fontSizeLarge,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'Configure various application settings and preferences.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  fontSize: AppConstants.fontSizeBody,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

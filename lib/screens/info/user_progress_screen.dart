@@ -1,54 +1,65 @@
+// lib/screens/info/user_progress_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart';
 
 class UserProgressScreen extends StatelessWidget {
   const UserProgressScreen({super.key});
 
-  // Example progress stats
-  final Map<String, int> progressStats = const {
-    'Profile Completeness': 85,
-    'Events Attended': 12,
-    'Daily Prompts Completed': 34,
-    'Matches Made': 7,
-  };
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Progress'),
-        backgroundColor: theme.colorScheme.primary,
+        title: Text(
+          'User Progress',
+          style: TextStyle(
+            color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isDarkMode ? AppConstants.primaryColorShade900 : AppConstants.lightPrimaryColorShade400,
+        iconTheme: IconThemeData(color: isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: progressStats.entries.map((entry) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    entry.key,
-                    style: theme.textTheme.titleMedium?.copyWith(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: entry.value / 100,
-                    color: Colors.deepPurpleAccent,
-                    backgroundColor: Colors.white12,
-                    minHeight: 12,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${entry.value}%',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                  ),
-                ],
+      backgroundColor: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.bar_chart_rounded,
+                size: 80,
+                color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
               ),
-            );
-          }).toList(),
+              const SizedBox(height: AppConstants.spacingMedium),
+              Text(
+                'This is the User Progress Screen (Placeholder)',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
+                  fontSize: AppConstants.fontSizeLarge,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: AppConstants.spacingSmall),
+              Text(
+                'Track your progress, achievements, and milestones within the app.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,
+                  fontSize: AppConstants.fontSizeBody,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
