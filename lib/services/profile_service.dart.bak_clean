@@ -1,5 +1,8 @@
-import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:supabase_flutter/supabase_flutter.dart';
+// lib/services/profile_service.dart
+
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
 import 'package:bliindaidating/models/user_profile.dart'; // Ensure this path is correct
 import 'package:image_picker/image_picker.dart'; // For XFile
 import 'dart:typed_data'; // For Uint8List
@@ -11,27 +14,24 @@ import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for b
 import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'dart:io' as io; // Explicitly import dart:io as 'io'
 
-class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now, as it's common.
+class ProfileService extends ChangeNotifier {
   final SupabaseClient _supabaseClient;
-
-  UserProfile? _userProfile;
-  bool _isProfileLoaded = false;
-
   ProfileService(this._supabaseClient);
-
-  // Getters
+    Future<UserProfile?> fetchUserProfile({required String id}) async {
+  UserProfile? _userProfile;
   UserProfile? get userProfile => _userProfile;
+
+  // Added: Flag to indicate initial profile load status
+  bool _isProfileLoaded = false;
   bool get isProfileLoaded => _isProfileLoaded;
 
-  // Method to set the user profile
+
   void setUserProfile(UserProfile? profile) {
     _userProfile = profile;
-    _isProfileLoaded = true; // Mark as loaded if profile is set
     notifyListeners();
     debugPrint('ProfileService: User profile updated to: ${profile?.id}');
   }
 
-  // Method to clear the user profile (on sign out)
   void clearProfile() {
     _userProfile = null;
     _isProfileLoaded = true; // Mark as loaded even if cleared
@@ -44,49 +44,13 @@ class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now,
   Future<void> initializeProfile() async {
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
-      await fetchUserProfile(id: currentUser.id); // Changed to named parameter
+      await fetchUserProfile(currentUser.id);
     } else {
       _userProfile = null; // Ensure no stale profile if no user logged in
     }
     _isProfileLoaded = true; // Mark as loaded after initial check
     notifyListeners(); // Notify listeners that initial load is complete
     debugPrint('ProfileService: Initial profile load complete. User: ${currentUser?.id}, Profile exists: ${_userProfile != null}');
-  }
-
-  Future<UserProfile?> fetchUserProfile({required String id}) async {
-    try {
-      debugPrint('ProfileService: Attempting to fetch profile for user ID: $id');
-      final response = await _supabaseClient
-          .from('user_profiles') // Corrected table name
-          .select()
-          .eq('id', id)
-          .single();
-
-      if (response != null) {
-        final Map<String, dynamic> data = response;
-        debugPrint('ProfileService: Raw data fetched: $data');
-        final profile = UserProfile.fromJson(data);
-        setUserProfile(profile); // Set the fetched profile
-        debugPrint('ProfileService: User profile fetched and set for ID: ${profile.id}');
-        return profile;
-      } else {
-        debugPrint('ProfileService: No profile found for user $id (response was null).');
-        _isProfileLoaded = true; // Mark as loaded even if null, to prevent endless retries
-        return null;
-      }
-    } on PostgrestException catch (e) {
-      if (e.message.contains('rows not found') || e.code == 'PGRST116') { // Added PGRST116 check
-        debugPrint('ProfileService: Profile not found for user $id (likely first login or not yet created).');
-        _isProfileLoaded = true; // Mark as loaded even if not found
-        setUserProfile(null); // Clear local profile if not found
-        return null;
-      }
-      debugPrint('ProfileService Error fetching profile: ${e.message}');
-      rethrow;
-    } catch (e) {
-      debugPrint('ProfileService Generic error fetching profile: $e');
-      rethrow;
-    }
   }
 
   Future<String> uploadAnalysisPhoto(String userId, dynamic file) async {
@@ -134,9 +98,8 @@ class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now,
 
   Future<void> insertProfile(UserProfile profile) async {
     try {
-      debugPrint('ProfileService: Attempting to insert profile for user ID: ${profile.id}');
-      await _supabaseClient
-          .from('user_profiles') // Corrected table name
+      await Supabase.instance.client
+          .from('user_profiles')
           .insert(profile.toJson());
 
       setUserProfile(profile);
@@ -152,11 +115,10 @@ class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now,
 
   Future<void> updateProfile(UserProfile profile) async {
     try {
-      debugPrint('ProfileService: Attempting to update profile for user ID: ${profile.id}');
-      await _supabaseClient
-          .from('user_profiles') // Corrected table name
+      await Supabase.instance.client
+          .from('user_profiles')
           .update(profile.toJson())
-          .eq('id', profile.id);
+          .eq('id', profile.id); // Corrected: Use 'id' matching UserProfile.userId
 
       setUserProfile(profile);
       debugPrint('Profile updated successfully for user: ${profile.id}');
@@ -167,6 +129,39 @@ class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now,
       debugPrint('General Error updating profile: $e');
       rethrow;
     }
+  }
+
+    try {
+      final response = await Supabase.instance.client
+          .from('user_profiles')
+          .select()
+          .eq('id', userId) // Corrected: Use 'id' matching UserProfile.userId
+          .single();
+
+      if (response != null) {
+        final profile = UserProfile.fromJson(response);
+        setUserProfile(profile);
+        return profile;
+      }
+      return null;
+    } on PostgrestException catch (e) {
+      // Supabase's PostgREST returns 'PGRST116' (or a message indicating '0 rows')
+      // when .single() finds no matching record. This is expected for new users.
+      if (e.code == 'PGRST116' || e.message.contains('0 rows')) {
+        debugPrint('Profile not found for user $userId (likely first login or not yet created).');
+        setUserProfile(null); // Clear local profile if not found and notify
+        return null;
+      }
+      debugPrint('Supabase Error fetching profile: ${e.message}');
+      rethrow;
+    } catch (e) {
+      debugPrint('General Error fetching profile: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> loadUserProfile(String userId) async {
+    await fetchUserProfile(userId);
   }
 
   /// NEW: Fetches a list of all user profiles from the backend.

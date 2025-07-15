@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'package:provider/provider.dart'; // FIXED: Changed .h to .dart
+import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'dart:ui'; // Import for ImageFilter
 import 'dart:math' as math; // For math.Random and other math functions
 
 // Local imports for core project components
 import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // CORRECTED: .h changed to .dart
+import 'package:bliindaidating/controllers/theme_controller.dart'; // Corrected import
+import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 
 // OpenAI Integration Imports (already confirmed to exist and be populated)
@@ -28,10 +28,13 @@ import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switche
 // NEW: Tab Content Screen Imports
 import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
 import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
-import 'package:bliindaidating/screens/discovery/discover_people_screen.dart'; // Corrected import to discover_people_screen
+import 'package:bliindaidating/screens/discovery/discover_people_screen.dart';
 import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart';
 import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
+
+// Import the new Dashboard Overview Screen
+import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart'; // NEW IMPORT
 
 // Re-importing the custom painters from landing_page for consistency
 import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains NebulaBackgroundPainter, ParticleFieldPainter
@@ -45,14 +48,15 @@ class MainDashboardScreen extends StatefulWidget {
 }
 
 class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerProviderStateMixin {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   UserProfile? _userProfile;
   String? _profilePictureDisplayUrl;
   bool _isLoadingProfile = true;
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
-  int _selectedTabIndex = 0; // Default to Newsfeed (index 0)
+  int _selectedTabIndex = 0; // Default to Dashboard Overview (index 0)
 
   // State for the collapsible side menu
-  // This state is now managed by MainDashboardScreen for the persistent sidebar
   bool _isSideMenuCollapsed = false;
 
   // Animation controllers for the cosmic background
@@ -64,8 +68,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
   final List<Offset> _nebulaParticles = [];
   final List<Offset> _deepSpaceParticles = [];
   final math.Random _random = math.Random();
-
-
 
   @override
   void initState() {
@@ -101,7 +103,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     }
 
     try {
-      final UserProfile? fetchedProfile = await profileService.fetchUserProfile(currentUser.id);
+      final UserProfile? fetchedProfile = await profileService.fetchUserProfile(id: currentUser.id);
       if (fetchedProfile != null) {
         setState(() {
           _userProfile = fetchedProfile;
@@ -112,10 +114,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
           });
         }
+        // This redirect logic should primarily be handled by GoRouter's redirect logic in main.dart
+        // This check here is a fallback/additional safety.
         if (!fetchedProfile.isPhase1Complete) {
-           debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
-           if (mounted) context.go('/profile_setup');
-           return;
+            debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
+            if (mounted) context.go('/profile_setup');
+            return;
         }
       } else {
         setState(() { _isLoadingProfile = false; });
@@ -126,7 +130,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
       }
 
       _profileSubscription = Supabase.instance.client
-          .from('user_profiles') // Corrected table name from 'profiles' to 'user_profiles'
+          .from('user_profiles')
           .stream(primaryKey: ['id'])
           .eq('id', currentUser.id)
           .listen((List<Map<String, dynamic>> data) async {
@@ -138,7 +142,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               _profilePictureDisplayUrl = updatedProfile.profilePictureUrl;
             }
           });
-          // Using fullLegalName or displayName as per your model
           debugPrint('MainDashboardScreen: Realtime update for profile: ${updatedProfile.displayName ?? updatedProfile.fullLegalName ?? 'N/A'}');
         }
       });
@@ -186,7 +189,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
   @override
   Widget build(BuildContext context) {
-    final theme = Provider.of<ThemeController>(context);
+    final theme = Provider.of<ThemeController>(context); // Corrected type
     final isDarkMode = theme.isDarkMode;
     final size = MediaQuery.of(context).size;
 
@@ -198,20 +201,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     final profileService = Provider.of<ProfileService>(context);
     final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
 
-    // Phase 2 setup is now a direct route, not a tab index in _dashboardScreens
-    // The banner will navigate directly to '/questionnaire-phase2'
-    const int dummyPhase2SetupTabIndex = -1; // No longer directly mapped to a tab index in _dashboardScreens
-
     final bool absorbAndBlurContent = _isLoadingProfile || (!isPhase2Complete); // Blur if loading or Phase 2 incomplete
 
     final List<Widget> _dashboardScreens = const [
-      NewsfeedScreen(), // Index 0
-      MatchesListScreen(), // Index 1
-      DiscoverPeopleScreen(), // Index 2
-      QuestionnaireScreen(), // Index 3
-      MyProfileScreen(), // Index 4 (Example of another main content screen)
+      DashboardOverviewScreen(), // Index 0
+      NewsfeedScreen(), // Index 1
+      MatchesListScreen(), // Index 2
+      DiscoverPeopleScreen(), // Index 3
+      QuestionnaireScreen(), // Index 4
+      MyProfileScreen(), // Index 5 (Example of another main content screen)
       // Add other main content screens that should be switched via tabs here
-      // Phase2SetupScreen is now a direct route, not part of this list.
     ];
 
     // Determine the width of the side menu based on its collapsed state
@@ -225,19 +224,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
 
 
     return Scaffold(
+      key: _scaffoldKey,
       extendBodyBehindAppBar: true,
-      // AppBar for mobile (will show menu icon to open drawer)
-      // For larger screens, the side menu is persistent, so no need for leading icon in app bar.
       appBar: isSmallScreen
           ? DashboardAppBar(
               showProfileCompletion: !isPhase2Complete,
-              // For mobile, the menu button opens the endDrawer
               onMenuPressed: () {
-                Scaffold.of(context).openEndDrawer();
+                _scaffoldKey.currentState?.openEndDrawer();
               },
             )
-          : null, // No app bar for larger screens (or a custom one without leading menu icon)
-      // End Drawer for mobile (the actual side menu)
+          : null,
       endDrawer: isSmallScreen
           ? DashboardSideMenu(
               userProfile: _userProfile,
@@ -248,15 +244,14 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                 Navigator.of(context).pop(); // Close drawer after selection
               },
               isPhase2Complete: isPhase2Complete,
-              onCollapseToggle: _onSideMenuCollapseToggle, // This won't be used in drawer mode
-              isInitiallyCollapsed: false, // Mobile drawer is always initially expanded when opened
-              isDrawerMode: true, // Explicitly set to true for drawer behavior
+              onCollapseToggle: _onSideMenuCollapseToggle,
+              isInitiallyCollapsed: false,
+              isDrawerMode: true,
             )
           : null,
       body: Stack(
         children: [
           // --- Full-screen Background Elements (Nebula and Particles) ---
-          // Nebula background
           Positioned.fill(
             child: CustomPaint(
               painter: NebulaBackgroundPainter(
@@ -266,18 +261,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
               ),
             ),
           ),
-          // Particle field background
           Positioned.fill(
             child: CustomPaint(
               painter: ParticleFieldPainter(
-                _deepSpaceParticles, // Using deep space particles for main background
+                _deepSpaceParticles,
                 _particleFieldAnimation,
-                AppConstants.spacingExtraSmall, // Particle size
+                AppConstants.spacingExtraSmall,
                 isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
               ),
             ),
           ),
-          // Subtle overlay gradient for depth and consistency
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -286,7 +279,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                     isDarkMode ? AppConstants.backgroundColor.withOpacity(0.8) : AppConstants.lightBackgroundColor.withOpacity(0.8),
                     isDarkMode ? AppConstants.backgroundColor.withOpacity(0.95) : AppConstants.lightBackgroundColor.withOpacity(0.95),
                   ],
-                  center: Alignment.center, // Centered for overall screen effect
+                  center: Alignment.center,
                   radius: 1.0,
                 ),
               ),
@@ -296,7 +289,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
           SafeArea(
             child: Row(
               children: [
-                // Persistent Side Menu for Tablet/Desktop
                 if (!isSmallScreen)
                   DashboardSideMenu(
                     userProfile: _userProfile,
@@ -304,27 +296,22 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                     selectedTabIndex: _selectedTabIndex,
                     onTabSelected: _onTabSelected,
                     isPhase2Complete: isPhase2Complete,
-                    onCollapseToggle: _onSideMenuCollapseToggle, // Pass callback
-                    isInitiallyCollapsed: isMediumScreen, // Start collapsed on tablet, expanded on desktop
-                    isDrawerMode: false, // Explicitly set to false for persistent sidebar behavior
+                    onCollapseToggle: _onSideMenuCollapseToggle,
+                    isInitiallyCollapsed: isMediumScreen,
+                    isDrawerMode: false,
                   ),
-                // Main Content Area - dynamically sized
                 AnimatedContainer(
                   duration: AppConstants.animationDurationMedium,
                   curve: Curves.easeInOutCubic,
                   width: isSmallScreen
-                      ? size.width // Mobile: takes full width
-                      : size.width - sideMenuWidth, // Desktop/Tablet: takes remaining width
+                      ? size.width
+                      : size.width - sideMenuWidth,
                   child: Column(
                     children: [
-                      // Dashboard AppBar for larger screens (since Scaffold AppBar is null)
                       if (!isSmallScreen)
                         DashboardAppBar(
                           showProfileCompletion: !isPhase2Complete,
-                          // No menu button needed here as sidebar is persistent
-                          // You might add other actions here if needed
                         ),
-                      // Phase 2 Completion Banner
                       if (!isPhase2Complete && !_isLoadingProfile)
                         Container(
                           padding: const EdgeInsets.all(AppConstants.paddingMedium),
@@ -366,7 +353,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: () {
-                                    // Navigate directly to the Phase 2 setup screen route
                                     context.go('/questionnaire-phase2');
                                   },
                                   style: TextButton.styleFrom(
@@ -389,7 +375,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                             ],
                           ),
                         ),
-                      // Loading indicator or content area
                       _isLoadingProfile
                           ? Expanded(
                               child: Center(
@@ -415,7 +400,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                                 ),
                               ),
                             ),
-                      // Dashboard Footer at the very bottom
                       const DashboardFooter(),
                     ],
                   ),

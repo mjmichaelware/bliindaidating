@@ -1,10 +1,10 @@
+part 'user_profile.g.dart';
+
 import 'dart:convert'; // Essential for jsonEncode and jsonDecode
 import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:json_annotation/json_annotation.dart'; // Required for @JsonSerializable()
 
-// Removed: part 'user_profile.g.dart';
-// Removed: import 'package:json_annotation/json_annotation.dart';
-
-// Removed: @JsonSerializable()
+@JsonSerializable()
 class UserProfile {
   final String id;
   final String email;
@@ -50,12 +50,12 @@ class UserProfile {
   final String? communicationStyle;
   final String? mentalHealthDisclosures;
   final String? petOwnership;
-  final String? travelFrequencyOrFavoriteDestinations;
+  final String? travelFrequencyOrFavoriteDestinations; // Corrected field name
   final Map<String, bool> profileVisibilityPreferences;
   final Map<String, bool> pushNotificationPreferences;
   final bool isPhase1Complete;
   final bool isPhase2Complete;
-  final bool isAdmin;
+  final bool isAdmin; // To check if user is an admin
   final Map<String, dynamic> questionnaireAnswers;
   final Map<String, dynamic> personalityAssessmentResults;
 
@@ -63,12 +63,12 @@ class UserProfile {
   final String? addressZip;
   final String? gender;
   final double? height;
-  final String? interests;
+  final String? interests; // Remains String? as it's a raw deprecated string
   final String? governmentIdFrontUrl;
   final String? governmentIdBackUrl;
   final String? fullName;
-  final String? hobbiesAndInterestsNew;
-  final String? loveLanguagesNew;
+  final String? hobbiesAndInterestsNew; // Remains String? as it's a raw deprecated string
+  final String? loveLanguagesNew; // Remains String? as it's a raw deprecated string
   final String? locationCity;
   final String? locationState;
 
@@ -117,7 +117,7 @@ class UserProfile {
     this.communicationStyle,
     this.mentalHealthDisclosures,
     this.petOwnership,
-    this.travelFrequencyOrFavoriteDestinations,
+    this.travelFrequencyOrFavoriteDestinations, // Corrected parameter name
     this.profileVisibilityPreferences = const {},
     this.pushNotificationPreferences = const {},
     this.isPhase1Complete = false,
@@ -200,7 +200,7 @@ class UserProfile {
 
     List<String> resolvedHobbiesAndInterests = [];
     if (json['hobbies_and_interests'] != null) {
-      resolvedHobbiesAndInterests = _decodeStringList(json['hobbies_and_interests']);
+      resolvedHobbiesAndArrests = _decodeStringList(json['hobbies_and_interests']);
     } else if (json['hobbies_and_interests_new'] != null) {
       resolvedHobbiesAndInterests = _decodeStringList(json['hobbies_and_interests_new']);
     } else if (json['interests'] != null) {
@@ -254,17 +254,17 @@ class UserProfile {
       personalityTraits: _decodeStringList(json['personality_traits']),
       willingToRelocate: json['willing_to_relocate'] as bool?,
       monogamyVsPolyamoryPreferences: json['monogamy_vs_polyamory_preferences'] as String?,
-      astrologicalSign: json['astrological_sign'] as String?,
-      attachmentStyle: json['attachment_style'] as String?,
-      communicationStyle: json['communication_style'] as String?,
-      mentalHealthDisclosures: json['mental_health_disclosures'] as String?,
-      petOwnership: json['pet_ownership'] as String?,
-      travelFrequencyOrFavoriteDestinations: json['travel_frequency_or_favorite_destinations'] as String?,
+      astrologicalSign: json['astrological_sign'] as String?, // Fixed
+      attachmentStyle: json['attachment_style'] as String?, // Fixed
+      communicationStyle: json['communication_style'] as String?, // Fixed
+      mentalHealthDisclosures: json['mental_health_disclosures'] as String?, // Fixed
+      petOwnership: json['pet_ownership'] as String?, // Fixed
+      travelFrequencyOrFavoriteDestinations: json['travel_frequency_or_favorite_destinations'] as String?, // Fixed
       profileVisibilityPreferences: _decodeStringBoolMap(json['profile_visibility_preferences']),
       pushNotificationPreferences: _decodeStringBoolMap(json['push_notification_preferences']),
       isPhase1Complete: json['is_phase_1_complete'] as bool? ?? false,
       isPhase2Complete: json['is_phase_2_complete'] as bool? ?? false,
-      isAdmin: json['is_admin'] as bool? ?? false,
+      isAdmin: json['is_admin'] as bool? ?? false, // Ensure isAdmin is mapped
       questionnaireAnswers: _decodeStringDynamicMap(json['questionnaire_answers']),
       personalityAssessmentResults: _decodeStringDynamicMap(json['personality_assessment_results']),
 
@@ -312,16 +312,16 @@ class UserProfile {
       'marital_status': maritalStatus,
       'has_children': hasChildren,
       'wants_children': wantsChildren,
-      'relationshipGoals': relationshipGoals,
+      'relationship_goals': relationshipGoals,
       'dealbreakers': jsonEncode(dealbreakers),
       'religion_or_spiritual_beliefs': religionOrSpiritualBeliefs,
       'political_views': politicalViews,
       'diet': diet,
       'smoking_habits': smokingHabits,
       'drinking_habits': drinkingHabits,
-      'exerciseFrequencyOrFitnessLevel': exerciseFrequencyOrFitnessLevel,
-      'sleepSchedule': sleepSchedule,
-      'personalityTraits': jsonEncode(personalityTraits),
+      'exercise_frequency_or_fitness_level': exerciseFrequencyOrFitnessLevel,
+      'sleep_schedule': sleepSchedule,
+      'personality_traits': jsonEncode(personalityTraits),
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
       'astrological_sign': astrologicalSign,

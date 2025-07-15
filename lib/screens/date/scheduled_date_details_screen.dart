@@ -1,12 +1,14 @@
-// lib/screens/date/scheduled_dates_list_screen.dart
+// lib/screens/date/scheduled_date_details_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
-class ScheduledDatesListScreen extends StatelessWidget {
-  const ScheduledDatesListScreen({super.key});
+class ScheduledDateDetailsScreen extends StatelessWidget {
+  final String dateId; // Example: to display details of a specific date
+
+  const ScheduledDateDetailsScreen({super.key, required this.dateId});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +18,7 @@ class ScheduledDatesListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Scheduled Dates',
+          'Date Details ($dateId)',
           style: TextStyle(
             color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
             fontFamily: 'Inter',
@@ -34,13 +36,13 @@ class ScheduledDatesListScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.list_alt_rounded,
+                Icons.calendar_today_rounded,
                 size: 80,
                 color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
               ),
               const SizedBox(height: AppConstants.spacingMedium),
               Text(
-                'This is the Scheduled Dates List Screen (Placeholder)',
+                'This is the Scheduled Date Details Screen (Placeholder)',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
@@ -50,7 +52,7 @@ class ScheduledDatesListScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppConstants.spacingSmall),
               Text(
-                'View all your upcoming and past scheduled dates.',
+                'Detailed information for scheduled date ID: $dateId.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,

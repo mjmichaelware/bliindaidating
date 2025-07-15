@@ -62,6 +62,10 @@ import 'package:bliindaidating/screens/profile/my_profile_screen.dart'; // For /
 import 'package:bliindaidating/screens/favorites/favorites_list_screen.dart'; // For /favorites
 import 'package:bliindaidating/matching/match_display_screen.dart'; // For /match-display
 import 'package:bliindaidating/screens/date/scheduled_date_details_screen.dart'; // For /scheduled-date-details
+import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart'; // Explicit import for newsfeed
+
+// NEW IMPORT for the new dashboard overview screen
+import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart';
 
 
 // --- Custom Painter for Side Menu Background (Inspired by NebulaBackgroundPainter) ---
@@ -250,977 +254,685 @@ class _SideMenuProfileHeader extends StatelessWidget {
                     Text(
                       'Online',
                       style: TextStyle(
-                        color: onlineIndicatorColor,
+                        color: headerTextColor.withOpacity(0.8),
                         fontSize: AppConstants.fontSizeSmall,
                         fontFamily: 'Inter',
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.spacingMedium),
-                TextButton(
-                  onPressed: () {
-                    context.go('/my-profile');
-                  },
-                  child: Text(
-                    'Manage Profile',
-                    style: TextStyle(
-                      color: headerAccentColor,
-                      fontSize: AppConstants.fontSizeSmall,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                      decorationColor: headerAccentColor,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
-          Divider(color: AppConstants.borderColor.withOpacity(0.2), height: AppConstants.spacingMedium),
         ],
       ),
     );
   }
 }
 
-// --- Side Menu Item (Enhanced with Hover and Animation) ---
-class _SideMenuItem extends StatefulWidget {
+
+// --- Side Menu Item (Generic) ---
+class _SideMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String routeName;
-  final bool isSelected;
-  final bool isEnabled;
+  final VoidCallback onTap;
   final bool isCollapsed;
-  final ValueChanged<int>? onTabSelected; // For main dashboard tabs
-  final int? tabIndex; // Corresponding tab index for onTabSelected
-  final Animation<double> expandAnimation;
+  final bool showNotificationBadge; // New property
+  final int notificationCount; // New property
+  final bool isComingSoon; // New property
 
   const _SideMenuItem({
-    Key? key,
     required this.icon,
     required this.title,
-    required this.routeName,
-    this.isSelected = false,
-    this.isEnabled = true,
-    required this.isCollapsed,
-    this.onTabSelected,
-    this.tabIndex,
-    required this.expandAnimation,
-  }) : super(key: key);
-
-  @override
-  State<_SideMenuItem> createState() => _SideMenuItemState();
-}
-
-class _SideMenuItemState extends State<_SideMenuItem> with SingleTickerProviderStateMixin {
-  late AnimationController _hoverController;
-  late Animation<double> _hoverAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _hoverController = AnimationController(
-      vsync: this,
-      duration: AppConstants.animationDurationShort,
-    );
-    _hoverAnimation = CurvedAnimation(parent: _hoverController, curve: Curves.easeOut);
-  }
-
-  @override
-  void dispose() {
-    _hoverController.dispose();
-    super.dispose();
-  }
+    required this.onTap,
+    this.isCollapsed = false,
+    this.showNotificationBadge = false,
+    this.notificationCount = 0,
+    this.isComingSoon = false, // Initialize here
+  });
 
   @override
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
     final isDarkMode = themeController.isDarkMode;
 
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color selectedItemColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color disabledColor = isDarkMode ? AppConstants.textLowEmphasis.withOpacity(0.3) : AppConstants.lightTextLowEmphasis.withOpacity(0.3);
+    final itemColor = isDarkMode ? AppConstants.textColor.withOpacity(0.9) : AppConstants.lightTextColor.withOpacity(0.9);
+    final selectedItemColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+    final badgeColor = AppConstants.errorColor; // For notification badge
 
-    final Color currentIconColor = widget.isEnabled
-        ? (widget.isSelected ? selectedItemColor : unselectedItemColor)
-        : disabledColor;
-    final Color currentTextColor = widget.isEnabled
-        ? (widget.isSelected ? textColor : unselectedItemColor)
-        : disabledColor;
-
-    return MouseRegion(
-      onEnter: (_) {
-        if (widget.isEnabled) _hoverController.forward();
-      },
-      onExit: (_) {
-        if (widget.isEnabled) _hoverController.reverse();
-      },
-      child: GestureDetector(
-        onTap: widget.isEnabled
-            ? () {
-                if (widget.onTabSelected != null && widget.tabIndex != null) {
-                  widget.onTabSelected!(widget.tabIndex!);
-                } else {
-                  context.go(widget.routeName);
-                }
-              }
-            : null,
-        child: AnimatedBuilder(
-          animation: Listenable.merge([widget.expandAnimation, _hoverAnimation]),
-          builder: (context, child) {
-            final double expandFactor = widget.expandAnimation.value;
-            final double hoverFactor = _hoverAnimation.value;
-
-            return Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: AppConstants.paddingSmall,
-                vertical: AppConstants.paddingExtraSmall,
-              ),
-              decoration: BoxDecoration(
-                color: widget.isSelected && widget.isEnabled
-                    ? selectedItemColor.withOpacity(0.2 + 0.1 * hoverFactor)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-                border: widget.isSelected && widget.isEnabled
-                    ? Border.all(color: selectedItemColor.withOpacity(0.5 + 0.2 * hoverFactor), width: 1.0 + 0.5 * hoverFactor)
-                    : null,
-                boxShadow: [
-                  if (widget.isSelected && widget.isEnabled)
-                    BoxShadow(
-                      color: selectedItemColor.withOpacity(0.2 * hoverFactor + 0.1),
-                      blurRadius: 8 * hoverFactor + 4,
-                      spreadRadius: 2 * hoverFactor + 1,
+    // Determine if this item is currently active based on the GoRouter location
+    // Corrected GoRouter.of(context).currentRoute.fullPath to GoRouter.of(context).routerDelegate.currentConfiguration.fullPath
+    final bool isSelected = GoRouter.of(context).routerDelegate.currentConfiguration.fullPath == _getPathFromTitle(title);
+    return InkWell(
+      onTap: isComingSoon ? null : onTap, // Disable tap if coming soon
+      borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+      child: Container(
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppConstants.paddingSmall,
+          vertical: AppConstants.paddingExtraSmall,
+        ),
+        padding: EdgeInsets.symmetric(
+          vertical: AppConstants.paddingMedium,
+          horizontal: isCollapsed ? AppConstants.paddingSmall : AppConstants.paddingMedium,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? selectedItemColor.withOpacity(0.2)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        ),
+        child: Row(
+          mainAxisSize: isCollapsed ? MainAxisSize.min : MainAxisSize.max,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? selectedItemColor : itemColor,
+              size: AppConstants.fontSizeLarge,
+            ),
+            AnimatedCrossFade(
+              duration: AppConstants.animationDurationMedium,
+              crossFadeState: isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              firstChild: const SizedBox.shrink(), // Collapsed state (no text)
+              secondChild: Row(
+                children: [
+                  const SizedBox(width: AppConstants.spacingMedium),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? selectedItemColor : itemColor,
+                      fontSize: AppConstants.fontSizeMedium,
+                      fontFamily: 'Inter',
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.paddingMedium,
-                  vertical: AppConstants.paddingSmall,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      widget.icon,
-                      color: Color.lerp(currentIconColor, selectedItemColor, hoverFactor),
-                      size: AppConstants.fontSizeExtraLarge * (1.0 + 0.1 * hoverFactor),
-                    ),
-                    SizedBox(width: AppConstants.spacingMedium * expandFactor),
-                    Expanded(
-                      child: ClipRect(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: expandFactor,
-                          child: Opacity(
-                            opacity: expandFactor,
-                            child: Text(
-                              widget.title,
-                              style: TextStyle(
-                                color: Color.lerp(currentTextColor, textColor, hoverFactor),
-                                fontSize: AppConstants.fontSizeMedium,
-                                fontFamily: 'Inter',
-                                fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
+                  ),
+                  if (showNotificationBadge && notificationCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: AppConstants.spacingSmall),
+                      child: Container(
+                        padding: const EdgeInsets.all(AppConstants.paddingExtraSmall),
+                        decoration: BoxDecoration(
+                          color: badgeColor,
+                          borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 20,
+                          minHeight: 20,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          notificationCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: AppConstants.fontSizeSmall,
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  if (isComingSoon)
+                    Padding(
+                      padding: const EdgeInsets.only(left: AppConstants.spacingSmall),
+                      child: Text(
+                        '(Coming Soon)',
+                        style: TextStyle(
+                          color: itemColor.withOpacity(0.6),
+                          fontSize: AppConstants.fontSizeSmall,
+                          fontFamily: 'Inter',
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-// --- Side Menu Category Item (Enhanced ExpansionTile) ---
-class _SideMenuCategoryItem extends StatefulWidget {
-  final String title;
-  final IconData icon;
-  final List<Widget> children;
-  final bool isCollapsed;
-  final Animation<double> expandAnimation;
-
-  const _SideMenuCategoryItem({
-    super.key,
-    required this.title,
-    required this.icon,
-    required this.children,
-    required this.isCollapsed,
-    required this.expandAnimation,
-  });
-
-  @override
-  State<_SideMenuCategoryItem> createState() => _SideMenuCategoryItemState();
-}
-
-class _SideMenuCategoryItemState extends State<_SideMenuCategoryItem> with SingleTickerProviderStateMixin {
-  late AnimationController _expansionController;
-  late Animation<double> _expansionAnimation;
-  late AnimationController _hoverController;
-  late Animation<double> _hoverAnimation;
-
-  bool _isExpanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _expansionController = AnimationController(
-      vsync: this,
-      duration: AppConstants.animationDurationMedium,
-    );
-    _expansionAnimation = CurvedAnimation(parent: _expansionController, curve: Curves.easeInOutCubic);
-
-    _hoverController = AnimationController(
-      vsync: this,
-      duration: AppConstants.animationDurationShort,
-    );
-    _hoverAnimation = CurvedAnimation(parent: _hoverController, curve: Curves.easeOut);
-  }
-
-  @override
-  void dispose() {
-    _expansionController.dispose();
-    _hoverController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final themeController = Provider.of<ThemeController>(context);
-    final isDarkMode = themeController.isDarkMode;
-
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color selectedItemColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-
-    return MouseRegion(
-      onEnter: (_) => _hoverController.forward(),
-      onExit: (_) => _hoverController.reverse(),
-      child: AnimatedBuilder(
-        animation: Listenable.merge([widget.expandAnimation, _hoverAnimation, _expansionAnimation]),
-        builder: (context, child) {
-          final double expandFactor = widget.expandAnimation.value;
-          final double hoverFactor = _hoverAnimation.value;
-
-          return Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppConstants.paddingSmall,
-              vertical: AppConstants.paddingExtraSmall,
-            ),
-            decoration: BoxDecoration(
-              color: _isExpanded
-                  ? selectedItemColor.withOpacity(0.15 + 0.05 * hoverFactor)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-              border: _isExpanded
-                  ? Border.all(color: selectedItemColor.withOpacity(0.3 + 0.1 * hoverFactor), width: 1.0)
-                  : null,
-              boxShadow: [
-                if (_isExpanded)
-                  BoxShadow(
-                    color: selectedItemColor.withOpacity(0.1 * hoverFactor + 0.05),
-                    blurRadius: 5 * hoverFactor + 2,
-                    spreadRadius: 1 * hoverFactor + 0.5,
-                  ),
-              ],
-            ),
-            child: ClipRRect( // Clip to prevent overflow during collapse
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-              child: Theme( // Override default ExpansionTile theme for custom styling
-                data: Theme.of(context).copyWith(
-                  dividerColor: Colors.transparent,
-                  listTileTheme: ListTileThemeData(
-                    iconColor: unselectedItemColor,
-                    textColor: textColor,
-                    selectedColor: selectedItemColor,
-                    minLeadingWidth: AppConstants.fontSizeExtraLarge,
-                  ),
-                ),
-                child: ExpansionTile(
-                  key: ValueKey(widget.title), // Key to ensure state is reset when title changes
-                  onExpansionChanged: (bool expanded) {
-                    setState(() {
-                      _isExpanded = expanded;
-                    });
-                    if (expanded) {
-                      _expansionController.forward();
-                    } else {
-                      _expansionController.reverse();
-                    }
-                  },
-                  leading: Icon(
-                    widget.icon,
-                    color: Color.lerp(unselectedItemColor, selectedItemColor, hoverFactor),
-                    size: AppConstants.fontSizeExtraLarge * (1.0 + 0.1 * hoverFactor),
-                  ),
-                  title: ClipRect(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: expandFactor,
-                      child: Opacity(
-                        opacity: expandFactor,
-                        child: Text(
-                          widget.title,
-                          style: TextStyle(
-                            color: Color.lerp(unselectedItemColor, textColor, hoverFactor),
-                            fontSize: AppConstants.fontSizeMedium,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.normal,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  trailing: AnimatedRotation(
-                    turns: _isExpanded ? 0.25 : 0.0, // Rotate arrow when expanded
-                    duration: AppConstants.animationDurationMedium,
-                    child: Icon(
-                      Icons.arrow_forward_ios,
-                      color: unselectedItemColor.withOpacity(expandFactor),
-                      size: AppConstants.fontSizeSmall * 1.5,
-                    ),
-                  ),
-                  children: [
-                    // Sub-items are only visible when expanded
-                    Padding(
-                      padding: EdgeInsets.only(left: AppConstants.paddingLarge * expandFactor),
-                      child: SizeTransition(
-                        sizeFactor: _expansionAnimation,
-                        child: FadeTransition(
-                          opacity: AlwaysStoppedAnimation<double>(_expansionAnimation.value),
-                          child: Column(
-                            children: widget.children.map<Widget>((child) {
-                              // Ensure sub-items also respect the theme and expand factor
-                              if (child is _SideMenuItem) {
-                                return _SideMenuItem(
-                                  key: child.key,
-                                  icon: child.icon,
-                                  title: child.title,
-                                  routeName: child.routeName,
-                                  isSelected: child.isSelected,
-                                  isEnabled: child.isEnabled,
-                                  isCollapsed: widget.isCollapsed, // Pass collapsed state
-                                  onTabSelected: child.onTabSelected,
-                                  tabIndex: child.tabIndex,
-                                  expandAnimation: widget.expandAnimation, // Pass parent animation
-                                );
-                              }
-                              return child;
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+  // Helper to determine the path from title for selection
+  String _getPathFromTitle(String title) {
+    switch (title) {
+      case 'Dashboard':
+        return '/dashboard-overview';
+      case 'Discovery':
+        return '/discovery';
+      case 'Matches':
+        return '/matches';
+      case 'Newsfeed':
+        return '/newsfeed';
+      case 'Daily Prompts':
+        return '/daily-prompts';
+      case 'Notifications':
+        return '/notifications';
+      case 'Profile Setup':
+        return '/profile_setup';
+      case 'AI Questionnaire':
+        return '/questionnaire';
+      case 'My Profile':
+        return '/my-profile';
+      case 'Scheduled Dates':
+        return '/scheduled-dates-list';
+      case 'Post-Date Feedback':
+        return '/post-date-feedback';
+      case 'Date Proposal':
+        return '/date-proposal';
+      case 'Compatibility Insights':
+        return '/compatibility-results';
+      case 'Daily Personality Question':
+        return '/daily-personality-question';
+      case 'Personality Quiz':
+        return '/personality-quiz';
+      case 'Local Events':
+        return '/events';
+      case 'Friends Match':
+        return '/friends-match';
+      case 'App Settings': // Corrected to App Settings
+        return '/app-settings';
+      case 'About Us':
+        return '/about-us';
+      case 'Privacy Policy':
+        return '/privacy';
+      case 'Terms & Conditions':
+        return '/terms';
+      case 'Feedback':
+        return '/feedback';
+      case 'Report User':
+        return '/report';
+      case 'Admin Dashboard':
+        return '/admin';
+      case 'Referral Program':
+        return '/referral';
+      case 'Activity Feed':
+        return '/activity-feed';
+      case 'Blocked Users':
+        return '/blocked-users';
+      case 'Date Ideas':
+        return '/date-ideas';
+      case 'Guided Tour':
+        return '/guided-tour';
+      case 'Safety Tips':
+        return '/safety-tips';
+      case 'User Progress':
+        return '/user-progress';
+      case 'Favorites':
+        return '/favorites';
+      case 'Match Display': // While not directly in menu, good to have path mapping
+        return '/match-display';
+      case 'Scheduled Date Details': // While not directly in menu, good to have path mapping
+        return '/scheduled-date-details';
+      default:
+        return '';
+    }
   }
 }
 
-// --- Main Dashboard Side Menu Widget ---
+// --- Main Side Menu Widget ---
 class DashboardSideMenu extends StatefulWidget {
   final UserProfile? userProfile;
   final String? profilePictureUrl;
   final int selectedTabIndex;
-  final ValueChanged<int> onTabSelected;
+  final Function(int) onTabSelected;
   final bool isPhase2Complete;
-  final ValueChanged<bool> onCollapseToggle;
+  final Function(bool) onCollapseToggle;
   final bool isInitiallyCollapsed;
-  final bool isDrawerMode; // NEW: Indicates if it's operating as a Drawer
+  final bool isDrawerMode;
 
   const DashboardSideMenu({
     super.key,
-    this.userProfile,
-    this.profilePictureUrl,
+    required this.userProfile,
+    required this.profilePictureUrl,
     required this.selectedTabIndex,
     required this.onTabSelected,
-    this.isPhase2Complete = false,
+    required this.isPhase2Complete,
     required this.onCollapseToggle,
-    this.isInitiallyCollapsed = false,
-    this.isDrawerMode = false, // Default to false (persistent sidebar)
+    required this.isInitiallyCollapsed,
+    required this.isDrawerMode,
   });
 
   @override
   State<DashboardSideMenu> createState() => _DashboardSideMenuState();
 }
 
-class _DashboardSideMenuState extends State<DashboardSideMenu> with TickerProviderStateMixin {
-  late AnimationController _expandController;
+class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
   late Animation<double> _expandAnimation;
-  late AnimationController _backgroundAnimationController;
-  late Animation<double> _backgroundAnimation;
+  late bool _isCollapsed;
 
-  bool _isCollapsed = false; // Internal state for collapsed/expanded
-
-  final List<Offset> _backgroundParticles = [];
-  final math.Random _random = math.Random();
+  final List<Offset> _particles = List.generate(50, (index) => Offset(math.Random().nextDouble(), math.Random().nextDouble()));
+  static const double _particleMaxRadius = 2.0;
 
   @override
   void initState() {
     super.initState();
-    // If in drawer mode, force it to be expanded
-    _isCollapsed = widget.isDrawerMode ? false : widget.isInitiallyCollapsed;
+    _isCollapsed = widget.isInitiallyCollapsed;
 
-    _expandController = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
-      duration: AppConstants.animationDurationMedium,
-    );
-    _expandAnimation = CurvedAnimation(parent: _expandController, curve: Curves.easeInOutCubic);
-
-    _backgroundAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 30), // Slower animation for background
+      duration: AppConstants.animationDurationLong,
     )..repeat(reverse: true);
-    _backgroundAnimation = CurvedAnimation(parent: _backgroundAnimationController, curve: Curves.linear);
-
-    _generateParticles(50, _backgroundParticles);
-
-    // Initial state of the animation controller based on _isCollapsed
-    if (_isCollapsed) {
-      _expandController.value = 0.0; // Fully collapsed
-    } else {
-      _expandController.value = 1.0; // Fully expanded
-    }
-  }
-
-  void _generateParticles(int count, List<Offset> particleList) {
-    for (int i = 0; i < count; i++) {
-      particleList.add(Offset(_random.nextDouble(), _random.nextDouble()));
-    }
+    _expandAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOutBack,
+    );
   }
 
   @override
   void dispose() {
-    _expandController.dispose();
-    _backgroundAnimationController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
-  void _toggleCollapse() {
-    setState(() {
-      _isCollapsed = !_isCollapsed;
-      if (_isCollapsed) {
-        _expandController.reverse();
-      } else {
-        _expandController.forward();
-      }
-    });
-    widget.onCollapseToggle(_isCollapsed); // Notify parent of the change
+  @override
+  void didUpdateWidget(covariant DashboardSideMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isInitiallyCollapsed != oldWidget.isInitiallyCollapsed) {
+      setState(() {
+        _isCollapsed = widget.isInitiallyCollapsed;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
-    final isDarkMode = themeController.isDarkMode;
-    final authService = Provider.of<AuthService>(context, listen: false);
     final profileService = Provider.of<ProfileService>(context);
+    final authService = Provider.of<AuthService>(context);
+
+    final isDarkMode = themeController.isDarkMode;
+    final primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+    final secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+    final dividerColor = isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor;
 
     final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
-    final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false; // Corrected local variable name
+    final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
     final bool isProfileFullyComplete = isPhase1Complete && isPhase2Complete;
 
-    final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
-    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final Color menuBackgroundColor = isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor;
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color unselectedItemColor = isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis;
-    final Color logoutButtonColor = AppConstants.errorColor; // Use error color for logout
-
-    // Responsive width logic
-    final double maxMenuWidth = AppConstants.dashboardSideMenuWidth;
-    final double minMenuWidth = AppConstants.spacingXXL + AppConstants.paddingMedium; // Icon size + padding
 
     return AnimatedBuilder(
-      animation: _expandAnimation,
+      animation: _animationController,
       builder: (context, child) {
-        // In drawer mode, width is always maxMenuWidth and it's never collapsed visually
-        final double currentWidth = widget.isDrawerMode
-            ? maxMenuWidth
-            : minMenuWidth + (maxMenuWidth - minMenuWidth) * _expandAnimation.value;
-        final bool isCurrentlyCollapsed = widget.isDrawerMode ? false : _expandAnimation.value < 0.5; // Visual check for collapsed state
-
-        return Container(
-          width: currentWidth,
-          decoration: BoxDecoration(
-            color: widget.isDrawerMode
-                ? menuBackgroundColor.withOpacity(1.0) // Fully opaque in drawer mode
-                : menuBackgroundColor, // Base color for persistent
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(5, 0),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Animated Background Painter
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: SideMenuBackgroundPainter(
-                    _backgroundAnimation,
-                    primaryColor,
-                    secondaryColor,
-                    _backgroundParticles,
-                    AppConstants.spacingExtraSmall, // Particle size
-                    widget.isDrawerMode, // Pass isDrawerMode to painter
-                  ),
-                ),
-              ),
-              // Overlay gradient for depth
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        widget.isDrawerMode
-                            ? menuBackgroundColor.withOpacity(1.0) // Fully opaque in drawer mode
-                            : menuBackgroundColor.withOpacity(0.8),
-                        widget.isDrawerMode
-                            ? menuBackgroundColor.withOpacity(1.0) // Fully opaque in drawer mode
-                            : menuBackgroundColor.withOpacity(0.95),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
-              ),
-              // Actual menu content
-              Column(
+        return Drawer(
+          width: _isCollapsed ? 80 : 250,
+          child: CustomPaint(
+            painter: SideMenuBackgroundPainter(
+              _animationController,
+              primaryColor,
+              secondaryColor,
+              _particles,
+              _particleMaxRadius,
+              widget.isDrawerMode,
+            ),
+            child: Container(
+              color: Colors.transparent,
+              child: ListView(
+                padding: EdgeInsets.zero,
                 children: [
-                  // Toggle Button (top right) - Only show for persistent sidebar, not for drawer
-                  if (!widget.isDrawerMode)
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppConstants.paddingSmall),
-                        child: IconButton(
-                          icon: AnimatedRotation(
-                            turns: isCurrentlyCollapsed ? 0.0 : 0.25, // Rotate 90 degrees when expanded
-                            duration: AppConstants.animationDurationMedium,
-                            child: Icon(
-                              isCurrentlyCollapsed ? Icons.arrow_forward_ios : Icons.arrow_back_ios,
-                              color: textColor.withOpacity(0.7),
-                              size: AppConstants.fontSizeLarge,
-                            ),
-                          ),
-                          onPressed: _toggleCollapse,
-                          tooltip: isCurrentlyCollapsed ? 'Expand Menu' : 'Collapse Menu',
-                        ),
-                      ),
-                    ),
                   // Profile Header
                   _SideMenuProfileHeader(
-                    userProfile: widget.userProfile,
-                    profilePictureUrl: widget.profilePictureUrl,
+                    userProfile: profileService.userProfile,
+                    profilePictureUrl: profileService.userProfile?.profilePictureUrl,
                     expandAnimation: _expandAnimation,
-                    isCollapsed: isCurrentlyCollapsed,
+                    isCollapsed: _isCollapsed,
                   ),
-                  // Menu Items
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.zero,
-                      children: [
-                        // Dashboard
-                        _SideMenuItem(
-                          icon: Icons.dashboard_rounded,
-                          title: 'Dashboard',
-                          routeName: '/home',
-                          isSelected: widget.selectedTabIndex == 0,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 0,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
+                  // Toggle Collapse Button - only show if not in drawer mode
+                  if (!widget.isDrawerMode)
+                    ListTile(
+                      title: AnimatedCrossFade(
+                        duration: AppConstants.animationDurationShort,
+                        crossFadeState: _isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                        firstChild: Align(
+                          alignment: Alignment.centerRight,
+                          child: Icon(Icons.arrow_forward_ios_rounded, color: textColor.withOpacity(0.7)),
                         ),
-                        // Discovery
-                        _SideMenuItem(
-                          icon: Icons.travel_explore_rounded,
-                          title: 'Discovery',
-                          routeName: '/discovery',
-                          isSelected: widget.selectedTabIndex == 1,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 1,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
+                        secondChild: Align(
+                          alignment: Alignment.centerRight,
+                          child: Icon(Icons.arrow_back_ios_rounded, color: textColor.withOpacity(0.7)),
                         ),
-                        // Matches
-                        _SideMenuItem(
-                          icon: Icons.favorite_rounded,
-                          title: 'Matches',
-                          routeName: '/matches',
-                          isSelected: widget.selectedTabIndex == 2,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 2,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                        ),
-                        // News Feed
-                        _SideMenuItem(
-                          icon: Icons.rss_feed_rounded,
-                          title: 'News Feed',
-                          routeName: '/newsfeed',
-                          isSelected: widget.selectedTabIndex == 3,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 3,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                        ),
-                        // Daily Prompts
-                        _SideMenuItem(
-                          icon: Icons.lightbulb_outline_rounded,
-                          title: 'Daily Prompts',
-                          routeName: '/daily-prompts',
-                          isSelected: widget.selectedTabIndex == 4,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 4,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                        ),
-                        // Notifications
-                        _SideMenuItem(
-                          icon: Icons.notifications_rounded,
-                          title: 'Notifications',
-                          routeName: '/notifications',
-                          isSelected: widget.selectedTabIndex == 5,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 5,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                        ),
-                        // Profile Setup (Phase 1) - always visible for review
-                        _SideMenuItem(
-                          icon: Icons.account_circle_rounded,
-                          title: 'Profile Setup',
-                          routeName: '/profile_setup',
-                          isSelected: widget.selectedTabIndex == 6,
-                          onTabSelected: widget.onTabSelected,
-                          tabIndex: 6,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                        ),
-                        // Phase 2 Setup / Questionnaire (conditional visibility)
-                        // This should be the 'ongoing questionnaire'
-                        if (isPhase1Complete)
-                          _SideMenuItem(
-                            icon: Icons.quiz_rounded,
-                            title: 'AI Questionnaire',
-                            routeName: '/questionnaire', // New route for the ongoing questionnaire
-                            isSelected: widget.selectedTabIndex == 7,
-                            onTabSelected: widget.onTabSelected,
-                            tabIndex: 7,
-                            isCollapsed: isCurrentlyCollapsed,
-                            expandAnimation: _expandAnimation,
-                          ),
-                        // Conditional Phase 2 Setup (if not complete)
-                        if (isPhase1Complete && !isPhase2Complete)
-                          _SideMenuItem(
-                            icon: Icons.rocket_launch_rounded,
-                            title: 'Complete Phase 2',
-                            routeName: '/questionnaire-phase2', // Route for Phase 2 setup
-                            isSelected: widget.selectedTabIndex == 8,
-                            onTabSelected: widget.onTabSelected,
-                            tabIndex: 8,
-                            isCollapsed: isCurrentlyCollapsed,
-                            expandAnimation: _expandAnimation,
-                          ),
-
-                        Divider(color: AppConstants.borderColor.withOpacity(0.2), height: AppConstants.spacingMedium),
-
-                        // --- Categories with Dropdowns ---
-
-                        // Friends & Events Category
-                        _SideMenuCategoryItem(
-                          title: 'Friends & Events',
-                          icon: Icons.people_alt_rounded,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                          children: [
-                            _SideMenuItem(
-                              icon: Icons.event_note_rounded,
-                              title: 'Local Events',
-                              routeName: '/events',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.group_add_rounded,
-                              title: 'Friends Match',
-                              routeName: '/friends-match',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                          ],
-                        ),
-
-                        // Matching Insights Category
-                        _SideMenuCategoryItem(
-                          title: 'Matching Insights',
-                          icon: Icons.insights_rounded,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                          children: [
-                            _SideMenuItem(
-                              icon: Icons.auto_awesome_rounded,
-                              title: 'Compatibility Results',
-                              routeName: '/compatibility-results',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.lightbulb_rounded,
-                              title: 'Daily Personality Q',
-                              routeName: '/daily-personality-question',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.sentiment_satisfied_alt_rounded,
-                              title: 'Personality Quiz',
-                              routeName: '/personality-quiz',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                          ],
-                        ),
-
-                        // Date Management Category
-                        _SideMenuCategoryItem(
-                          title: 'Date Management',
-                          icon: Icons.calendar_today_rounded,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                          children: [
-                            _SideMenuItem(
-                              icon: Icons.list_alt_rounded,
-                              title: 'Scheduled Dates',
-                              routeName: '/scheduled-dates-list',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.rate_review_rounded,
-                              title: 'Post-Date Feedback',
-                              routeName: '/post-date-feedback',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.date_range_rounded,
-                              title: 'Date Proposals',
-                              routeName: '/date-proposal',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                          ],
-                        ),
-
-                        // Info & Support Category
-                        _SideMenuCategoryItem(
-                          title: 'Info & Support',
-                          icon: Icons.info_rounded,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                          children: [
-                            _SideMenuItem(
-                              icon: Icons.history_toggle_off_rounded,
-                              title: 'Activity Feed',
-                              routeName: '/activity-feed',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.block_rounded,
-                              title: 'Blocked Users',
-                              routeName: '/blocked-users',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.lightbulb_outline_rounded,
-                              title: 'Date Ideas',
-                              routeName: '/date-ideas',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.tour_rounded,
-                              title: 'Guided Tour',
-                              routeName: '/guided-tour',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.security_rounded,
-                              title: 'Privacy Policy',
-                              routeName: '/privacy',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.health_and_safety_rounded,
-                              title: 'Safety Tips',
-                              routeName: '/safety-tips',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.gavel_rounded,
-                              title: 'Terms of Service',
-                              routeName: '/terms',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.bar_chart_rounded,
-                              title: 'User Progress',
-                              routeName: '/user-progress',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.feedback_rounded,
-                              title: 'Feedback',
-                              routeName: '/feedback',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.report_rounded,
-                              title: 'Report a Problem',
-                              routeName: '/report',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.info_outline_rounded,
-                              title: 'About Us',
-                              routeName: '/about-us',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                          ],
-                        ),
-
-                        // Settings Category
-                        _SideMenuCategoryItem(
-                          title: 'Settings',
-                          icon: Icons.settings_rounded,
-                          isCollapsed: isCurrentlyCollapsed,
-                          expandAnimation: _expandAnimation,
-                          children: [
-                            _SideMenuItem(
-                              icon: Icons.app_settings_alt_rounded,
-                              title: 'App Settings',
-                              routeName: '/app-settings',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.vpn_key_rounded,
-                              title: 'Admin Dashboard',
-                              routeName: '/admin',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                            _SideMenuItem(
-                              icon: Icons.card_giftcard_rounded,
-                              title: 'Referral Program',
-                              routeName: '/referral',
-                              isCollapsed: isCurrentlyCollapsed,
-                              expandAnimation: _expandAnimation,
-                            ),
-                          ],
-                        ),
-
-                        Divider(color: AppConstants.borderColor.withOpacity(0.2), height: AppConstants.spacingMedium),
-
-                        // Logout Button
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppConstants.paddingSmall,
-                            vertical: AppConstants.paddingExtraSmall,
-                          ),
-                          child: AnimatedBuilder(
-                            animation: _expandAnimation,
-                            builder: (context, child) {
-                              final double expandFactor = _expandAnimation.value;
-                              return Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () async {
-                                    await authService.signOut();
-                                    if (mounted) {
-                                      context.go('/login'); // Redirect to login after logout
-                                    }
-                                  },
-                                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: AppConstants.paddingMedium,
-                                      vertical: AppConstants.paddingSmall,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.logout_rounded,
-                                          color: logoutButtonColor,
-                                          size: AppConstants.fontSizeExtraLarge,
-                                        ),
-                                        SizedBox(width: AppConstants.spacingMedium * expandFactor),
-                                        Expanded(
-                                          child: ClipRect(
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              widthFactor: expandFactor,
-                                              child: Opacity(
-                                                opacity: expandFactor,
-                                                child: Text(
-                                                  'Logout',
-                                                  style: TextStyle(
-                                                    color: logoutButtonColor,
-                                                    fontSize: AppConstants.fontSizeMedium,
-                                                    fontFamily: 'Inter',
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  overflow: TextOverflow.ellipsis,
-                                                  maxLines: 1,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _isCollapsed = !_isCollapsed;
+                          widget.onCollapseToggle(_isCollapsed);
+                        });
+                      },
+                      contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
                     ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Core Navigation ---
+                  _SideMenuItem(
+                    icon: Icons.dashboard_rounded,
+                    title: 'Dashboard',
+                    onTap: () {
+                      context.go('/dashboard-overview');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
                   ),
+                  _SideMenuItem(
+                    icon: Icons.person_search_rounded,
+                    title: 'Discovery',
+                    onTap: () {
+                      context.go('/discovery');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.favorite_rounded,
+                    title: 'Matches',
+                    onTap: () {
+                      context.go('/matches');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                    _SideMenuItem(
+                    icon: Icons.rss_feed_rounded,
+                    title: 'Newsfeed',
+                    onTap: () {
+                      context.go('/newsfeed');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.notifications_active_rounded,
+                    title: 'Notifications',
+                    onTap: () {
+                      context.go('/notifications');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                    showNotificationBadge: true,
+                    notificationCount: 5,
+                  ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Profile & AI Section ---
+                  _SideMenuItem(
+                    icon: Icons.person_rounded,
+                    title: 'My Profile',
+                    onTap: () {
+                      context.go('/my-profile');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.settings_accessibility_rounded,
+                    title: 'Profile Setup',
+                    onTap: () {
+                      if (!isPhase1Complete) {
+                        context.go('/profile_setup');
+                      } else if (!isPhase2Complete) {
+                        context.go('/questionnaire-phase2');
+                      } else {
+                        context.go('/my-profile');
+                      }
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.quiz_rounded,
+                    title: 'AI Questionnaire',
+                    onTap: () {
+                      context.go('/questionnaire');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.lightbulb_outline_rounded,
+                    title: 'Daily Prompts',
+                    onTap: () {
+                      context.go('/daily-prompts');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Match Insights ---
+                  _SideMenuItem(
+                    icon: Icons.auto_awesome_rounded,
+                    title: 'Compatibility Insights',
+                    onTap: () {
+                      context.go('/compatibility-results');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.quiz_rounded, // Corrected icon
+                    title: 'Daily Personality Question',
+                    onTap: () {
+                      context.go('/daily-personality-question');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.psychology_alt_rounded,
+                    title: 'Personality Quiz',
+                    onTap: () {
+                      context.go('/personality-quiz');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Date Management ---
+                  _SideMenuItem(
+                    icon: Icons.calendar_today_rounded,
+                    title: 'Scheduled Dates',
+                    onTap: () {
+                      context.go('/scheduled-dates-list');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.rate_review_rounded,
+                    title: 'Post-Date Feedback',
+                    onTap: () {
+                      context.go('/post-date-feedback');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.send_rounded,
+                    title: 'Date Proposal',
+                    onTap: () {
+                      context.go('/date-proposal');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Social & Events (Coming Soon) ---
+                  _SideMenuItem(
+                    icon: Icons.groups_rounded,
+                    title: 'Friends Match',
+                    onTap: () { /* No-op, Coming Soon */ },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.event_rounded,
+                    title: 'Local Events',
+                    onTap: () { /* No-op, Coming Soon */ },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Information & Support ---
+                  _SideMenuItem(
+                    icon: Icons.info_rounded,
+                    title: 'About Us',
+                    onTap: () {
+                      context.go('/about-us');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.policy_rounded,
+                    title: 'Privacy Policy',
+                    onTap: () {
+                      context.go('/privacy');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.description_rounded,
+                    title: 'Terms & Conditions',
+                    onTap: () {
+                      context.go('/terms');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.feedback_rounded,
+                    title: 'Feedback',
+                    onTap: () {
+                      context.go('/feedback');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.report_rounded,
+                    title: 'Report User',
+                    onTap: () {
+                      context.go('/report');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.security_rounded,
+                    title: 'Safety Tips',
+                    onTap: () {
+                      context.go('/safety-tips');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.tour_rounded,
+                    title: 'Guided Tour',
+                    onTap: () {
+                      context.go('/guided-tour');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.lightbulb_rounded,
+                    title: 'Date Ideas',
+                    onTap: () {
+                      context.go('/date-ideas');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                   _SideMenuItem(
+                    icon: Icons.trending_up_rounded,
+                    title: 'User Progress',
+                    onTap: () {
+                      context.go('/user-progress');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                   _SideMenuItem(
+                    icon: Icons.timeline_rounded,
+                    title: 'Activity Feed',
+                    onTap: () {
+                      context.go('/activity-feed');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                   _SideMenuItem(
+                    icon: Icons.block_rounded,
+                    title: 'Blocked Users',
+                    onTap: () {
+                      context.go('/blocked-users');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                   _SideMenuItem(
+                    icon: Icons.stars_rounded,
+                    title: 'Favorites',
+                    onTap: () {
+                      context.go('/favorites');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Settings & Admin ---
+                  _SideMenuItem(
+                    icon: Icons.settings_rounded,
+                    title: 'App Settings',
+                    onTap: () {
+                      context.go('/app-settings');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                   _SideMenuItem(
+                    icon: Icons.card_giftcard_rounded,
+                    title: 'Referral Program',
+                    onTap: () {
+                      context.go('/referral');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  // Only show Admin Dashboard if the user is an admin (hypothetical check)
+                  if (profileService.userProfile?.isAdmin ?? false)
+                    _SideMenuItem(
+                      icon: Icons.admin_panel_settings_rounded,
+                      title: 'Admin Dashboard',
+                      onTap: () {
+                        context.go('/admin');
+                        if (widget.isDrawerMode) Navigator.of(context).pop();
+                      },
+                      isCollapsed: _isCollapsed,
+                    ),
+                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                  // --- Sign Out ---
+                  _SideMenuItem(
+                    icon: Icons.logout_rounded,
+                    title: 'Sign Out',
+                    onTap: () async {
+                      await authService.signOut();
+                      context.go('/login'); // Navigate back to login
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  const SizedBox(height: AppConstants.paddingLarge),
                 ],
               ),
-            ],
+            ),
           ),
         );
       },

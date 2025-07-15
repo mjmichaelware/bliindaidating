@@ -3,77 +3,78 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/services/auth_service.dart'; // FIX: Added missing import for AuthService
+import 'package:bliindaidating/services/auth_service.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showProfileCompletion;
-  final VoidCallback? onMenuPressed; // Optional callback for mobile drawer
+  final VoidCallback? onMenuPressed;
 
   const DashboardAppBar({
     super.key,
     this.showProfileCompletion = false,
-    this.onMenuPressed, // Ensure this is passed in
+    this.onMenuPressed,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight); // Standard AppBar height
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
     final isDarkMode = themeController.isDarkMode;
 
-    // Use colors from AppConstants based on theme
     final Color appBarBackgroundColor = isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor;
     final Color appBarPrimaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
     final Color appBarSecondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
     final Color appBarTextColor = isDarkMode ? AppConstants.textHighEmphasis : AppConstants.lightTextHighEmphasis;
     final Color appBarIconColor = isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor;
-    final Color errorColor = AppConstants.errorColor; // For warning icon
+    final Color errorColor = AppConstants.errorColor;
 
     return AppBar(
-      backgroundColor: Colors.transparent, // Make AppBar background transparent to show flexibleSpace
-      elevation: 0, // Remove default elevation
-      // flexibleSpace allows for custom background drawing behind the AppBar content
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              appBarBackgroundColor.withOpacity(0.8), // Start with a slightly opaque background
-              appBarBackgroundColor.withOpacity(0.6), // Fade to more transparent
+              appBarBackgroundColor.withOpacity(0.8),
+              appBarBackgroundColor.withOpacity(0.6),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3), // Subtle shadow for depth
+              color: Colors.black.withOpacity(0.3),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
           ],
         ),
       ),
-      // Leading icon for mobile drawer toggle
       leading: onMenuPressed != null
-          ? IconButton(
-              icon: Icon(Icons.menu_rounded, color: appBarIconColor, size: AppConstants.fontSizeExtraLarge),
-              onPressed: onMenuPressed,
-              tooltip: 'Open menu',
+          ? Builder( // ADDED Builder here for a more robust context
+              builder: (BuildContext innerContext) { // Use innerContext for the Scaffold.of call
+                return IconButton(
+                  icon: Icon(Icons.menu_rounded, color: appBarIconColor, size: AppConstants.fontSizeExtraLarge),
+                  // Changed to call onMenuPressed directly, as it already contains the Scaffold.of(context).openEndDrawer()
+                  onPressed: onMenuPressed,
+                  tooltip: 'Open menu',
+                );
+              }
             )
-          : null, // No leading icon if onMenuPressed is null (e.g., for desktop)
+          : null,
       title: Text(
         AppConstants.appName,
         style: TextStyle(
           fontFamily: 'Inter',
           fontWeight: FontWeight.bold,
-          fontSize: AppConstants.fontSizeTitle, // Using AppConstants for consistent size
-          color: appBarTextColor, // Use textHighEmphasis for main title
+          fontSize: AppConstants.fontSizeTitle,
+          color: appBarTextColor,
           shadows: [
-            // Adding a subtle glow effect to the title text
             BoxShadow(
               color: appBarPrimaryColor.withOpacity(0.5),
               blurRadius: 8,
@@ -87,28 +88,25 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
       ),
-      centerTitle: true, // Center the title
+      centerTitle: true,
       actions: [
-        // Profile Completion Warning Indicator
         if (showProfileCompletion)
           Padding(
             padding: const EdgeInsets.only(right: AppConstants.paddingSmall),
             child: Tooltip(
               message: 'Profile Phase 2 Incomplete! Tap to complete.',
-              child: IconButton( // Changed to IconButton to make it tappable
+              child: IconButton(
                 icon: Icon(
                   Icons.warning_rounded,
-                  color: errorColor, // Highlight incomplete status with error color
+                  color: errorColor,
                   size: AppConstants.fontSizeExtraLarge,
                 ),
                 onPressed: () {
-                  // Navigate to Phase 2 setup screen
                   context.go('/questionnaire-phase2');
                 },
               ),
             ),
           ),
-        // Notifications Button
         IconButton(
           icon: Icon(
             Icons.notifications_rounded,
@@ -117,11 +115,9 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           onPressed: () {
             context.push('/notifications');
-            debugPrint('Notification button pressed!');
           },
           tooltip: 'Notifications',
         ),
-        // Settings Button
         IconButton(
           icon: Icon(
             Icons.settings,
@@ -133,23 +129,18 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
           },
           tooltip: 'Settings',
         ),
-        // Logout Button
         IconButton(
           icon: Icon(
             Icons.logout,
-            color: appBarIconColor, // Keep icon color consistent
+            color: appBarIconColor,
             size: AppConstants.fontSizeExtraLarge,
           ),
           onPressed: () async {
-            debugPrint('Logout button pressed! Attempting to sign out.');
             try {
-              // Access AuthService via Provider to sign out
               final authService = Provider.of<AuthService>(context, listen: false);
               await authService.signOut();
-              // The GoRouterRefreshStream in main.dart will detect this auth state change
-              // and automatically redirect the user to the appropriate page.
             } catch (e) {
-              debugPrint('Error signing out: $e');
+              // Handle error, e.g., show SnackBar
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Failed to sign out: ${e.toString()}')),
               );
@@ -159,7 +150,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         const SizedBox(width: AppConstants.paddingSmall),
       ],
-      automaticallyImplyLeading: false, // Ensure no default back button
+      automaticallyImplyLeading: false,
     );
   }
 }

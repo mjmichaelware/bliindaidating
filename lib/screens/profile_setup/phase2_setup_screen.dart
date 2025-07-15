@@ -231,7 +231,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
 
     try {
       // 1. Fetch the existing user profile
-      UserProfile? existingProfile = await profileService.fetchUserProfile(currentUser.id);
+      UserProfile? existingProfile = await profileService.fetchUserProfile(id: currentUser.id);
 
       if (existingProfile == null) {
         throw Exception('User profile not found. Cannot complete Phase 2.');

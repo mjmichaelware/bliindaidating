@@ -24,7 +24,7 @@ class AuthService with ChangeNotifier {
         if (_currentUser != null) {
           // Immediately fetch or refresh profile when user signs in or session is initial
           // This call will notify ProfileService's listeners, which GoRouter will also listen to
-          await _profileService.fetchUserProfile(_currentUser!.id);
+          await _profileService.fetchUserProfile(id: _currentUser!.id);
         }
         notifyListeners(); // Notify AuthService listeners (e.g., any widgets directly watching AuthService)
       } else if (event == AuthChangeEvent.signedOut) {
@@ -35,7 +35,7 @@ class AuthService with ChangeNotifier {
         _currentUser = session?.user;
         if (_currentUser != null) {
           // Re-fetch profile if user details (e.g., email) are updated
-          await _profileService.fetchUserProfile(_currentUser!.id);
+          await _profileService.fetchUserProfile(id: _currentUser!.id);
         }
         notifyListeners();
       }

@@ -1,14 +1,12 @@
-// lib/screens/date/scheduled_date_details_screen.dart
+// lib/screens/date/scheduled_dates_list_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 
-class ScheduledDateDetailsScreen extends StatelessWidget {
-  final String dateId; // Example: to display details of a specific date
-
-  const ScheduledDateDetailsScreen({super.key, required this.dateId});
+class ScheduledDatesListScreen extends StatelessWidget {
+  const ScheduledDatesListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +16,7 @@ class ScheduledDateDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Date Details ($dateId)',
+          'Scheduled Dates',
           style: TextStyle(
             color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
             fontFamily: 'Inter',
@@ -36,13 +34,13 @@ class ScheduledDateDetailsScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.calendar_today_rounded,
+                Icons.list_alt_rounded,
                 size: 80,
                 color: isDarkMode ? AppConstants.textLowEmphasis : AppConstants.lightTextLowEmphasis,
               ),
               const SizedBox(height: AppConstants.spacingMedium),
               Text(
-                'This is the Scheduled Date Details Screen (Placeholder)',
+                'This is the Scheduled Dates List Screen (Placeholder)',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
@@ -52,7 +50,7 @@ class ScheduledDateDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppConstants.spacingSmall),
               Text(
-                'Detailed information for scheduled date ID: $dateId.',
+                'View all your upcoming and past scheduled dates.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDarkMode ? AppConstants.textMediumEmphasis : AppConstants.lightTextMediumEmphasis,

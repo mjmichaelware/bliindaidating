@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; // For debugPrint
+import 'package:flutter/foundation.dart'; // For ChangeNotifier, debugPrint, and kIsWeb
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // Ensure this path is correct
 import 'package:image_picker/image_picker.dart'; // For XFile
@@ -8,10 +8,11 @@ import 'dart:convert'; // For jsonDecode
 import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for base URL
 
 // Conditional import for File:
-import 'dart:io' if (dart.library.html) 'dart:html' as html;
 import 'dart:io' as io; // Explicitly import dart:io as 'io'
+import 'dart:html' as html; // Explicitly import dart:html as 'html' (even if only for web)
 
-class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now, as it's common.
+
+class ProfileService extends ChangeNotifier {
   final SupabaseClient _supabaseClient;
 
   UserProfile? _userProfile;
@@ -96,9 +97,9 @@ class ProfileService extends ChangeNotifier { // Keeping ChangeNotifier for now,
       Uint8List bytes;
       if (file is XFile) {
         bytes = await file.readAsBytes();
-      } else if (file is io.File) { // Explicitly check for dart:io.File
+      } else if (file is io.File) { // Explicitly check for dart:io.File (for non-web)
         bytes = await file.readAsBytes();
-      } else if (file is html.File) { // Explicitly check for dart:html.File
+      } else if (kIsWeb && file is html.File) { // Only use html.File on web
         final reader = html.FileReader();
         reader.readAsArrayBuffer(file);
         await reader.onLoadEnd.first; // Wait for the file to be read

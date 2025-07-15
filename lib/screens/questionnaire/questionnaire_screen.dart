@@ -12,7 +12,7 @@ import 'package:bliindaidating/widgets/questionnaire/question_card.dart'; // FIX
 import 'package:bliindaidating/widgets/questionnaire/question_progress_indicator.dart'; // FIXED: Added import for QuestionProgressIndicator
 import 'package:bliindaidating/models/questionnaire/question.dart'; // Import the Question model
 import 'package:go_router/go_router.dart'; // For navigation
-import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for currentUser.userId
+import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for currentUser.id
 
 class QuestionnaireScreen extends StatefulWidget {
   const QuestionnaireScreen({super.key});
@@ -130,7 +130,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     final profileService = Provider.of<ProfileService>(context, listen: false);
     final currentUser = profileService.userProfile;
 
-    if (currentUser == null || currentUser.userId.isEmpty) {
+    if (currentUser == null || currentUser.id.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User not logged in or profile ID missing.')),
       );
@@ -142,7 +142,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     _answers[lastQuestionId] = _answerController.text;
 
     try {
-      await questionnaireService.submitAnswers(currentUser.userId, _answers); // FIXED: Correct arguments
+      await questionnaireService.submitAnswers(currentUser.id, _answers); // FIXED: Correct arguments
       // Navigate to results screen or dashboard upon successful submission
       context.go('/compatibility-results'); // Or '/home'
     } catch (e) {

@@ -21,7 +21,7 @@ class MatchesService extends ChangeNotifier {
     _matches = [
       // Example dummy matches, now providing required 'createdAt'
       UserProfile(
-        userId: 'match_user_1',
+        id: 'match_user_1',
         email: 'match1@example.com',
         displayName: 'Astro Explorer',
         bio: 'Loves stargazing and deep conversations about the universe.',
@@ -35,7 +35,7 @@ class MatchesService extends ChangeNotifier {
         updatedAt: DateTime.now().subtract(const Duration(days: 5)), // Provided
       ),
       UserProfile(
-        userId: 'match_user_2',
+        id: 'match_user_2',
         email: 'match2@example.com',
         displayName: 'Cosmic Chef',
         bio: 'Passionate about culinary arts and exploring new galaxies (of flavor).',

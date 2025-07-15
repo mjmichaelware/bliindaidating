@@ -209,7 +209,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     final profileService = Provider.of<ProfileService>(context, listen: false);
 
     try {
-      final UserProfile? userProfile = await profileService.fetchUserProfile(currentUser.id);
+      final UserProfile? userProfile = await profileService.fetchUserProfile(id: currentUser.id);
       if (userProfile != null) {
         // Load data from the new fields first, then fallback to old ones if necessary for migration
         _fullNameController.text = userProfile.fullLegalName ?? userProfile.fullName ?? '';
@@ -323,7 +323,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     if (_pickedImage != null) {
       try {
         // Assert _pickedImage is not null with '!'
-        uploadedPhotoPath = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!);
+        uploadedPhotoPath = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!.path);
         if (uploadedPhotoPath == null) {
           throw Exception('Failed to get uploaded photo path after upload.');
         }
@@ -355,7 +355,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       if (existingProfile == null) {
         // INSERT SCENARIO
         final UserProfile newProfile = UserProfile(
-          userId: currentUser.id,
+          id: currentUser.id,
           email: currentUser.email!,
           createdAt: DateTime.now(), // FIX: Provide the createdAt timestamp
           fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
