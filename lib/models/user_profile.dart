@@ -1,3 +1,5 @@
+// lib/models/user_profile.dart
+
 import 'dart:convert'; // Essential for jsonEncode and jsonDecode
 import 'package:flutter/foundation.dart'; // For debugPrint
 
@@ -299,13 +301,13 @@ class UserProfile {
       'languages_spoken': jsonEncode(languagesSpoken),
       'desired_occupation': desiredOccupation,
       'education_level': educationLevel,
-      'hobbies_and_interests': jsonEncode(hobbiesAndInterests), // CORRECTED: Capital 'I'
+      'hobbies_and_interests': jsonEncode(hobbiesAndInterests), // FIXED: Changed to snake_case
       'love_languages': jsonEncode(loveLanguages),
       'favorite_media': jsonEncode(favoriteMedia),
-      'maritalStatus': maritalStatus,
+      'marital_status': maritalStatus,
       'has_children': hasChildren,
       'wants_children': wantsChildren,
-      'relationshipGoals': relationshipGoals,
+      'relationship_goals': relationshipGoals,
       'dealbreakers': jsonEncode(dealbreakers),
       'religion_or_spiritual_beliefs': religionOrSpiritualBeliefs,
       'political_views': politicalViews,
@@ -317,7 +319,7 @@ class UserProfile {
       'personality_traits': jsonEncode(personalityTraits),
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
-      'astrologicalSign': astrologicalSign,
+      'astrological_sign': astrologicalSign,
       'attachment_style': attachmentStyle,
       'communication_style': communicationStyle,
       'mental_health_disclosures': mentalHealthDisclosures,

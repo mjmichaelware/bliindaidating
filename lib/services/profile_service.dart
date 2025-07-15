@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
 import 'package:bliindaidating/models/user_profile.dart'; // Ensure this path is correct
 import 'package:image_picker/image_picker.dart'; // For XFile
 import 'dart:typed_data'; // For Uint8List
+import 'package:http/http.dart' as http; // Import for HTTP requests
+import 'dart:convert'; // For jsonDecode
+import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for base URL
 
 // Conditional import for File:
 import 'dart:io' if (dart.library.html) 'dart:html' as html;
@@ -157,5 +160,54 @@ class ProfileService extends ChangeNotifier {
 
   Future<void> loadUserProfile(String userId) async {
     await fetchUserProfile(userId);
+  }
+
+  /// NEW: Fetches a list of all user profiles from the backend.
+  /// This is used for displaying profiles in Discovery/Matches.
+  Future<List<UserProfile>> fetchAllUserProfiles({int limit = 10, int offset = 0}) async {
+    final url = Uri.parse('${AppConstants.baseUrl}/user-profiles/?limit=$limit&offset=$offset');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['profiles'] is List) {
+          return List<UserProfile>.from(
+            (data['profiles'] as List).map((json) => UserProfile.fromJson(json))
+          );
+        }
+        debugPrint('Backend returned unexpected format for /user-profiles: ${response.body}');
+        return [];
+      } else {
+        debugPrint('Failed to fetch all user profiles: ${response.statusCode} - ${response.body}');
+        return [];
+      }
+    } catch (e) {
+      debugPrint('Error fetching all user profiles: $e');
+      return [];
+    }
+  }
+
+  /// NEW: Triggers the backend to generate dummy users in Supabase.
+  Future<String?> generateDummyUsers(int count) async {
+    final url = Uri.parse('${AppConstants.baseUrl}/generate-dummy-users/');
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({'count': count});
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return data['message']; // Returns the success message
+      } else {
+        debugPrint('Failed to generate dummy users: ${response.statusCode} - ${response.body}');
+        final Map<String, dynamic> errorData = jsonDecode(response.body);
+        return errorData['error'] ?? 'Unknown error generating dummy users';
+      }
+    } catch (e) {
+      debugPrint('Error generating dummy users: $e');
+      return 'Network error: $e';
+    }
   }
 }
