@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode; // ADDED kReleaseMode
 import 'dart:async';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // <--- ADD THIS IMPORT!
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Keep this import for debug mode
 
 // Local Imports
 import 'package:bliindaidating/app_constants.dart';
@@ -20,7 +20,7 @@ import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
 // Screen Imports
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
-import 'package:bliindaidating/screens/auth/forgot_password_screen.dart'; // CORRECTED: was bliindaing
+import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/profile/profile_setup_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
@@ -28,19 +28,38 @@ import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
 
 Future<void> main() async {
-  // --- STEP 2 PART 1: Load .env file FIRST ---
-  try {
-    await dotenv.load(fileName: ".env"); // Assuming your .env file is named '.env'
-    debugPrint('main: .env file loaded successfully!');
-  } catch (e) {
-    debugPrint('main: Error loading .env file: $e');
-    // It's critical to halt or show a severe error if .env doesn't load
-    // because your app won't have necessary keys.
-    rethrow; // Re-throw to prevent the app from continuing without keys
-  }
-
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('main: WidgetsFlutterBinding ensured initialized.');
+
+  String supabaseUrl;
+  String supabaseAnonKey;
+  String geminiApiKey;
+
+  // --- CONDITIONAL LOGIC FOR ENVIRONMENT VARIABLES ---
+  if (kReleaseMode) {
+    // For Release Builds (e.g., flutter build web, flutter build apk/ipa)
+    // Variables are injected at compile time using --dart-define
+    supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
+    supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
+    geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY');
+    debugPrint('main: Running in Release Mode. Variables from --dart-define.');
+  } else {
+    // For Debug Builds (e.g., flutter run, hot reload/restart)
+    // Variables are loaded from .env file at runtime
+    try {
+      await dotenv.load(fileName: ".env");
+      supabaseUrl = dotenv.env['SUPABASE_URL']!;
+      supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY']!;
+      geminiApiKey = dotenv.env['GEMINI_API_KEY']!; // Load Gemini key from .env too
+      debugPrint('main: Running in Debug Mode. .env file loaded successfully!');
+      // OPTIONAL: Add this line to see all loaded env vars in debug mode
+      debugPrint('main: Loaded env variables in debug: ${dotenv.env}');
+    } catch (e) {
+      debugPrint('main: Error loading .env file in Debug Mode: $e');
+      throw Exception('Missing .env file for local debug or keys not found: $e');
+    }
+  }
+  // --- END CONDITIONAL LOGIC ---
 
   // --- Start of NEW PLATFORM UTILS INTEGRATION ---
   final platformHelper = getPlatformHelpers();
@@ -48,19 +67,22 @@ Future<void> main() async {
   platformHelper.doSomethingPlatformSpecific();
   // --- End of NEW PLATFORM UTILS INTEGRATION ---
 
-  // --- STEP 2 PART 2: Initialize Supabase using the loaded environment variables ---
+  // --- Initialize Supabase using the determined environment variables ---
   try {
-    final supabaseUrl = dotenv.env['SUPABASE_URL'];
-    final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
-
-    if (supabaseUrl == null || supabaseAnonKey == null) {
-      debugPrint('main: Supabase URL or Anon Key not found in .env after loading!');
-      throw Exception('Missing Supabase environment variables. Please check your .env file.');
+    // Check if the variables were actually defined (important for --dart-define)
+    // String.fromEnvironment returns an empty string if the variable wasn't passed,
+    // or the variable's literal name if accessed outside a const context or not defined.
+    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty || supabaseUrl == 'SUPABASE_URL' || supabaseAnonKey == 'SUPABASE_ANON_KEY') {
+      debugPrint('main: Supabase URL or Anon Key not found! Check environment variables.');
+      throw Exception('Missing Supabase environment variables. Please ensure they are correctly set for the current build mode (via .env for debug, or --dart-define for release).');
     }
 
+    // Set Gemini API Key in AppConstants
+    AppConstants.geminiApiKey = geminiApiKey;
+
     await Supabase.initialize(
-      url: supabaseUrl,      // <--- USE dotenv.env for URL
-      anonKey: supabaseAnonKey, // <--- USE dotenv.env for ANON KEY
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
     );
     debugPrint('main: Supabase initialized successfully!');
   } catch (e) {
@@ -74,7 +96,6 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (context) => ThemeController(),
         ),
-        // ProfileService must be created before AuthService as AuthService depends on it
         ChangeNotifierProvider<ProfileService>(
           create: (context) => ProfileService(Supabase.instance.client),
         ),
@@ -110,7 +131,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
     _router = GoRouter(
       initialLocation: '/',
-      debugLogDiagnostics: kDebugMode,
+      debugLogDiagnostics: kDebugMode, // Only log GoRouter diagnostics in debug mode
       refreshListenable: Listenable.merge([
         Provider.of<AuthService>(context, listen: false),
         Provider.of<ProfileService>(context, listen: false),

@@ -31,6 +31,11 @@ class AppConstants {
   // Admin Email - ADDED THIS LINE TO FIX COMPILATION ERROR
   static const String adminEmail = 'your_admin_email@example.com';
 
+  // --- Gemini API Key ---
+  // IMPORTANT CHANGE: Removed 'const' so this can be assigned in main.dart
+  static String geminiApiKey = ""; // Initialize with an empty string
+  // --- END Gemini API Key ---
+
 
   // Landing Page Taglines
   static const String landingHeadline1 = 'Tired of loneliness? Craving real connection?';
