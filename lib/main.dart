@@ -1,11 +1,10 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode; // Import kDebugMode
-import 'dart:async'; // Required for Future, etc.
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'dart:async';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // <--- ADD THIS IMPORT!
 
 // Local Imports
 import 'package:bliindaidating/app_constants.dart';
@@ -13,7 +12,7 @@ import 'package:bliindaidating/services/auth_service.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/theme/app_theme.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is imported for type hints
+import 'package:bliindaidating/models/user_profile.dart';
 
 // NEW IMPORT for platform utilities
 import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
@@ -21,51 +20,25 @@ import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
 // Screen Imports
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
-import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
+import 'package:bliindaidating/screens/auth/forgot_password_screen.dart'; // CORRECTED: was bliindaing
 import 'package:bliindaidating/landing_page/landing_page.dart';
-import 'package:bliindaidating/profile/profile_setup_screen.dart'; // Phase 1
-import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // Phase 2
+import 'package:bliindaidating/profile/profile_setup_screen.dart';
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
-import 'package:bliindaidating/screens/utility/loading_screen.dart'; // Import the new LoadingScreen
-
-// Remaining screen imports (keep these as they are, just for completeness)
-import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart';
-import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
-import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
-import 'package:bliindaidating/screens/discovery/discover_people_screen.dart';
-import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart';
-import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
-import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart';
-import 'package:bliindaidating/screens/notifications/notifications_screen.dart';
-import 'package:bliindaidating/screens/favorites/favorites_list_screen.dart';
-import 'package:bliindaidating/screens/dashboard/compatibility_results_screen.dart';
-import 'package:bliindaidating/screens/dashboard/daily_personality_question_screen.dart';
-import 'package:bliindaidating/screens/quiz/personality_quiz_screen.dart';
-import 'package:bliindaidating/matching/match_display_screen.dart';
-import 'package:bliindaidating/matching/date_proposal_screen.dart';
-import 'package:bliindaidating/screens/date/scheduled_dates_list_screen.dart';
-import 'package:bliindaidating/screens/date/scheduled_date_details_screen.dart';
-import 'package:bliindaidating/screens/date/post_date_feedback_screen.dart';
-import 'package:bliindaidating/screens/info/date_ideas_screen.dart';
-import 'package:bliindaidating/friends/friends_match_screen.dart';
-import 'package:bliindaidating/friends/local_events_screen.dart';
-import 'package:bliindaidating/friends/event_details_screen.dart';
-import 'package:bliindaidating/screens/info/about_us_screen.dart';
-import 'package:bliindaidating/screens/info/privacy_screen.dart';
-import 'package:bliindaidating/screens/info/safety_tips_screen.dart';
-import 'package:bliindaidating/screens/info/terms_screen.dart';
-import 'package:bliindaidating/screens/feedback_report/feedback_screen.dart';
-import 'package:bliindaidating/screens/feedback_report/report_screen.dart';
-import 'package:bliindaidating/screens/info/activity_feed_screen.dart';
-import 'package:bliindaidating/screens/info/blocked_users_screen.dart';
-import 'package:bliindaidating/screens/info/guided_tour_screen.dart';
-import 'package:bliindaidating/screens/info/user_progress_screen.dart';
-import 'package:bliindaidating/screens/settings/app_settings_screen.dart';
-import 'package:bliindaidating/screens/admin/admin_dashboard_screen.dart';
-import 'package:bliindaidating/screens/premium/referral_screen.dart';
-
+import 'package:bliindaidating/screens/utility/loading_screen.dart';
 
 Future<void> main() async {
+  // --- STEP 2 PART 1: Load .env file FIRST ---
+  try {
+    await dotenv.load(fileName: ".env"); // Assuming your .env file is named '.env'
+    debugPrint('main: .env file loaded successfully!');
+  } catch (e) {
+    debugPrint('main: Error loading .env file: $e');
+    // It's critical to halt or show a severe error if .env doesn't load
+    // because your app won't have necessary keys.
+    rethrow; // Re-throw to prevent the app from continuing without keys
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
   debugPrint('main: WidgetsFlutterBinding ensured initialized.');
 
@@ -75,17 +48,23 @@ Future<void> main() async {
   platformHelper.doSomethingPlatformSpecific();
   // --- End of NEW PLATFORM UTILS INTEGRATION ---
 
-  // Initialize Supabase FIRST and ensure it completes robustly.
+  // --- STEP 2 PART 2: Initialize Supabase using the loaded environment variables ---
   try {
+    final supabaseUrl = dotenv.env['SUPABASE_URL'];
+    final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
+
+    if (supabaseUrl == null || supabaseAnonKey == null) {
+      debugPrint('main: Supabase URL or Anon Key not found in .env after loading!');
+      throw Exception('Missing Supabase environment variables. Please check your .env file.');
+    }
+
     await Supabase.initialize(
-      url: const String.fromEnvironment('SUPABASE_URL'),
-      anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+      url: supabaseUrl,      // <--- USE dotenv.env for URL
+      anonKey: supabaseAnonKey, // <--- USE dotenv.env for ANON KEY
     );
     debugPrint('main: Supabase initialized successfully!');
   } catch (e) {
     debugPrint('main: Error initializing Supabase: $e');
-    // You might want to show an error dialog or a persistent error screen here
-    // as the app cannot function without Supabase. For now, rethrow to crash early.
     rethrow;
   }
 
@@ -101,7 +80,6 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider<AuthService>(
           create: (context) => AuthService(
-            // Use listen: false here as AuthService itself doesn't need to rebuild when ProfileService changes
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
@@ -126,47 +104,35 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     super.initState();
     debugPrint('BlindAIDatingApp: initState called.');
 
-    // Access providers using listen: false for initial setup in initState
     final ProfileService profileService = Provider.of<ProfileService>(context, listen: false);
-
-    // Initiate the profile loading. This is fire-and-forget here,
-    // as ProfileService manages its own internal state and notifies.
-    // The GoRouter redirect will react to profileService.isProfileLoaded.
     profileService.initializeProfile();
     debugPrint('BlindAIDatingApp: profileService.initializeProfile() called.');
 
-
     _router = GoRouter(
       initialLocation: '/',
-      debugLogDiagnostics: kDebugMode, // Use kDebugMode for conditional logging
-      // refreshListenable will trigger redirect when either AuthService or ProfileService notifies listeners
+      debugLogDiagnostics: kDebugMode,
       refreshListenable: Listenable.merge([
         Provider.of<AuthService>(context, listen: false),
         Provider.of<ProfileService>(context, listen: false),
       ]),
       redirect: (BuildContext context, GoRouterState state) {
-        // IMPORTANT: Do NOT await network calls here.
-        // All necessary data (auth state, profile data, loading status) should be
-        // available synchronously from the Providers.
         final AuthService authService = Provider.of<AuthService>(context, listen: false);
         final ProfileService profileService = Provider.of<ProfileService>(context, listen: false);
 
         final bool isLoggedIn = authService.isLoggedIn;
-        final bool isProfileLoaded = profileService.isProfileLoaded; // Indicates if initial load attempt is done
+        final bool isProfileLoaded = profileService.isProfileLoaded;
         final UserProfile? userProfile = profileService.userProfile;
 
-        // Use these to check phase completion
         final bool phase1Complete = userProfile?.isPhase1Complete ?? false;
         final bool phase2Complete = userProfile?.isPhase2Complete ?? false;
 
         final String currentPath = state.fullPath ?? '/';
 
-        // Paths that don't require login/profile completion
         final bool isAuthPath = currentPath == '/login' ||
             currentPath == '/signup' ||
             currentPath == '/forgot-password';
         final bool isLandingPath = currentPath == '/';
-        final bool isUtilityPath = currentPath == '/loading'; // New loading screen path
+        final bool isUtilityPath = currentPath == '/loading';
 
         debugPrint('--- GoRouter Redirect Evaluation ---');
         debugPrint('Current Path: $currentPath');
@@ -175,7 +141,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('User Profile Exists: ${userProfile != null}');
         debugPrint('Phase 1 Complete: $phase1Complete');
         debugPrint('Phase 2 Complete: $phase2Complete');
-
 
         // SCENARIO 1: User is NOT logged in
         if (!isLoggedIn) {
@@ -192,10 +157,8 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('Redirect Logic: User IS logged in.');
 
         // If logged in, but profile data is still being initially loaded
-        // This handles the gap between login and profile data being ready.
         if (!isProfileLoaded) {
           debugPrint('Redirect Logic: Profile data not yet initially loaded. Current path: $currentPath');
-          // Ensure we don't redirect to /loading if we are already there to prevent a loop
           return currentPath == '/loading' ? null : '/loading';
         }
 
@@ -209,9 +172,10 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
             debugPrint('Redirect Logic: Redirecting from public/landing/loading to /profile_setup (Phase 1 incomplete).');
             return '/profile_setup';
           }
+          // MODIFIED: If phase 2 is incomplete, redirect to dashboard-overview to show banner
           if (!phase2Complete) {
-            debugPrint('Redirect Logic: Redirecting from public/landing/loading to /questionnaire-phase2 (Phase 2 incomplete).');
-            return '/questionnaire-phase2';
+            debugPrint('Redirect Logic: Redirecting from public/landing/loading to /dashboard-overview (Phase 2 incomplete, show banner).');
+            return '/dashboard-overview';
           }
           debugPrint('Redirect Logic: Redirecting from public/landing/loading to /dashboard-overview (all phases complete).');
           return '/dashboard-overview';
@@ -224,9 +188,11 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           return currentPath == '/profile_setup' ? null : '/profile_setup';
         }
 
+        // MODIFIED: If phase 2 is incomplete, but phase 1 is, always go to dashboard-overview.
+        // MainDashboardScreen will handle the blur/banner based on isPhase2Complete.
         if (!phase2Complete) {
-          debugPrint('Redirect Logic: Logged in, Phase 1 complete, Phase 2 incomplete. Current path: $currentPath');
-          return currentPath == '/questionnaire-phase2' ? null : '/questionnaire-phase2';
+          debugPrint('Redirect Logic: Logged in, Phase 1 complete, Phase 2 incomplete. Redirecting to /dashboard-overview to show banner.');
+          return currentPath == '/dashboard-overview' ? null : '/dashboard-overview';
         }
 
         // If user is logged in, and both phases are complete, they can access any authenticated route.
@@ -236,20 +202,14 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
       routes: [
         // Standard Routes
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
-        GoRoute(path: '/loading', builder: (context, state) => const LoadingScreen()), // Define loading route
+        GoRoute(path: '/loading', builder: (context, state) => const LoadingScreen()),
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
         GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
         GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
         GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
 
-        // All dashboard-related routes now point to MainDashboardScreen.
-        // The MainDashboardScreen will then use its internal switcher
-        // based on the sub-path or an internal state if a specific tab is desired.
-        // For simplicity, we are sending all of them to MainDashboardScreen.
-        // You'll need to pass the *intended initial tab* to MainDashboardScreen
-        // if the path like '/newsfeed' should pre-select the newsfeed tab.
-        // This is usually done with an extra parameter or by reading the current path.
+        // All dashboard-related routes point to MainDashboardScreen.
         GoRoute(path: '/dashboard-overview', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/newsfeed', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/matches', builder: (context, state) => const MainDashboardScreen()),
@@ -260,7 +220,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/notifications', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/favorites', builder: (context, state) => const MainDashboardScreen()),
 
-        // Continue with your other routes similarly pointing to MainDashboardScreen if they should be shell-contained
         GoRoute(path: '/compatibility-results', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/daily-personality-question', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/personality-quiz', builder: (context, state) => const MainDashboardScreen()),

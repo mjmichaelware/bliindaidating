@@ -36,7 +36,7 @@ class UserProfile {
   final String? politicalViews;
   final String? diet;
   final String? smokingHabits;
-  final String? drinkingHabits;
+  final String? drinkingHabits; // Correctly named here
   final String? sleepSchedule;
   final bool? willingToRelocate;
   final String? monogamyVsPolyamoryPreferences;
@@ -101,7 +101,7 @@ class UserProfile {
     this.politicalViews,
     this.diet,
     this.smokingHabits,
-    this.drinkingHabits,
+    this.drinkingHabits, // Correctly named here
     this.sleepSchedule,
     this.willingToRelocate,
     this.monogamyVsPolyamoryPreferences,
@@ -241,7 +241,7 @@ class UserProfile {
       politicalViews: json['political_views'] as String?,
       diet: json['diet'] as String?,
       smokingHabits: json['smoking_habits'] as String?,
-      drinkingHabits: json['drinking_habits'] as String?,
+      drinkingHabits: json['drinking_habits'] as String?, // Corrected: fetching 'drinking_habits'
       sleepSchedule: json['sleep_schedule'] as String?,
       willingToRelocate: json['willing_to_relocate'] as bool?,
       monogamyVsPolyamoryPreferences: json['monogamy_vs_polyamory_preferences'] as String?,
@@ -309,7 +309,7 @@ class UserProfile {
       'political_views': politicalViews,
       'diet': diet,
       'smoking_habits': smokingHabits,
-      'drinking_habits': drinkingHabits,
+      'drinking_habits': drinkingHabits, // Correctly named here
       'sleep_schedule': sleepSchedule,
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
@@ -363,7 +363,7 @@ class UserProfile {
     String? politicalViews,
     String? diet,
     String? smokingHabits,
-    String? drinkingHabits,
+    String? drinkingHabits, // Parameter name corrected here
     String? sleepSchedule,
     bool? willingToRelocate,
     String? monogamyVsPolyamoryPreferences,
@@ -426,7 +426,8 @@ class UserProfile {
       politicalViews: politicalViews ?? this.politicalViews,
       diet: diet ?? this.diet,
       smokingHabits: smokingHabits ?? this.smokingHabits,
-      drinkingHabits: drinkingHabings ?? this.drinkingHabits,
+      // CORRECTED LINE: Changed 'drinkingHabings' to 'drinkingHabits'
+      drinkingHabits: drinkingHabits ?? this.drinkingHabits,
       sleepSchedule: sleepSchedule ?? this.sleepSchedule,
       willingToRelocate: willingToRelocate ?? this.willingToRelocate,
       monogamyVsPolyamoryPreferences: monogamyVsPolyamoryPreferences ?? this.monogamyVsPolyamoryPreferences,

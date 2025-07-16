@@ -1,3 +1,4 @@
+// lib/screens/main/main_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,13 +10,14 @@ import 'dart:math' as math; // For math.Random and other math functions
 
 // Local imports for core project components
 import 'package:bliindaidating/app_constants.dart';
+// CORRECTED: Added '.dart' and ';' to complete the import statement
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/services/profile_service.dart';
 
-// OpenAI Integration Imports
+// OpenAI Integration Imports (assuming these are used within the screens or services)
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
-import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart';
+import 'package:bliindaidating/models/newsfeed/ai_engagement_prompt.dart'; // Assuming path adjustment
 
 // NEW: Dashboard Shell Component Imports
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
@@ -29,12 +31,15 @@ import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
 import 'package:bliindaidating/screens/discovery/discover_people_screen.dart';
 import 'package:bliindaidating/screens/questionnaire/questionnaire_screen.dart';
 import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
-import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
+import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart'; // This import is fine here as per analysis
 
 // Import the new Dashboard Overview Screen
 import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart';
 
 // Re-importing the custom painters from landing_page for consistency
+// RECOMMENDED: For better modularity, consider moving NebulaBackgroundPainter and ParticleFieldPainter
+// into their own dedicated files (e.g., 'lib/painters/nebula_background_painter.dart') and
+// importing them directly here.
 import 'package:bliindaidating/landing_page/landing_page.dart'; // Contains NebulaBackgroundPainter, ParticleFieldPainter
 
 
@@ -96,7 +101,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     if (currentUser == null) {
       setState(() { _isLoadingProfile = false; });
       debugPrint('MainDashboardScreen: No current user for profile load. Redirecting to login.');
-      if (mounted) context.go('/login');
+      // The GoRouter redirect logic in main.dart should handle this.
+      // Removed direct context.go('/login') here to avoid conflicts.
       return;
     }
 
@@ -112,19 +118,18 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
             _profilePictureDisplayUrl = fetchedProfile.profilePictureUrl;
           });
         }
-        // This redirect logic should primarily be handled by GoRouter's redirect logic in main.dart
-        // This check here is a fallback/additional safety.
-        if (!fetchedProfile.isPhase1Complete) {
-            debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
-            if (mounted) context.go('/profile_setup');
-            return;
-        }
+        // REMOVED: This redirect logic should primarily be handled by GoRouter's redirect logic in main.dart
+        // This check here is a fallback/additional safety, but can be removed for cleaner routing if GoRouter is robust.
+        // if (!fetchedProfile.isPhase1Complete) {
+        //     debugPrint('MainDashboardScreen: Profile Phase 1 is not complete. Redirecting to setup.');
+        //     if (mounted) context.go('/profile_setup');
+        //     return;
+        // }
       } else {
         setState(() { _isLoadingProfile = false; });
-        debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. Redirecting to setup.');
-        if (mounted) {
-          context.go('/profile_setup');
-        }
+        debugPrint('MainDashboardScreen: User profile not found for ID: ${currentUser.id}. GoRouter will handle redirect.');
+        // The GoRouter redirect logic in main.dart should handle this.
+        // Removed direct context.go('/profile_setup') here to avoid conflicts.
       }
 
       _profileSubscription = Supabase.instance.client
@@ -194,7 +199,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
     // Responsive breakpoints
     final bool isSmallScreen = size.width < 600; // Mobile
     final bool isMediumScreen = size.width >= 600 && size.width < 1000; // Tablet
-    final bool isLargeScreen = size.width >= 1000; // Desktop
+    // final bool isLargeScreen = size.width >= 1000; // Desktop - not explicitly used beyond default
 
     final profileService = Provider.of<ProfileService>(context);
     final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
@@ -377,25 +382,29 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> with TickerPr
                       _isLoadingProfile
                           ? Expanded(
                               child: Center(
-                                child: CircularProgressIndicator(
-                                    color: Theme.of(context).colorScheme.secondary),
-                              ),
+                                  child: CircularProgressIndicator(
+                                      color: Theme.of(context).colorScheme.secondary)),
                             )
                           : Expanded(
-                              child: ImageFiltered( // Keep ImageFiltered for visual blur
-                                imageFilter: showContentBlur
-                                    ? ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0)
-                                    : ImageFilter.blur(sigmaX: 0.0, sigmaY: 0.0),
-                                child: AnimatedOpacity( // CORRECTED: Changed Opacity to AnimatedOpacity
-                                  opacity: showContentBlur ? 0.4 : 1.0,
-                                  duration: AppConstants.animationDurationMedium, // Now 'duration' is a valid parameter
-                                  child: DashboardContentSwitcher(
-                                    selectedTabIndex: _selectedTabIndex,
-                                    screens: _dashboardScreens,
+                              // ADDED AbsorbPointer here to block interaction when blurred
+                              child: AbsorbPointer(
+                                absorbing: showContentBlur, // Only absorb when content should be blurred
+                                child: ImageFiltered(
+                                  imageFilter: showContentBlur
+                                      ? ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0)
+                                      : ImageFilter.blur(sigmaX: 0.0, sigmaY: 0.0),
+                                  child: AnimatedOpacity(
+                                    opacity: showContentBlur ? 0.4 : 1.0,
+                                    duration: AppConstants.animationDurationMedium,
+                                    child: DashboardContentSwitcher(
+                                      selectedTabIndex: _selectedTabIndex,
+                                      screens: _dashboardScreens,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
+                      // Added the missing DashboardFooter here based on the closing brace from your original input
                       const DashboardFooter(),
                     ],
                   ),
