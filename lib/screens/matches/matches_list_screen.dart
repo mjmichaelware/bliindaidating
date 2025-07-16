@@ -94,9 +94,9 @@ class _MatchesListScreenState extends State<MatchesListScreen> {
                             ),
                           ),
                           const SizedBox(height: AppConstants.spacingSmall),
-                          // Personality Traits & Astrological Sign
+                          // Astrological Sign (Removed Personality Traits)
                           Text(
-                            'Personality: ${userProfile.personalityTraits.isNotEmpty ? userProfile.personalityTraits.join(', ') : 'N/A'} | Sign: ${userProfile.astrologicalSign ?? 'N/A'}',
+                            'Sign: ${userProfile.astrologicalSign ?? 'N/A'}', // Removed Personality
                             style: theme.textTheme.bodyMedium?.copyWith(color: AppConstants.textMediumEmphasis),
                           ),
                           const SizedBox(height: AppConstants.spacingSmall),

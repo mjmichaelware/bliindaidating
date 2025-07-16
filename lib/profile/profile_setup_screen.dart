@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // Ensure UserProfile is imported
 import 'package:bliindaidating/services/profile_service.dart'; // Ensure ProfileService is imported
 import 'package:bliindaidating/app_constants.dart'; // Ensure AppConstants is imported
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; // FIX: Corrected import from .h to .dart
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:cross_file/cross_file.dart'; // Import XFile
 import 'package:image_picker/image_picker.dart'; // Corrected import for ImagePicker
@@ -15,13 +15,12 @@ import 'dart:io'; // For File, if needed for platform-specific image handling
 // Import custom background/effects for immersion (assuming these exist from your base project)
 import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
 
-// Import the modular form widgets (CORRECTED PATHS)
+// Import the modular form widgets
 import 'package:bliindaidating/screens/profile_setup/widgets/basic_info_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/identity_id_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/preferences_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/consent_form.dart';
 
-// ... rest of your file remains the same as previously corrected ...
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -91,10 +90,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   bool _showDiet = false;
   bool _showSmokingHabits = false;
   bool _showDrinkingHabits = false;
-  bool _showExerciseFrequency = false;
   bool _showSleepSchedule = false;
-  bool _showPersonalityTraits = false;
-
+  // Removed _showPersonalityTraits (already removed from previous version)
 
   static const List<Tab> _profileTabs = <Tab>[
     Tab(text: 'Basic Info', icon: Icon(Icons.person)),
@@ -273,11 +270,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showDiet = userProfile.diet != null; // NEW
         _showSmokingHabits = userProfile.smokingHabits != null; // NEW
         _showDrinkingHabits = userProfile.drinkingHabits != null; // NEW
-        _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null; // NEW
         _showSleepSchedule = userProfile.sleepSchedule != null; // NEW
-        // Directly use .isNotEmpty as these are List<String> fields
-        _showPersonalityTraits = userProfile.personalityTraits.isNotEmpty;
-
       }
       debugPrint('ProfileSetupScreen: Preferences loaded.');
     } catch (e) {
@@ -404,9 +397,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           diet: null,
           smokingHabits: null,
           drinkingHabits: null,
-          exerciseFrequencyOrFitnessLevel: null,
           sleepSchedule: null,
-          personalityTraits: const [],
           questionnaireAnswers: const {},
           personalityAssessmentResults: const {},
           profileVisibilityPreferences: const {}, // Ensure this is not null if required
@@ -454,7 +445,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           hobbiesAndInterests: _selectedInterests, // This will replace the entire list
           lookingFor: _lookingFor ?? existingProfile.lookingFor,
           isPhase1Complete: true, // Ensure this is true after completing this setup phase
-          agreedToTerms: _agreedToTerms, // CORRECTED LINE
+          agreedToTerms: _agreedToTerms,
           agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
           bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : existingProfile.bio,
           // Other fields are implicitly carried over by copyWith if not explicitly set here.
@@ -462,7 +453,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           // you explicitly set it to `null` or an empty string/list if that's the desired behavior.
           // For text fields, `_controller.text.trim().isNotEmpty ? _controller.text.trim() : null` handles clearing.
         );
-        // CORRECTED LINE: Use named argument 'profile'
         await profileService.updateProfile(profile: updatedProfile);
         debugPrint('User profile ${currentUser.id} updated successfully in Supabase.');
         if (mounted) {
@@ -582,7 +572,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
                         sexualOrientation: _sexualOrientation,
                         lookingFor: _lookingFor,
                         selectedInterests: _selectedInterests,
-                        onMaritalStatusChanged: _onMaritalStatusChanged, // Added this line
+                        onMaritalStatusChanged: _onMaritalStatusChanged,
                       ),
                       ConsentForm(
                         formKey: _formKeys[3],

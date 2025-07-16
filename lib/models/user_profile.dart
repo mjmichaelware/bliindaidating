@@ -1,10 +1,7 @@
+// lib/models/user_profile.dart
 import 'dart:convert'; // Essential for jsonEncode and jsonDecode
 import 'package:flutter/foundation.dart'; // For debugPrint
 
-// Removed: part 'user_profile.g.dart';
-// Removed: import 'package:json_annotation/json_annotation.dart';
-
-// Removed: @JsonSerializable()
 class UserProfile {
   final String id;
   final String email;
@@ -40,9 +37,7 @@ class UserProfile {
   final String? diet;
   final String? smokingHabits;
   final String? drinkingHabits;
-  final String? exerciseFrequencyOrFitnessLevel;
   final String? sleepSchedule;
-  final List<String> personalityTraits;
   final bool? willingToRelocate;
   final String? monogamyVsPolyamoryPreferences;
   final String? astrologicalSign;
@@ -107,9 +102,7 @@ class UserProfile {
     this.diet,
     this.smokingHabits,
     this.drinkingHabits,
-    this.exerciseFrequencyOrFitnessLevel,
     this.sleepSchedule,
-    this.personalityTraits = const [],
     this.willingToRelocate,
     this.monogamyVsPolyamoryPreferences,
     this.astrologicalSign,
@@ -249,9 +242,7 @@ class UserProfile {
       diet: json['diet'] as String?,
       smokingHabits: json['smoking_habits'] as String?,
       drinkingHabits: json['drinking_habits'] as String?,
-      exerciseFrequencyOrFitnessLevel: json['exercise_frequency_or_fitness_level'] as String?,
       sleepSchedule: json['sleep_schedule'] as String?,
-      personalityTraits: _decodeStringList(json['personality_traits']),
       willingToRelocate: json['willing_to_relocate'] as bool?,
       monogamyVsPolyamoryPreferences: json['monogamy_vs_polyamory_preferences'] as String?,
       astrologicalSign: json['astrological_sign'] as String?,
@@ -319,15 +310,13 @@ class UserProfile {
       'diet': diet,
       'smoking_habits': smokingHabits,
       'drinking_habits': drinkingHabits,
-      'exerciseFrequencyOrFitnessLevel': exerciseFrequencyOrFitnessLevel,
-      'sleepSchedule': sleepSchedule,
-      'personalityTraits': jsonEncode(personalityTraits),
+      'sleep_schedule': sleepSchedule,
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
       'astrological_sign': astrologicalSign,
       'attachment_style': attachmentStyle,
       'communication_style': communicationStyle,
-      'mentalHealthDisclosures': mentalHealthDisclosures,
+      'mental_health_disclosures': mentalHealthDisclosures,
       'petOwnership': petOwnership,
       'travel_frequency_or_favorite_destinations': travelFrequencyOrFavoriteDestinations,
       'profile_visibility_preferences': jsonEncode(profileVisibilityPreferences),
@@ -375,9 +364,7 @@ class UserProfile {
     String? diet,
     String? smokingHabits,
     String? drinkingHabits,
-    String? exerciseFrequencyOrFitnessLevel,
     String? sleepSchedule,
-    List<String>? personalityTraits,
     bool? willingToRelocate,
     String? monogamyVsPolyamoryPreferences,
     String? astrologicalSign,
@@ -439,10 +426,8 @@ class UserProfile {
       politicalViews: politicalViews ?? this.politicalViews,
       diet: diet ?? this.diet,
       smokingHabits: smokingHabits ?? this.smokingHabits,
-      drinkingHabits: drinkingHabits ?? this.drinkingHabits,
-      exerciseFrequencyOrFitnessLevel: exerciseFrequencyOrFitnessLevel ?? this.exerciseFrequencyOrFitnessLevel,
+      drinkingHabits: drinkingHabings ?? this.drinkingHabits,
       sleepSchedule: sleepSchedule ?? this.sleepSchedule,
-      personalityTraits: personalityTraits ?? this.personalityTraits,
       willingToRelocate: willingToRelocate ?? this.willingToRelocate,
       monogamyVsPolyamoryPreferences: monogamyVsPolyamoryPreferences ?? this.monogamyVsPolyamoryPreferences,
       astrologicalSign: astrologicalSign ?? this.astrologicalSign,

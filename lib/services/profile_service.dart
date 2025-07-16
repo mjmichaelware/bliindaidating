@@ -1,19 +1,14 @@
 // lib/services/profile_service.dart
-import 'package:flutter/foundation.dart'; // For kIsWeb
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:image_picker/image_picker.dart'; // Keep this, as it's cross-platform for picking
+import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
-import 'dart:async'; // For Completer
-import 'package:flutter/services.dart'; // For ByteData
+import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:uuid/uuid.dart';
 
-// REMOVE these specific imports, as we now use a unified factory
-// import 'package:bliindaidating/platform_utils/platform_io_helpers.dart';
-// import 'package:bliindaidating/platform_utils/platform_html_helpers.dart';
-
-// NEW: Import our new unified platform helper factory and the abstract interface
 import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
 import 'package:bliindaidating/platform_utils/abstract_platform_helpers.dart';
 
@@ -23,7 +18,6 @@ class ProfileService with ChangeNotifier {
   bool _isProfileLoaded = false;
   bool _isLoading = false;
 
-  // NEW: Instantiate the single abstract platform helper from the factory
   final AbstractPlatformHelpers _platformHelpers = getPlatformHelpers();
 
   ProfileService(this._supabase);
@@ -63,7 +57,8 @@ class ProfileService with ChangeNotifier {
     _setLoading(true);
     debugPrint('ProfileService: Attempting to fetch user profile for ID: $id');
     try {
-      final response = await _supabase.from('profiles').select().eq('id', id).single();
+      // CHANGE HERE: from 'profiles' to 'user_profiles'
+      final response = await _supabase.from('user_profiles').select().eq('id', id).single();
       _userProfile = UserProfile.fromJson(response);
       debugPrint('ProfileService: User profile fetched: ${_userProfile?.toJson()}');
       return _userProfile;
@@ -94,7 +89,8 @@ class ProfileService with ChangeNotifier {
   Future<void> updateProfile({required UserProfile profile}) async {
     _setLoading(true);
     try {
-      final response = await _supabase.from('profiles').upsert(profile.toJson()).select().single();
+      // CHANGE HERE: from 'profiles' to 'user_profiles'
+      final response = await _supabase.from('user_profiles').upsert(profile.toJson()).select().single();
       _userProfile = UserProfile.fromJson(response);
       debugPrint('ProfileService: Profile updated: ${_userProfile?.toJson()}');
       notifyListeners();
@@ -121,7 +117,8 @@ class ProfileService with ChangeNotifier {
           );
       debugPrint('ProfileService: Avatar uploaded to: $publicUrl');
 
-      await _supabase.from('profiles').update({
+      // CHANGE HERE: from 'profiles' to 'user_profiles'
+      await _supabase.from('user_profiles').update({
         'profile_picture_url': publicUrl,
       }).eq('id', _supabase.auth.currentUser!.id);
 
@@ -134,8 +131,6 @@ class ProfileService with ChangeNotifier {
     }
   }
 
-  // This method will pick an image and prepare it for upload
-  // *** SIMPLIFIED: Now uses ImagePicker consistently across all platforms. ***
   Future<Uint8List?> pickAndPrepareAvatar() async {
     try {
       final ImagePicker picker = ImagePicker();
@@ -178,14 +173,12 @@ class ProfileService with ChangeNotifier {
       Uint8List? fileBytes;
       String fileName = 'analysis_photo_${DateTime.now().millisecondsSinceEpoch}.png';
 
-      // *** CORRECTED: Explicitly handle web case as `readFileAsBytes` isn't meant for web paths. ***
       if (kIsWeb) {
         debugPrint('ProfileService: uploadAnalysisPhoto: `imagePath` is not directly readable on web. '
-                     'Consider refactoring to accept Uint8List directly or use a web-specific picker first.');
+                    'Consider refactoring to accept Uint8List directly or use a web-specific picker first.');
         throw UnsupportedError('uploadAnalysisPhoto with imagePath not directly supported for local file paths on web. '
                                'Provide Uint8List directly or use a web file picker first.');
       } else {
-        // Use the unified `_platformHelpers` instance and its `readFileAsBytes` method for IO platforms.
         fileBytes = await _platformHelpers.readFileAsBytes(imagePath);
       }
 
@@ -215,7 +208,8 @@ class ProfileService with ChangeNotifier {
   Future<void> insertProfile(UserProfile profile) async {
     _setLoading(true);
     try {
-      await _supabase.from('profiles').insert(profile.toJson());
+      // CHANGE HERE: from 'profiles' to 'user_profiles'
+      await _supabase.from('user_profiles').insert(profile.toJson());
       _userProfile = profile;
       notifyListeners();
       debugPrint('ProfileService: Profile inserted.');
@@ -233,7 +227,8 @@ class ProfileService with ChangeNotifier {
   Future<List<UserProfile>> fetchAllUserProfiles() async {
     _setLoading(true);
     try {
-      final response = await _supabase.from('profiles').select();
+      // CHANGE HERE: from 'profiles' to 'user_profiles'
+      final response = await _supabase.from('user_profiles').select();
       final List<UserProfile> profiles = (response as List).map((json) => UserProfile.fromJson(json)).toList();
       debugPrint('ProfileService: Fetched ${profiles.length} user profiles.');
       return profiles;
@@ -260,7 +255,8 @@ class ProfileService with ChangeNotifier {
           isPhase1Complete: true,
           isPhase2Complete: true,
         );
-        await _supabase.from('profiles').insert(dummyProfile.toJson());
+        // CHANGE HERE: from 'profiles' to 'user_profiles'
+        await _supabase.from('user_profiles').insert(dummyProfile.toJson());
         debugPrint('Generated dummy user: $dummyEmail');
       }
       return 'Successfully generated $count dummy users.';
