@@ -1,10 +1,12 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode; // ADDED kReleaseMode
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode;
 import 'dart:async';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // Keep this import for debug mode
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Local Imports
 import 'package:bliindaidating/app_constants.dart';
@@ -14,7 +16,12 @@ import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/theme/app_theme.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 
-// NEW IMPORT for platform utilities
+// Service Imports
+import 'package:bliindaidating/services/newsfeed_service.dart';
+// CORRECTED IMPORT: Using questionnaire_service.dart as confirmed by your file
+import 'package:bliindaidating/services/questionnaire_service.dart';
+
+// Platform utilities
 import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
 
 // Screen Imports
@@ -37,22 +44,17 @@ Future<void> main() async {
 
   // --- CONDITIONAL LOGIC FOR ENVIRONMENT VARIABLES ---
   if (kReleaseMode) {
-    // For Release Builds (e.g., flutter build web, flutter build apk/ipa)
-    // Variables are injected at compile time using --dart-define
     supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
     supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
     geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY');
     debugPrint('main: Running in Release Mode. Variables from --dart-define.');
   } else {
-    // For Debug Builds (e.g., flutter run, hot reload/restart)
-    // Variables are loaded from .env file at runtime
     try {
       await dotenv.load(fileName: ".env");
       supabaseUrl = dotenv.env['SUPABASE_URL']!;
       supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY']!;
-      geminiApiKey = dotenv.env['GEMINI_API_KEY']!; // Load Gemini key from .env too
+      geminiApiKey = dotenv.env['GEMINI_API_KEY']!;
       debugPrint('main: Running in Debug Mode. .env file loaded successfully!');
-      // OPTIONAL: Add this line to see all loaded env vars in debug mode
       debugPrint('main: Loaded env variables in debug: ${dotenv.env}');
     } catch (e) {
       debugPrint('main: Error loading .env file in Debug Mode: $e');
@@ -60,6 +62,13 @@ Future<void> main() async {
     }
   }
   // --- END CONDITIONAL LOGIC ---
+
+  // --- Environment Variable Verification Prints ---
+  debugPrint('--- Environment Variable Verification ---');
+  debugPrint('Supabase URL (after load): "$supabaseUrl"');
+  debugPrint('Supabase Anon Key (after load): ${supabaseAnonKey.isNotEmpty ? '*** (loaded)' : 'NOT LOADED / EMPTY'}');
+  debugPrint('Gemini API Key (after load): ${geminiApiKey.isNotEmpty ? '*** (loaded)' : 'NOT LOADED / EMPTY'}');
+  debugPrint('-----------------------------------------');
 
   // --- Start of NEW PLATFORM UTILS INTEGRATION ---
   final platformHelper = getPlatformHelpers();
@@ -69,11 +78,8 @@ Future<void> main() async {
 
   // --- Initialize Supabase using the determined environment variables ---
   try {
-    // Check if the variables were actually defined (important for --dart-define)
-    // String.fromEnvironment returns an empty string if the variable wasn't passed,
-    // or the variable's literal name if accessed outside a const context or not defined.
     if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty || supabaseUrl == 'SUPABASE_URL' || supabaseAnonKey == 'SUPABASE_ANON_KEY') {
-      debugPrint('main: Supabase URL or Anon Key not found! Check environment variables.');
+      debugPrint('main: Supabase URL or Anon Key not found! Throwing exception. (Values were: URL="$supabaseUrl", Key="${supabaseAnonKey.isNotEmpty ? '***' : 'empty'}")');
       throw Exception('Missing Supabase environment variables. Please ensure they are correctly set for the current build mode (via .env for debug, or --dart-define for release).');
     }
 
@@ -104,6 +110,18 @@ Future<void> main() async {
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
+        // --- NewsfeedService in MultiProvider ---
+        // Assuming NewsfeedService has a no-argument constructor based on previous errors.
+        // If your NewsfeedService *does* take arguments, you must update its constructor
+        // AND this `create` method call to match.
+        ChangeNotifierProvider<NewsfeedService>(
+          create: (context) => NewsfeedService(),
+        ),
+        // --- QuestionnaireService in MultiProvider ---
+        // CORRECTED: Using QuestionnaireService and its no-argument constructor.
+        ChangeNotifierProvider<QuestionnaireService>(
+          create: (context) => QuestionnaireService(),
+        ),
       ],
       child: const BlindAIDatingApp(),
     ),
@@ -131,7 +149,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
     _router = GoRouter(
       initialLocation: '/',
-      debugLogDiagnostics: kDebugMode, // Only log GoRouter diagnostics in debug mode
+      debugLogDiagnostics: kDebugMode,
       refreshListenable: Listenable.merge([
         Provider.of<AuthService>(context, listen: false),
         Provider.of<ProfileService>(context, listen: false),
@@ -193,7 +211,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
             debugPrint('Redirect Logic: Redirecting from public/landing/loading to /profile_setup (Phase 1 incomplete).');
             return '/profile_setup';
           }
-          // MODIFIED: If phase 2 is incomplete, redirect to dashboard-overview to show banner
           if (!phase2Complete) {
             debugPrint('Redirect Logic: Redirecting from public/landing/loading to /dashboard-overview (Phase 2 incomplete, show banner).');
             return '/dashboard-overview';
@@ -209,8 +226,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           return currentPath == '/profile_setup' ? null : '/profile_setup';
         }
 
-        // MODIFIED: If phase 2 is incomplete, but phase 1 is, always go to dashboard-overview.
-        // MainDashboardScreen will handle the blur/banner based on isPhase2Complete.
         if (!phase2Complete) {
           debugPrint('Redirect Logic: Logged in, Phase 1 complete, Phase 2 incomplete. Redirecting to /dashboard-overview to show banner.');
           return currentPath == '/dashboard-overview' ? null : '/dashboard-overview';

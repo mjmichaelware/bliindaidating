@@ -108,12 +108,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     debugPrint('ProfileSetupScreen: initState called.');
     _tabController = TabController(length: _profileTabs.length, vsync: this);
     _tabController.addListener(_handleTabChange);
+    debugPrint('ProfileSetupScreen: TabController initialized and listener added.');
     _loadPreferences();
+    debugPrint('ProfileSetupScreen: _loadPreferences called from initState.');
   }
 
   @override
   void dispose() {
-    debugPrint('ProfileSetupScreen: dispose called.');
+    debugPrint('ProfileSetupScreen: dispose called. Disposing controllers and listeners.');
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     _fullNameController.dispose();
@@ -122,128 +124,175 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     _phoneNumberController.dispose();
     _addressZipController.dispose();
     _bioController.dispose();
+    debugPrint('ProfileSetupScreen: All controllers disposed.');
     super.dispose();
   }
 
   void _handleTabChange() {
-    debugPrint('ProfileSetupScreen: Tab changed to index ${_tabController.index}.');
-    setState(() {});
+    debugPrint('ProfileSetupScreen: Tab change listener fired. Tab index changed to ${_tabController.index}.');
+    setState(() {
+      debugPrint('ProfileSetupScreen: setState called from _handleTabChange.');
+    });
   }
 
   void _onImagePicked(XFile? image) {
-    debugPrint('ProfileSetupScreen: Image picked: ${image?.path}');
+    debugPrint('ProfileSetupScreen: _onImagePicked called with image: ${image?.path ?? "null"}.');
     setState(() {
       _pickedImage = image;
       _imagePreviewPath = image?.path;
+      debugPrint('ProfileSetupScreen: _pickedImage and _imagePreviewPath updated in setState for image pick.');
     });
   }
 
   void _onDateOfBirthSelected(DateTime? newDate) {
-    debugPrint('ProfileSetupScreen: Date of birth selected: $newDate');
+    debugPrint('ProfileSetupScreen: _onDateOfBirthSelected called with date: $newDate.');
     setState(() {
       _dateOfBirth = newDate;
+      debugPrint('ProfileSetupScreen: _dateOfBirth updated in setState for date selection.');
     });
   }
 
   void _onGenderChanged(String? newGender) {
-    debugPrint('ProfileSetupScreen: Gender changed to: $newGender');
+    debugPrint('ProfileSetupScreen: _onGenderChanged called with gender: $newGender.');
     setState(() {
       _gender = newGender;
+      debugPrint('ProfileSetupScreen: _gender updated in setState for gender change.');
     });
   }
 
   void _onSexualOrientationChanged(String? newSexualOrientation) {
-    debugPrint('ProfileSetupScreen: Sexual Orientation changed to: $newSexualOrientation');
+    debugPrint('ProfileSetupScreen: _onSexualOrientationChanged called with orientation: $newSexualOrientation.');
     setState(() {
       _sexualOrientation = newSexualOrientation;
+      debugPrint('ProfileSetupScreen: _sexualOrientation updated in setState for orientation change.');
     });
   }
 
   void _onLookingForChanged(String? newLookingFor) {
-    debugPrint('ProfileSetupScreen: Looking For changed to: $newLookingFor');
+    debugPrint('ProfileSetupScreen: _onLookingForChanged called with lookingFor: $newLookingFor.');
     setState(() {
       _lookingFor = newLookingFor;
+      debugPrint('ProfileSetupScreen: _lookingFor updated in setState for lookingFor change.');
     });
   }
 
   void _onInterestSelected(String interest) {
-    debugPrint('ProfileSetupScreen: Interest selected: $interest');
+    debugPrint('ProfileSetupScreen: _onInterestSelected called with interest: $interest.');
     setState(() {
       if (!_selectedInterests.contains(interest)) {
         _selectedInterests.add(interest);
+        debugPrint('ProfileSetupScreen: Added interest "$interest" to _selectedInterests.');
+      } else {
+        debugPrint('ProfileSetupScreen: Interest "$interest" already exists, not adding.');
       }
     });
   }
 
   void _onInterestDeselected(String interest) {
-    debugPrint('ProfileSetupScreen: Interest deselected: $interest');
+    debugPrint('ProfileSetupScreen: _onInterestDeselected called with interest: $interest.');
     setState(() {
       _selectedInterests.remove(interest);
+      debugPrint('ProfileSetupScreen: Removed interest "$interest" from _selectedInterests.');
     });
   }
 
   void _onTermsChanged(bool? value) {
-    debugPrint('ProfileSetupScreen: Agreed to Terms changed to: $value');
+    debugPrint('ProfileSetupScreen: _onTermsChanged called with value: $value.');
     setState(() {
       _agreedToTerms = value ?? false;
+      debugPrint('ProfileSetupScreen: _agreedToTerms updated to $_agreedToTerms in setState.');
     });
   }
 
   void _onCommunityGuidelinesChanged(bool? value) {
-    debugPrint('ProfileSetupScreen: Agreed to Community Guidelines changed to: $value');
+    debugPrint('ProfileSetupScreen: _onCommunityGuidelinesChanged called with value: $value.');
     setState(() {
       _agreedToCommunityGuidelines = value ?? false;
+      debugPrint('ProfileSetupScreen: _agreedToCommunityGuidelines updated to $_agreedToCommunityGuidelines in setState.');
     });
   }
 
   void _onMaritalStatusChanged(String? newMaritalStatus) {
-    debugPrint('ProfileSetupScreen: Marital Status changed to: $newMaritalStatus');
+    debugPrint('ProfileSetupScreen: _onMaritalStatusChanged called with status: $newMaritalStatus.');
+    // No setState here, assuming this value is handled elsewhere or is a placeholder for future use.
   }
 
 
   Future<void> _loadPreferences() async {
     debugPrint('ProfileSetupScreen: _loadPreferences started.');
-    setState(() { _isLoading = true; });
+    setState(() {
+      _isLoading = true;
+      debugPrint('ProfileSetupScreen: _isLoading set to true at start of _loadPreferences.');
+    });
+
     final currentUser = Supabase.instance.client.auth.currentUser;
+    debugPrint('ProfileSetupScreen: Fetched currentUser: ${currentUser?.id ?? "null"}.');
+
     if (currentUser == null) {
       if (mounted) {
-        debugPrint('ProfileSetupScreen: No current user during load, redirecting to login.');
-        // Ensure you don't navigate if already navigating
+        debugPrint('ProfileSetupScreen: No current user during load, checking _isNavigating flag.');
         if (!_isNavigating) {
           _isNavigating = true; // Set flag
+          debugPrint('ProfileSetupScreen: _isNavigating set to true. Redirecting to /login.');
           context.go('/login');
           debugPrint('ProfileSetupScreen: Issued navigation to /login from _loadPreferences.');
+        } else {
+          debugPrint('ProfileSetupScreen: Already navigating, skipping duplicate redirect to /login.');
         }
+      } else {
+        debugPrint('ProfileSetupScreen: Widget unmounted, cannot redirect to login from _loadPreferences.');
       }
+      setState(() {
+        _isLoading = false; // Ensure loading state is reset even on redirect
+        debugPrint('ProfileSetupScreen: _isLoading set to false due to no current user (redirect scenario).');
+      });
       return;
     }
 
     final profileService = Provider.of<ProfileService>(context, listen: false);
+    debugPrint('ProfileSetupScreen: ProfileService obtained from Provider.');
 
     try {
-      debugPrint('ProfileSetupScreen: Fetching user profile for ID: ${currentUser.id}');
+      debugPrint('ProfileSetupScreen: Attempting to fetch user profile for ID: ${currentUser.id}.');
       final UserProfile? userProfile = await profileService.fetchUserProfile(id: currentUser.id);
+      debugPrint('ProfileSetupScreen: User profile fetch completed. Profile found: ${userProfile != null}.');
+
       if (userProfile != null) {
-        debugPrint('ProfileSetupScreen: User profile fetched. Populating fields.');
+        debugPrint('ProfileSetupScreen: User profile fetched. Populating fields from existing profile.');
         _fullNameController.text = userProfile.fullLegalName ?? userProfile.fullName ?? '';
+        debugPrint('ProfileSetupScreen: Full Name populated: "${_fullNameController.text}".');
         _displayNameController.text = userProfile.displayName ?? '';
+        debugPrint('ProfileSetupScreen: Display Name populated: "${_displayNameController.text}".');
         _heightController.text = userProfile.heightCm?.toString() ?? userProfile.height?.toString() ?? '';
+        debugPrint('ProfileSetupScreen: Height populated: "${_heightController.text}".');
         _phoneNumberController.text = userProfile.phoneNumber ?? '';
+        debugPrint('ProfileSetupScreen: Phone Number populated: "${_phoneNumberController.text}".');
         _addressZipController.text = userProfile.locationZipCode ?? userProfile.addressZip ?? '';
+        debugPrint('ProfileSetupScreen: Address Zip populated: "${_addressZipController.text}".');
         _bioController.text = userProfile.bio ?? '';
+        debugPrint('ProfileSetupScreen: Bio populated: "${_bioController.text}".');
 
         _dateOfBirth = userProfile.dateOfBirth;
+        debugPrint('ProfileSetupScreen: Date of Birth populated: "$_dateOfBirth".');
         _gender = userProfile.genderIdentity ?? userProfile.gender;
+        debugPrint('ProfileSetupScreen: Gender populated: "$_gender".');
         _sexualOrientation = userProfile.sexualOrientation;
+        debugPrint('ProfileSetupScreen: Sexual Orientation populated: "$_sexualOrientation".');
         _lookingFor = userProfile.lookingFor;
+        debugPrint('ProfileSetupScreen: Looking For populated: "$_lookingFor".');
         _selectedInterests = List.from(userProfile.hobbiesAndInterests);
+        debugPrint('ProfileSetupScreen: Selected Interests populated: "$_selectedInterests".');
         _agreedToTerms = userProfile.agreedToTerms;
+        debugPrint('ProfileSetupScreen: Agreed to Terms populated: "$_agreedToTerms".');
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
+        debugPrint('ProfileSetupScreen: Agreed to Community Guidelines populated: "$_agreedToCommunityGuidelines".');
         _imagePreviewPath = userProfile.profilePictureUrl;
+        debugPrint('ProfileSetupScreen: Image Preview Path populated: "$_imagePreviewPath".');
 
         _preferredGender = userProfile.genderIdentity ?? userProfile.gender;
+        debugPrint('ProfileSetupScreen: Preferred Gender populated: "$_preferredGender".');
 
-        // Visibility toggles
+        // Visibility toggles - Populating these from profile data
         _showFullName = userProfile.fullLegalName != null || userProfile.fullName != null;
         _showDisplayName = userProfile.displayName != null;
         _showAge = userProfile.dateOfBirth != null;
@@ -278,48 +327,75 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showSmokingHabits = userProfile.smokingHabits != null;
         _showDrinkingHabits = userProfile.drinkingHabits != null;
         _showSleepSchedule = userProfile.sleepSchedule != null;
+        debugPrint('ProfileSetupScreen: Visibility toggles updated based on existing profile data.');
+
       } else {
-        debugPrint('ProfileSetupScreen: No existing user profile found for ID: ${currentUser.id}.');
+        debugPrint('ProfileSetupScreen: No existing user profile found for ID: ${currentUser.id}. Initializing with default/empty values.');
       }
-      debugPrint('ProfileSetupScreen: Preferences loading process completed.');
+      debugPrint('ProfileSetupScreen: Preferences loading process completed successfully.');
     } on PostgrestException catch (e) {
-      debugPrint('ProfileSetupScreen: Supabase Postgrest Error loading preferences: ${e.message}');
+      debugPrint('ProfileSetupScreen: Supabase Postgrest Error during _loadPreferences: ${e.message}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load profile: ${e.message}')),
         );
       }
     } catch (e) {
-      debugPrint('ProfileSetupScreen: Generic Error loading preferences: $e');
+      debugPrint('ProfileSetupScreen: Generic Error during _loadPreferences: ${e.toString()}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load profile: ${e.toString()}')),
         );
       }
     } finally {
-      setState(() { _isLoading = false; });
-      debugPrint('ProfileSetupScreen: _loadPreferences finally block executed. _isLoading set to false.');
+      setState(() {
+        _isLoading = false;
+        debugPrint('ProfileSetupScreen: _loadPreferences finally block executed. _isLoading set to false.');
+      });
     }
   }
 
   Future<void> _savePreferences() async {
-    debugPrint('ProfileSetupScreen: _savePreferences started.');
-    if (!_formKeys[_tabController.index].currentState!.validate()) {
+    debugPrint('ProfileSetupScreen: _savePreferences started. (Entry Point)');
+
+    debugPrint('ProfileSetupScreen: _savePreferences - Before initial form validation check for tab index ${_tabController.index}.');
+    final currentFormKey = _formKeys[_tabController.index];
+    if (currentFormKey.currentState == null) {
+      debugPrint('ProfileSetupScreen: ERROR: currentFormKey.currentState is NULL for tab index ${_tabController.index}. Cannot validate.');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Form state not available for validation.')),
+        );
+      }
+      setState(() { _isLoading = false; }); // Ensure loading is off if a critical error occurs
+      _isNavigating = false; // Reset navigation flag
+      return;
+    }
+
+    if (!currentFormKey.currentState!.validate()) {
       debugPrint('ProfileSetupScreen: Validation failed for current tab (index: ${_tabController.index}).');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please fill out all required fields on this tab.')),
         );
       }
+      setState(() { _isLoading = false; }); // Ensure loading is off if validation fails
+      _isNavigating = false; // Reset navigation flag
       return; // Exit if validation fails
     }
+    debugPrint('ProfileSetupScreen: _savePreferences - After initial form validation, validation successful.');
 
-    setState(() { _isLoading = true; });
-    debugPrint('ProfileSetupScreen: _isLoading set to true.');
+    setState(() {
+      _isLoading = true;
+      debugPrint('ProfileSetupScreen: _isLoading set to true at start of _savePreferences.');
+    });
 
+    debugPrint('ProfileSetupScreen: _savePreferences - Before getting Supabase current user.');
     final currentUser = Supabase.instance.client.auth.currentUser;
+    debugPrint('ProfileSetupScreen: _savePreferences - After getting Supabase current user. User: ${currentUser?.id ?? "null"}.');
+
     if (currentUser == null) {
-      debugPrint('ProfileSetupScreen: No current user found for saving. Redirecting to login.');
+      debugPrint('ProfileSetupScreen: No current user found for saving. Displaying error and redirecting to login.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: User not logged in!')),
@@ -327,53 +403,77 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         // Prevent multiple navigations
         if (!_isNavigating) {
           _isNavigating = true;
+          debugPrint('ProfileSetupScreen: _isNavigating set to true. Calling context.go(/login).');
           context.go('/login');
-          debugPrint('ProfileSetupScreen: Issued navigation to /login from _savePreferences.');
+          debugPrint('ProfileSetupScreen: Issued navigation to /login from _savePreferences (no user).');
+        } else {
+          debugPrint('ProfileSetupScreen: Already navigating, skipping duplicate redirect to /login.');
         }
+      } else {
+        debugPrint('ProfileSetupScreen: Widget unmounted, cannot redirect to login from _savePreferences (no user).');
       }
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false; // Ensure loading state is reset
+        debugPrint('ProfileSetupScreen: _isLoading set to false due to no current user (save scenario).');
+      });
+      _isNavigating = false; // Reset navigation flag
       return; // Exit if no user
     }
-    debugPrint('ProfileSetupScreen: Current user ID: ${currentUser.id}');
+    debugPrint('ProfileSetupScreen: Current user ID: ${currentUser.id}. Email: ${currentUser.email ?? "N/A"}.');
 
+    debugPrint('ProfileSetupScreen: _savePreferences - Before getting ProfileService from Provider.');
     final profileService = Provider.of<ProfileService>(context, listen: false);
+    debugPrint('ProfileSetupScreen: _savePreferences - After getting ProfileService.');
+
     String? uploadedPhotoPath;
 
-    debugPrint('ProfileSetupScreen: Checking for picked image...');
+    debugPrint('ProfileSetupScreen: Checking for picked image (_pickedImage: ${_pickedImage != null}).');
+    debugPrint('ProfileSetupScreen: Existing image preview path (_imagePreviewPath: $_imagePreviewPath).');
+
     if (_pickedImage != null) {
-      debugPrint('ProfileSetupScreen: Image picked, attempting to upload analysis photo...');
+      debugPrint('ProfileSetupScreen: Image picked, attempting to upload analysis photo from path: ${_pickedImage!.path}.');
       try {
+        debugPrint('ProfileSetupScreen: _savePreferences - Calling profileService.uploadAnalysisPhoto.');
         uploadedPhotoPath = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!.path);
+        debugPrint('ProfileSetupScreen: _savePreferences - After profileService.uploadAnalysisPhoto call. Uploaded path: $uploadedPhotoPath.');
         if (uploadedPhotoPath == null) {
-          debugPrint('ProfileSetupScreen: Failed to get uploaded photo path from service.');
+          debugPrint('ProfileSetupScreen: Failed to get uploaded photo path from service. Upload analysis photo returned null.');
           throw Exception('Failed to get uploaded photo path after upload.');
         }
-        debugPrint('ProfileSetupScreen: Analysis photo uploaded successfully. Path: $uploadedPhotoPath');
+        debugPrint('ProfileSetupScreen: Analysis photo uploaded successfully. Final path: $uploadedPhotoPath');
       } catch (e) {
-        debugPrint('ProfileSetupScreen: Error uploading photo: $e');
+        debugPrint('ProfileSetupScreen: Error uploading photo for analysis: ${e.toString()}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Failed to upload photo for analysis: ${e.toString()}')),
           );
         }
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false; // Ensure loading is off if photo upload fails
+          debugPrint('ProfileSetupScreen: _isLoading set to false after photo upload error.');
+        });
+        _isNavigating = false; // Reset navigation flag
         return; // Exit if photo upload fails
       }
     } else if (_imagePreviewPath != null && _imagePreviewPath!.startsWith('http')) {
       uploadedPhotoPath = _imagePreviewPath;
-      debugPrint('ProfileSetupScreen: Using existing image preview path: $uploadedPhotoPath');
+      debugPrint('ProfileSetupScreen: No new image picked. Using existing image preview path: $uploadedPhotoPath for profile.');
     } else {
-      debugPrint('ProfileSetupScreen: No new image picked and no existing URL, continuing without photo upload.');
+      debugPrint('ProfileSetupScreen: No new image picked and no existing URL found. Continuing without photo upload.');
       uploadedPhotoPath = null;
     }
+    debugPrint('ProfileSetupScreen: _savePreferences - After all image handling logic. Final uploadedPhotoPath: $uploadedPhotoPath.');
+
 
     try {
-      debugPrint('ProfileSetupScreen: Attempting to save profile data to Supabase.');
-      final UserProfile? existingProfile = profileService.userProfile;
-      debugPrint('ProfileSetupScreen: Existing profile status: ${existingProfile != null ? 'Found' : 'Not Found'}');
+      debugPrint('ProfileSetupScreen: Attempting to save profile data to Supabase database.');
+      debugPrint('ProfileSetupScreen: _savePreferences - Before fetching existing profile from ProfileService\'s internal state.');
+      final UserProfile? existingProfile = profileService.userProfile; // This reads from ProfileService's internal state
+      debugPrint('ProfileSetupScreen: Existing profile status: ${existingProfile != null ? 'Found' : 'Not Found'}.');
+      debugPrint('ProfileSetupScreen: _savePreferences - After fetching existing profile, before insert/update decision.');
 
       if (existingProfile == null) {
-        debugPrint('ProfileSetupScreen: Creating new user profile...');
+        debugPrint('ProfileSetupScreen: Existing profile not found. Creating a NEW user profile for ${currentUser.id}.');
         final UserProfile newProfile = UserProfile(
           id: currentUser.id,
           email: currentUser.email!,
@@ -412,16 +512,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           hobbiesAndInterestsNew: null, loveLanguagesNew: null,
           locationCity: null, locationState: null,
         );
-        debugPrint('ProfileSetupScreen: Calling profileService.insertProfile...');
+        debugPrint('ProfileSetupScreen: New UserProfile object created. Calling profileService.insertProfile for ID: ${newProfile.id}.');
+        debugPrint('ProfileSetupScreen: New Profile Data: fullLegalName: ${newProfile.fullLegalName}, displayName: ${newProfile.displayName}, isPhase1Complete: ${newProfile.isPhase1Complete}');
         await profileService.insertProfile(newProfile);
-        debugPrint('ProfileSetupScreen: User profile ${currentUser.id} inserted successfully in Supabase.');
+        debugPrint('ProfileSetupScreen: User profile ${currentUser.id} INSERTED successfully into Supabase.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile created successfully!')),
           );
         }
       } else {
-        debugPrint('ProfileSetupScreen: Updating existing user profile...');
+        debugPrint('ProfileSetupScreen: Existing profile found. Updating user profile for ${currentUser.id}.');
         final UserProfile updatedProfile = existingProfile.copyWith(
           updatedAt: DateTime.now(),
           fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : existingProfile.fullLegalName,
@@ -441,9 +542,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : existingProfile.bio,
           // isPhase2Complete: existingProfile.isPhase2Complete, // Keep existing Phase 2 status
         );
-        debugPrint('ProfileSetupScreen: Calling profileService.updateProfile...');
+        debugPrint('ProfileSetupScreen: Updated UserProfile object created. Calling profileService.updateProfile for ID: ${updatedProfile.id}.');
+        debugPrint('ProfileSetupScreen: Updated Profile Data: fullLegalName: ${updatedProfile.fullLegalName}, displayName: ${updatedProfile.displayName}, isPhase1Complete: ${updatedProfile.isPhase1Complete}');
         await profileService.updateProfile(profile: updatedProfile);
-        debugPrint('ProfileSetupScreen: User profile ${currentUser.id} updated successfully in Supabase.');
+        debugPrint('ProfileSetupScreen: User profile ${currentUser.id} UPDATED successfully in Supabase.');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully!')),
@@ -452,60 +554,72 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       }
 
       // NAVIGATE TO DASHBOARD AFTER SUCCESSFUL PHASE 1 COMPLETION
-      // Ensure the ProfileService state is updated to reflect Phase 1 completion
-      // This will trigger the refreshListenable in main.dart's GoRouter
-      debugPrint('ProfileSetupScreen: Re-initializing ProfileService to trigger GoRouter refresh...');
+      debugPrint('ProfileSetupScreen: Profile saved successfully. Initiating post-save actions.');
+      debugPrint('ProfileSetupScreen: Re-initializing ProfileService to trigger GoRouter refresh mechanism.');
+      debugPrint('ProfileSetupScreen: _savePreferences - Before calling profileService.initializeProfile.');
       await profileService.initializeProfile(); // Explicitly re-fetch and update profile state
-      debugPrint('ProfileSetupScreen: ProfileService re-initialized. Current isPhase1Complete: ${profileService.userProfile?.isPhase1Complete}');
+      debugPrint('ProfileSetupScreen: _savePreferences - After calling profileService.initializeProfile. ProfileService state updated.');
+      debugPrint('ProfileSetupScreen: ProfileService re-initialized. Current isPhase1Complete: ${profileService.userProfile?.isPhase1Complete}.');
 
       if (mounted) {
+        debugPrint('ProfileSetupScreen: Widget is mounted. Checking _isNavigating flag before GoRouter navigation.');
         debugPrint('ProfileSetupScreen: About to issue navigation command to /dashboard-overview.');
-        // Prevent multiple navigations
+        debugPrint('ProfileSetupScreen: _savePreferences - Before GoRouter context.go navigation.');
         if (!_isNavigating) {
-          _isNavigating = true; // Set flag
+          _isNavigating = true; // Set flag to prevent multiple navigations
+          debugPrint('ProfileSetupScreen: _isNavigating set to true. Calling context.go(/dashboard-overview).');
           context.go('/dashboard-overview');
-          debugPrint('ProfileSetupScreen: Navigation command issued for /dashboard-overview.');
+          debugPrint('ProfileSetupScreen: Navigation command issued for /dashboard-overview. Should now transition.');
         } else {
-          debugPrint('ProfileSetupScreen: Navigation already in progress, skipping duplicate.');
+          debugPrint('ProfileSetupScreen: Navigation already in progress (flag _isNavigating is true), skipping duplicate navigation to /dashboard-overview.');
         }
       } else {
-        debugPrint('ProfileSetupScreen: Widget unmounted, cannot navigate after profile save.');
+        debugPrint('ProfileSetupScreen: Widget unmounted, cannot perform navigation after profile save.');
       }
     } on PostgrestException catch (e) {
-      debugPrint('ProfileSetupScreen: Supabase Postgrest Error saving profile data: ${e.message}');
+      // FIX APPLIED HERE: PostgrestException does not have a 'stackTrace' getter directly.
+      debugPrint('ProfileSetupScreen: Supabase Postgrest Error occurred while saving profile data: CODE: ${e.code ?? "N/A"}, MESSAGE: ${e.message}.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Database error: ${e.message}')),
         );
       }
-    } catch (e) {
-      debugPrint('ProfileSetupScreen: Generic Error saving profile data: $e');
+    } catch (e, stackTrace) { // This generic catch correctly provides stackTrace
+      debugPrint('ProfileSetupScreen: Generic Error occurred while saving profile data: ${e.toString()}. Stack: ${stackTrace}.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save profile data: ${e.toString()}')),
         );
       }
     } finally {
-      debugPrint('ProfileSetupScreen: _savePreferences finally block reached.');
+      debugPrint('ProfileSetupScreen: _savePreferences finally block reached. Resetting loading state and navigation flag.');
+      debugPrint('ProfileSetupScreen: _savePreferences - Before setting _isLoading to false in finally block (mounted: $mounted).');
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        debugPrint('ProfileSetupScreen: _isLoading set to false via setState in finally block.');
+      } else {
+        debugPrint('ProfileSetupScreen: Widget unmounted in finally block, cannot call setState to set _isLoading to false.');
       }
       _isNavigating = false; // Reset navigation flag
+      debugPrint('ProfileSetupScreen: _savePreferences function finished execution.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('ProfileSetupScreen: build method started.');
     final themeController = Provider.of<ThemeController>(context);
     final isDarkMode = themeController.isDarkMode;
+    debugPrint('ProfileSetupScreen: Theme loaded. Dark Mode: $isDarkMode.');
 
     final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
     final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
     final Color accentColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color iconColor = isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor;
+    debugPrint('ProfileSetupScreen: Theme colors determined.');
 
     return Scaffold(
       body: Stack(
@@ -597,16 +711,29 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : () {
+                    debugPrint('ProfileSetupScreen: ElevatedButton onPressed handler activated. Current tab index: ${_tabController.index}.');
                     if (_tabController.index == _profileTabs.length - 1) {
-                      debugPrint('ProfileSetupScreen: "Complete Profile" button pressed.');
+                      debugPrint('ProfileSetupScreen: "Complete Profile" button pressed (last tab). Calling _savePreferences().');
                       _savePreferences();
                     } else {
-                      debugPrint('ProfileSetupScreen: "Next" button pressed. Current tab index: ${_tabController.index}');
-                      if (_formKeys[_tabController.index].currentState!.validate()) {
-                        debugPrint('ProfileSetupScreen: Current form validation successful. Moving to next tab.');
+                      debugPrint('ProfileSetupScreen: "Next" button pressed. Current tab index: ${_tabController.index}.');
+                      // Validate the current form before moving to the next tab
+                      final currentFormKey = _formKeys[_tabController.index];
+                      if (currentFormKey.currentState == null) {
+                        debugPrint('ProfileSetupScreen: ERROR: currentFormKey.currentState is NULL for "Next" button. Cannot validate.');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Error: Form state not available for validation on this tab.')),
+                          );
+                        }
+                        return; // Exit if form state is null
+                      }
+
+                      if (currentFormKey.currentState!.validate()) {
+                        debugPrint('ProfileSetupScreen: Current form validation successful. Moving to next tab (index: ${_tabController.index + 1}).');
                         _tabController.animateTo(_tabController.index + 1);
                       } else {
-                        debugPrint('ProfileSetupScreen: Current form validation failed.');
+                        debugPrint('ProfileSetupScreen: Current form validation failed. Showing snackbar.');
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Please fill out all required fields on this tab.')),

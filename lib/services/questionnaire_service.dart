@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
 import 'package:bliindaidating/models/questionnaire/question.dart'; // Import the Question model
 import 'dart:convert'; // For jsonEncode, jsonDecode
 import 'package:http/http.dart' as http; // For making HTTP requests
+import 'package:bliindaidating/app_constants.dart'; // Import AppConstants for Gemini API Key
 
 /// A service to manage questionnaire data and progress, including AI suggestions.
 class QuestionnaireService extends ChangeNotifier {
@@ -88,11 +89,11 @@ class QuestionnaireService extends ChangeNotifier {
       """;
 
       // Use the provided fetch call structure for LLM interaction
-      const apiKey = ""; // Canvas will automatically provide this in runtime
-      const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey";
+      final apiKey = AppConstants.geminiApiKey; // Access API key from AppConstants
+      const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
 
       final http.Response response = await http.post(
-        Uri.parse(apiUrl),
+        Uri.parse('$apiUrl$apiKey'), // Concatenate API URL with the key
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [
@@ -120,7 +121,7 @@ class QuestionnaireService extends ChangeNotifier {
   }
 
   /// Submits the questionnaire answers to the backend.
-  Future<void> submitAnswers(String userId, Map<String, dynamic> answers) async { // FIXED: Added userId parameter
+  Future<void> submitAnswers(String userId, Map<String, dynamic> answers) async {
     debugPrint('QuestionnaireService: Submitting answers for user $userId: $answers');
     // In a real app, you would send this to your backend/Supabase
     await Future.delayed(const Duration(seconds: 2)); // Simulate API call
