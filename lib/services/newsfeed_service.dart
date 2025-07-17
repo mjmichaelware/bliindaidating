@@ -26,23 +26,23 @@ class NewsfeedService extends ChangeNotifier {
       Generate a list of ${numItems} concise and engaging newsfeed items for a dating app user.
       Each item should be a single, compelling sentence or a very short paragraph.
       Focus on recent activity, profile completion, and discovery.
-      
+
       User Profile Summary: "$userProfileSummary"
       Recent App Activity: ${jsonEncode(recentActivity)}
-      
+
       Examples of desired output:
       - "You have a new match! Check out Jordan's profile."
       - "Complete your Phase 2 questionnaire to unlock more compatible matches!"
       - "Daily Prompt: What's your ideal weekend getaway?"
       - "Alex just liked your profile! Send them a message."
       - "New local event: 'Stargazing Night' happening this Saturday!"
-      
+
       Return only a JSON array of strings, where each string is a newsfeed item.
       Example: ["Item 1.", "Item 2.", "Item 3."]
       """;
 
       // Use the provided fetch call structure for LLM interaction
-      const apiKey = ""; // Canvas will automatically provide this in runtime
+      const apiKey = "AIzaSyCoiSj_WtEMy8_K9kZZ4C_wkQtHVvrnd6w"; // <--- PASTE YOUR KEY HERE
       const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey";
 
       final http.Response response = await http.post(

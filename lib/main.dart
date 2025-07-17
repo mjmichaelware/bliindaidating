@@ -18,7 +18,6 @@ import 'package:bliindaidating/models/user_profile.dart';
 
 // Service Imports
 import 'package:bliindaidating/services/newsfeed_service.dart';
-// CORRECTED IMPORT: Using questionnaire_service.dart as confirmed by your file
 import 'package:bliindaidating/services/questionnaire_service.dart';
 
 // Platform utilities
@@ -110,15 +109,9 @@ Future<void> main() async {
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
-        // --- NewsfeedService in MultiProvider ---
-        // Assuming NewsfeedService has a no-argument constructor based on previous errors.
-        // If your NewsfeedService *does* take arguments, you must update its constructor
-        // AND this `create` method call to match.
         ChangeNotifierProvider<NewsfeedService>(
           create: (context) => NewsfeedService(),
         ),
-        // --- QuestionnaireService in MultiProvider ---
-        // CORRECTED: Using QuestionnaireService and its no-argument constructor.
         ChangeNotifierProvider<QuestionnaireService>(
           create: (context) => QuestionnaireService(),
         ),
@@ -144,8 +137,13 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     debugPrint('BlindAIDatingApp: initState called.');
 
     final ProfileService profileService = Provider.of<ProfileService>(context, listen: false);
-    profileService.initializeProfile();
-    debugPrint('BlindAIDatingApp: profileService.initializeProfile() called.');
+    
+    // FIX: Schedule initializeProfile to run after the current frame is built
+    // This prevents calling notifyListeners during the build phase.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      profileService.initializeProfile();
+      debugPrint('BlindAIDatingApp: profileService.initializeProfile() scheduled via postFrameCallback.');
+    });
 
     _router = GoRouter(
       initialLocation: '/',

@@ -100,7 +100,10 @@ class AppConstants {
 
 
   // New colors to expand the palette based on the cosmic theme suggestion
+  // ADDED: tertiaryColor and lightTertiaryColor
   static const Color tertiaryColor = Color(0xFF8E24AA); // A deep purple
+  static const Color lightTertiaryColor = Color(0xFFD1C4E9); // A lighter purple that complements tertiaryColor
+
   static const Color complementaryColor1 = Color(0xFF00BCD4); // Cyan for contrast
   static const Color complementaryColor2 = Color(0xFF4CAF50); // Green for balance
   static const Color complementaryColor3 = Color(0xFFFFC107); // Amber for warmth

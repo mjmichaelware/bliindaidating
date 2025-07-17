@@ -66,6 +66,7 @@ import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart'; // Explic
 
 // NEW IMPORT for the new dashboard overview screen
 import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart';
+// REMOVED: import 'package:bliindaidating/widgets/global/custom_network_image.dart'; // This was causing the error
 
 
 // --- Custom Painter for Side Menu Background (Inspired by NebulaBackgroundPainter) ---
@@ -408,9 +409,9 @@ class _SideMenuItem extends StatelessWidget {
       case 'Notifications':
         return '/notifications';
       case 'Profile Setup':
-        return '/profile_setup';
+        return '/profile_setup'; // Path for Phase 1
       case 'AI Questionnaire':
-        return '/questionnaire';
+        return '/questionnaire'; // Path for general questionnaire or phase 2 direct link
       case 'My Profile':
         return '/my-profile';
       case 'Scheduled Dates':
@@ -475,7 +476,7 @@ class DashboardSideMenu extends StatefulWidget {
   final String? profilePictureUrl;
   final int selectedTabIndex;
   final Function(int) onTabSelected;
-  final bool isPhase2Complete;
+  final bool isPhase2Complete; // This is passed from MainDashboardScreen
   final Function(bool) onCollapseToggle;
   final bool isInitiallyCollapsed;
   final bool isDrawerMode;
@@ -538,8 +539,9 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
+    // FIX: Get ProfileService directly here for phase completion flags
     final profileService = Provider.of<ProfileService>(context);
-    final authService = Provider.of<AuthService>(context);
+    final authService = Provider.of<AuthService>(context, listen: false); // listen: false if only calling methods
 
     final isDarkMode = themeController.isDarkMode;
     final primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
@@ -547,8 +549,9 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
     final textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final dividerColor = isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor;
 
+    // Use profileService's userProfile to get current phase completion statuses
     final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
-    final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
+    final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false; // This is redundant with widget.isPhase2Complete but safe
     final bool isProfileFullyComplete = isPhase1Complete && isPhase2Complete;
 
 
@@ -556,7 +559,8 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
       animation: _animationController,
       builder: (context, child) {
         return Drawer(
-          width: _isCollapsed ? 80 : 250,
+          // width: _isCollapsed ? 80 : 250, // Let its parent control width if not in DrawerMode
+          width: widget.isDrawerMode ? MediaQuery.of(context).size.width * 0.75 : (_isCollapsed ? 80 : 250),
           child: CustomPaint(
             painter: SideMenuBackgroundPainter(
               _animationController,
@@ -573,8 +577,8 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                 children: [
                   // Profile Header
                   _SideMenuProfileHeader(
-                    userProfile: profileService.userProfile,
-                    profilePictureUrl: profileService.userProfile?.profilePictureUrl,
+                    userProfile: profileService.userProfile, // Use profileService.userProfile
+                    profilePictureUrl: profileService.userProfile?.profilePictureUrl, // Use profileService.userProfile
                     expandAnimation: _expandAnimation,
                     isCollapsed: _isCollapsed,
                   ),
@@ -672,6 +676,7 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                       } else if (!isPhase2Complete) {
                         context.go('/questionnaire-phase2');
                       } else {
+                        // If both complete, perhaps go to a profile completion summary or just My Profile
                         context.go('/my-profile');
                       }
                       if (widget.isDrawerMode) Navigator.of(context).pop();
@@ -762,47 +767,22 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                   _SideMenuItem(
                     icon: Icons.groups_rounded,
                     title: 'Friends Match',
-                    onTap: () { /* No-op, Coming Soon */ },
+                    onTap: () { /* No-op */ },
                     isCollapsed: _isCollapsed,
                     isComingSoon: true, // Mark as coming soon
                   ),
                   _SideMenuItem(
-                    icon: Icons.event_rounded,
+                    icon: Icons.event_note_rounded,
                     title: 'Local Events',
-                    onTap: () { /* No-op, Coming Soon */ },
+                    onTap: () {
+                      context.go('/events');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
                     isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
                   ),
                   Divider(color: dividerColor.withOpacity(0.5), height: 1),
 
-                  // --- Information & Support ---
-                  _SideMenuItem(
-                    icon: Icons.info_rounded,
-                    title: 'About Us',
-                    onTap: () {
-                      context.go('/about-us');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.policy_rounded,
-                    title: 'Privacy Policy',
-                    onTap: () {
-                      context.go('/privacy');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.description_rounded,
-                    title: 'Terms & Conditions',
-                    onTap: () {
-                      context.go('/terms');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
+                  // --- Info & Support ---
                   _SideMenuItem(
                     icon: Icons.feedback_rounded,
                     title: 'Feedback',
@@ -813,7 +793,7 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     isCollapsed: _isCollapsed,
                   ),
                   _SideMenuItem(
-                    icon: Icons.report_rounded,
+                    icon: Icons.gavel_rounded,
                     title: 'Report User',
                     onTap: () {
                       context.go('/report');
@@ -822,6 +802,15 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     isCollapsed: _isCollapsed,
                   ),
                   _SideMenuItem(
+                    icon: Icons.help_rounded,
+                    title: 'Guided Tour',
+                    onTap: () {
+                      context.go('/guided-tour');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                   _SideMenuItem(
                     icon: Icons.security_rounded,
                     title: 'Safety Tips',
                     onTap: () {
@@ -831,25 +820,34 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     isCollapsed: _isCollapsed,
                   ),
                   _SideMenuItem(
-                    icon: Icons.tour_rounded,
-                    title: 'Guided Tour',
+                    icon: Icons.privacy_tip_rounded,
+                    title: 'Privacy Policy',
                     onTap: () {
-                      context.go('/guided-tour');
+                      context.go('/privacy');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
                   ),
                   _SideMenuItem(
-                    icon: Icons.lightbulb_rounded,
-                    title: 'Date Ideas',
+                    icon: Icons.policy_rounded,
+                    title: 'Terms & Conditions',
                     onTap: () {
-                      context.go('/date-ideas');
+                      context.go('/terms');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
                   ),
-                   _SideMenuItem(
-                    icon: Icons.trending_up_rounded,
+                  _SideMenuItem(
+                    icon: Icons.info_rounded,
+                    title: 'About Us',
+                    onTap: () {
+                      context.go('/about-us');
+                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                    },
+                    isCollapsed: _isCollapsed,
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.bar_chart_rounded,
                     title: 'User Progress',
                     onTap: () {
                       context.go('/user-progress');
@@ -857,11 +855,11 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     },
                     isCollapsed: _isCollapsed,
                   ),
-                   _SideMenuItem(
-                    icon: Icons.timeline_rounded,
-                    title: 'Activity Feed',
+                  _SideMenuItem(
+                    icon: Icons.favorite_border_rounded,
+                    title: 'Favorites',
                     onTap: () {
-                      context.go('/activity-feed');
+                      context.go('/favorites');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
@@ -875,11 +873,11 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     },
                     isCollapsed: _isCollapsed,
                   ),
-                   _SideMenuItem(
-                    icon: Icons.stars_rounded,
-                    title: 'Favorites',
+                  _SideMenuItem(
+                    icon: Icons.lightbulb_rounded,
+                    title: 'Date Ideas',
                     onTap: () {
-                      context.go('/favorites');
+                      context.go('/date-ideas');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
@@ -887,9 +885,9 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                   Divider(color: dividerColor.withOpacity(0.5), height: 1),
 
                   // --- Settings & Admin ---
-                  _SideMenuItem(
+                   _SideMenuItem(
                     icon: Icons.settings_rounded,
-                    title: 'App Settings',
+                    title: 'App Settings', // Corrected title
                     onTap: () {
                       context.go('/app-settings');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
@@ -897,7 +895,7 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     isCollapsed: _isCollapsed,
                   ),
                    _SideMenuItem(
-                    icon: Icons.card_giftcard_rounded,
+                    icon: Icons.person_add_rounded,
                     title: 'Referral Program',
                     onTap: () {
                       context.go('/referral');
@@ -905,8 +903,8 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     },
                     isCollapsed: _isCollapsed,
                   ),
-                  // Only show Admin Dashboard if the user is an admin (hypothetical check)
-                  if (profileService.userProfile?.isAdmin ?? false)
+                  // Admin Dashboard - show only if user is admin (you'll need to check this from userProfile)
+                  if (profileService.userProfile?.isAdmin == true)
                     _SideMenuItem(
                       icon: Icons.admin_panel_settings_rounded,
                       title: 'Admin Dashboard',
@@ -923,13 +921,16 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     icon: Icons.logout_rounded,
                     title: 'Sign Out',
                     onTap: () async {
+                      debugPrint('DashboardSideMenu: Sign Out button pressed.');
                       await authService.signOut();
-                      context.go('/login'); // Navigate back to login
+                      if (context.mounted) {
+                        context.go('/login'); // Redirect to login after sign out
+                      }
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
                   ),
-                  const SizedBox(height: AppConstants.paddingLarge),
+                  const SizedBox(height: AppConstants.paddingLarge), // Extra space at bottom
                 ],
               ),
             ),
