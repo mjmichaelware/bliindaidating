@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Blind AI Dating helps you find deep, authentic love through revolutionary AI matchmaking. Embrace sincerity, discover meaning, and let your soul connect.">
+  <meta name="keywords" content="AI dating, matchmaking, blind dating, true love, meaningful connection, personalized dates, soulmates, emotional intelligence">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Blind AI Dating">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <title>Blind AI Dating: Your Journey Begins</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Keep your existing loading screen styles */
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #FFB6C1, #FFCCCB, #E0BBE4);
+      transition: opacity 0.5s ease-in-out;
+    }
+    .loading-container {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .loading-spinner {
+      border: 8px solid rgba(255, 255, 255, 0.3);
+      border-top: 8px solid #E91E63;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    .loading-text {
+      margin-top: 20px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.3em;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loading-fade-out {
+        opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-container" id="loading_container">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading your destiny...</div>
+  </div>
+
+  <script type="text/javascript">
+    (function () {
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+      }
+    })();
+  </script>
+  
+  <div id="flutter_app"></div>
+
+  <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+    // This script handles fading out the loading screen once Flutter is ready.
+    // It listens for the 'flutter-first-frame' event, which indicates the Flutter app has started rendering.
+    window.addEventListener('flutter-first-frame', function () {
+      const loadingContainer = document.getElementById('loading_container');
+      if (loadingContainer) {
+        loadingContainer.classList.add('loading-fade-out');
+        loadingContainer.addEventListener('transitionend', function() {
+          loadingContainer.remove();
+        });
+      }
+    });
+  </script>
+</body>
+</html>
