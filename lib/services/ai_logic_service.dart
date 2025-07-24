@@ -4,10 +4,22 @@ import 'package:http/http.dart' as http; // Import the http package
 import '../app_constants.dart'; // Import AppConstants for the base URL
 import 'package:flutter/foundation.dart'; // For debugPrint
 
-class AiLogicService { // Renamed from AiService to match your file name
-  final String _baseUrl = AppConstants.baseUrl; // Use the base URL from AppConstants
+/// A service responsible for all AI-related logic,
+/// acting as an intermediary to a backend API that wraps external AI models.
+class AiLogicService {
+  // The base URL for your FastAPI backend (or other backend)
+  final String _baseUrl = AppConstants.baseUrl; // This should point to your server, e.g., 'http://localhost:8000' or your deployed URL
+
+  // Private constructor for singleton pattern (optional, but common for services)
+  // Or, remove if you intend to create multiple instances of this service
+  // static final AiLogicService _instance = AiLogicService._internal();
+  // factory AiLogicService() {
+  //   return _instance;
+  // }
+  // AiLogicService._internal();
 
   // Function to generate a dating profile bio
+  /// Makes a POST request to your backend to generate a user profile bio.
   Future<String?> generateProfileBio(Map<String, String> userData, {String? instructions}) async {
     final url = Uri.parse('$_baseUrl/generate-profile/'); // Full URL to your FastAPI endpoint
     final headers = {'Content-Type': 'application/json'}; // Specify content type as JSON
@@ -16,12 +28,15 @@ class AiLogicService { // Renamed from AiService to match your file name
       'prompt_instructions': instructions,
     });
 
+    debugPrint('AiLogicService: Requesting profile bio generation from backend...');
     try {
       final response = await http.post(url, headers: headers, body: body); // Make POST request
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body); // Decode JSON response
-        return data['profile_bio']; // Extract the generated bio
+        final String? profileBio = data['profile_bio'] as String?;
+        debugPrint('AiLogicService: Profile bio generated successfully.');
+        return profileBio; // Extract the generated bio
       } else {
         // Log or print error details for debugging
         debugPrint('Failed to generate profile bio: ${response.statusCode} - ${response.body}');
@@ -35,6 +50,9 @@ class AiLogicService { // Renamed from AiService to match your file name
   }
 
   // Function to generate news feed items
+  /// Makes a POST request to your backend to generate news feed items.
+  /// Your backend is expected to handle the LLM call (e.g., Gemini) and
+  /// strip any markdown formatting before returning a clean JSON list of strings.
   Future<List<String>?> generateNewsFeed(String userProfileSummary, List<Map<String, dynamic>> recentActivity, {int numItems = 3}) async {
     final url = Uri.parse('$_baseUrl/generate-news-feed/');
     final headers = {'Content-Type': 'application/json'};
@@ -44,6 +62,7 @@ class AiLogicService { // Renamed from AiService to match your file name
       'num_items': numItems,
     });
 
+    debugPrint('AiLogicService: Requesting news feed generation from backend...');
     try {
       final response = await http.post(url, headers: headers, body: body);
 
@@ -51,43 +70,49 @@ class AiLogicService { // Renamed from AiService to match your file name
         final Map<String, dynamic> data = jsonDecode(response.body);
         // Ensure the backend returns a list of strings directly for 'news_feed_items'
         if (data['news_feed_items'] is List) {
-          return List<String>.from(data['news_feed_items']);
+          final List<String> newsFeedItems = List<String>.from(data['news_feed_items'].map((item) => item.toString()));
+          debugPrint('AiLogicService: News feed items generated successfully (${newsFeedItems.length} items).');
+          return newsFeedItems;
         }
-        debugPrint('News feed items returned in unexpected format.');
+        debugPrint('AiLogicService: News feed items returned in unexpected format from backend: ${response.body}');
         return null;
       } else {
-        debugPrint('Failed to generate news feed: ${response.statusCode} - ${response.body}');
+        debugPrint('Failed to generate news feed from backend: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      debugPrint('Error generating news feed: $e');
+      debugPrint('Error generating news feed via backend: $e');
       return null;
     }
   }
 
   // Function to generate a daily prompt (GET request)
+  /// Makes a GET request to your backend to generate a daily prompt.
   Future<String?> generateDailyPrompt({String? context}) async {
     final Map<String, dynamic> queryParams = context != null ? {'context': context} : {};
     final url = Uri.parse('$_baseUrl/generate-daily-prompt/').replace(queryParameters: queryParams);
 
+    debugPrint('AiLogicService: Requesting daily prompt generation from backend...');
     try {
       final response = await http.get(url); // Make GET request
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        return data['daily_prompt'];
+        final String? dailyPrompt = data['daily_prompt'] as String?;
+        debugPrint('AiLogicService: Daily prompt generated successfully.');
+        return dailyPrompt;
       } else {
-        debugPrint('Failed to generate daily prompt: ${response.statusCode} - ${response.body}');
+        debugPrint('Failed to generate daily prompt from backend: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      debugPrint('Error generating daily prompt: $e');
+      debugPrint('Error generating daily prompt via backend: $e');
       return null;
     }
   }
 
   /// NEW: Function to generate an AI-suggested answer for a questionnaire question.
-  /// This assumes a new backend endpoint /generate-questionnaire-answer/
+  /// This assumes a new backend endpoint `/generate-questionnaire-answer/`
   Future<String?> generateQuestionnaireAnswer(String questionText, Map<String, dynamic> userContext) async {
     final url = Uri.parse('$_baseUrl/generate-questionnaire-answer/');
     final headers = {'Content-Type': 'application/json'};
@@ -96,18 +121,21 @@ class AiLogicService { // Renamed from AiService to match your file name
       'user_context': userContext,
     });
 
+    debugPrint('AiLogicService: Requesting questionnaire answer generation from backend...');
     try {
       final response = await http.post(url, headers: headers, body: body);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        return data['answer']; // Assuming backend returns {'answer': 'AI-generated text'}
+        final String? answer = data['answer'] as String?; // Assuming backend returns {'answer': 'AI-generated text'}
+        debugPrint('AiLogicService: Questionnaire answer generated successfully.');
+        return answer;
       } else {
-        debugPrint('Failed to generate questionnaire answer: ${response.statusCode} - ${response.body}');
+        debugPrint('Failed to generate questionnaire answer from backend: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      debugPrint('Error generating questionnaire answer: $e');
+      debugPrint('Error generating questionnaire answer via backend: $e');
       return null;
     }
   }
