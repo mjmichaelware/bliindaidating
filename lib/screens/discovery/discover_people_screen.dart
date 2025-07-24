@@ -1,15 +1,15 @@
 // lib/screens/discovery/discover_people_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Import Provider for accessing services
-import 'package:bliindaidating/models/user_profile.dart'; // Import your UserProfile model
-import 'package:bliindaidating/services/profile_service.dart'; // Import your ProfileService
-import 'package:bliindaidating/widgets/common/loading_indicator_widget.dart'; // Assuming you have this
-import 'package:bliindaidating/widgets/common/empty_state_widget.dart'; // Assuming you have this
-import 'package:bliindaidating/app_constants.dart'; // For colors and spacing
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/services/profile_service.dart';
+import 'package:bliindaidating/widgets/common/loading_indicator_widget.dart';
+import 'package:bliindaidating/widgets/common/empty_state_widget.dart';
+import 'package:bliindaidating/app_constants.dart';
 
 class DiscoverPeopleScreen extends StatefulWidget {
-  const DiscoverPeopleScreen({super.key}); // No longer needs 'users' in constructor
+  const DiscoverPeopleScreen({super.key});
 
   @override
   State<DiscoverPeopleScreen> createState() => _DiscoverPeopleScreenState();
@@ -19,22 +19,30 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
   List<UserProfile> _discoveredProfiles = [];
   bool _isLoading = true;
   String? _error;
-  bool _isGeneratingDummyUsers = false; // New state for dummy user generation
+  bool _isGeneratingDummyUsers = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchDiscoveredProfiles(); // Fetch profiles when the screen initializes
+    // FIX: Defer the initial profile fetch until after the first frame is built.
+    // This prevents setState being called during the build phase of its parent/ancestors.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchDiscoveredProfiles();
+    });
   }
 
   Future<void> _fetchDiscoveredProfiles() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    // Only set loading if not already generating dummy users,
+    // as generation also implies loading.
+    if (!_isGeneratingDummyUsers) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
+
     try {
       final profileService = Provider.of<ProfileService>(context, listen: false);
-      // Fetch profiles from your backend via ProfileService
       final profiles = await profileService.fetchAllUserProfiles();
       setState(() {
         _discoveredProfiles = profiles;
@@ -58,10 +66,9 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
     });
     try {
       final profileService = Provider.of<ProfileService>(context, listen: false);
-      final message = await profileService.generateDummyUsers(5); // Generate 5 users
+      final message = await profileService.generateDummyUsers(5);
       debugPrint('Dummy user generation message: $message');
-      // After generating, refresh the list of profiles
-      await _fetchDiscoveredProfiles();
+      await _fetchDiscoveredProfiles(); // Will reset _isLoading to false
     } catch (e) {
       setState(() {
         _error = 'Failed to generate dummy users: $e';
@@ -70,6 +77,12 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
     } finally {
       setState(() {
         _isGeneratingDummyUsers = false;
+        // _isLoading is already set to false by _fetchDiscoveredProfiles if called last.
+        // If _fetchDiscoveredProfiles wasn't called (e.g., if it failed very early),
+        // ensure _isLoading is reset.
+        if (_error != null) { // Only force reset if an error occurred before _fetchDiscoveredProfiles could finish
+           _isLoading = false;
+        }
       });
     }
   }
@@ -81,7 +94,7 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Discover'),
-        backgroundColor: AppConstants.primaryColorShade900, // Using AppConstants colors
+        backgroundColor: AppConstants.primaryColorShade900,
         foregroundColor: AppConstants.textColor,
         actions: [
           IconButton(
@@ -100,9 +113,9 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
           ),
         ],
       ),
-      backgroundColor: AppConstants.backgroundColor, // Using AppConstants colors
+      backgroundColor: AppConstants.backgroundColor,
       body: _isLoading
-          ? const Center(child: LoadingIndicatorWidget()) // Use your loading widget
+          ? const Center(child: LoadingIndicatorWidget())
           : _error != null
               ? Center(
                   child: Column(
@@ -131,7 +144,7 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
                 )
               : _discoveredProfiles.isEmpty
                   ? Center(
-                      child: EmptyStateWidget( // Use your empty state widget
+                      child: EmptyStateWidget(
                         message: 'No profiles to discover yet. Generate some dummy users!',
                         onRefresh: _generateAndRefreshDummyUsers,
                       ),
@@ -159,7 +172,6 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Profile Picture
                               if (userProfile.profilePictureUrl != null && userProfile.profilePictureUrl!.isNotEmpty)
                                 Center(
                                   child: Padding(
@@ -171,7 +183,6 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
                                     ),
                                   ),
                                 ),
-                              // Display Name
                               Text(
                                 userProfile.displayName ?? userProfile.fullLegalName ?? 'Anonymous User',
                                 style: theme.textTheme.titleMedium?.copyWith(
@@ -181,13 +192,11 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
                                 ),
                               ),
                               const SizedBox(height: AppConstants.spacingSmall),
-                              // Astrological Sign (Removed Personality Traits)
                               Text(
-                                'Sign: ${userProfile.astrologicalSign ?? 'N/A'}', // Removed Personality Traits
+                                'Sign: ${userProfile.astrologicalSign ?? 'N/A'}',
                                 style: theme.textTheme.bodyMedium?.copyWith(color: AppConstants.textMediumEmphasis),
                               ),
                               const SizedBox(height: AppConstants.spacingSmall),
-                              // Bio
                               Text(
                                 '"${userProfile.bio ?? 'No bio provided.'}"',
                                 style: theme.textTheme.bodyLarge?.copyWith(
@@ -196,7 +205,6 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
                                 ),
                               ),
                               const SizedBox(height: AppConstants.spacingMedium),
-                              // Hobbies and Interests
                               if (userProfile.hobbiesAndInterests.isNotEmpty)
                                 Wrap(
                                   spacing: AppConstants.spacingSmall,
