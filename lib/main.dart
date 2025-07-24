@@ -19,6 +19,7 @@ import 'package:bliindaidating/models/user_profile.dart';
 // Service Imports
 import 'package:bliindaidating/services/newsfeed_service.dart';
 import 'package:bliindaidating/services/questionnaire_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart'; // NEW: Import AiLogicService
 
 // Platform utilities
 import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
@@ -109,8 +110,19 @@ Future<void> main() async {
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
+        // NEW ADDITION/ORDERING: Provide AiLogicService first, as NewsfeedService depends on it
+        // AiLogicService is NOT a ChangeNotifier itself based on your provided file,
+        // so we use a regular Provider, not ChangeNotifierProvider.
+        Provider<AiLogicService>(
+          create: (context) => AiLogicService(),
+        ),
         ChangeNotifierProvider<NewsfeedService>(
-          create: (context) => NewsfeedService(),
+          // NOW, NewsfeedService can depend on AiLogicService
+          create: (context) => NewsfeedService(
+            // Use context.read to get AiLogicService without rebuilding
+            // if AiLogicService is not a ChangeNotifier
+            context.read<AiLogicService>(),
+          ),
         ),
         ChangeNotifierProvider<QuestionnaireService>(
           create: (context) => QuestionnaireService(),
@@ -137,7 +149,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     debugPrint('BlindAIDatingApp: initState called.');
 
     final ProfileService profileService = Provider.of<ProfileService>(context, listen: false);
-    
+
     // FIX: Schedule initializeProfile to run after the current frame is built
     // This prevents calling notifyListeners during the build phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {

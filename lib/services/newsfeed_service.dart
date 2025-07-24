@@ -3,7 +3,6 @@
 import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
 import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart'; // Still import for NewsfeedItemType
 import 'dart:convert'; // For jsonEncode, jsonDecode
-// REMOVE THIS: import 'package:http/http.dart' as http; // No longer making direct HTTP requests here
 
 import 'package:bliindaidating/services/ai_logic_service.dart'; // <--- IMPORT AiLogicService
 
@@ -13,19 +12,13 @@ class NewsfeedService extends ChangeNotifier {
   List<String> get newsfeedItems => _newsfeedItems;
 
   // Inject AiLogicService (or create an instance)
-  final AiLogicService _aiLogicService; // <--- ADD THIS
+  final AiLogicService _aiLogicService; // <--- This remains the same
 
-  // CORRECTED CONSTRUCTOR SYNTAX
-  NewsfeedService({AiLogicService? aiLogicService})
-      : _aiLogicService = aiLogicService ?? AiLogicService(); // <-- No curly brace immediately after this line
-  // If you needed a body, it would look like this:
-  // {
-  //   // Any additional constructor logic here
-  //   debugPrint('NewsfeedService initialized.');
-  // }
-  // Since you only have a comment there, you can omit the body entirely.
-  // We won't fetch on init here, as newsfeed_screen calls refreshNewsfeed
-
+  // CORRECTED CONSTRUCTOR: It *requires* AiLogicService to be passed.
+  // This ensures that NewsfeedService always gets its dependency from the Provider tree.
+  NewsfeedService(this._aiLogicService) {
+    debugPrint('NewsfeedService initialized with AiLogicService.');
+  }
 
   // This method generates newsfeed items using an LLM (via AiLogicService)
   Future<List<String>> generateNewsFeedItems(
@@ -46,7 +39,7 @@ class NewsfeedService extends ChangeNotifier {
         _newsfeedItems = generatedItems;
         debugPrint('NewsfeedService: Received ${_newsfeedItems.length} newsfeed items from AiLogicService.');
       } else {
-        debugPrint('NewsfeedService: AiLogicService returned no newsfeed items.');
+        debugPrint('NewsfeedService: AiLogicService returned no newsfeed items or null. Using fallback message.');
         _newsfeedItems = ['Failed to generate newsfeed items. Please try again later.'];
       }
       notifyListeners();

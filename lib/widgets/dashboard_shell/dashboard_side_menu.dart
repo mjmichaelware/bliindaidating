@@ -69,77 +69,54 @@ import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart'
 // REMOVED: import 'package:bliindaidating/widgets/global/custom_network_image.dart'; // This was causing the error
 
 
-// --- Custom Painter for Side Menu Background (Inspired by NebulaBackgroundPainter) ---
+// --- Custom Painter for Side Menu Background (SIMPLIFIED FOR DEBUGGING) ---
 class SideMenuBackgroundPainter extends CustomPainter {
   final Animation<double> animation;
   final Color primaryColor;
   final Color secondaryColor;
-  final List<Offset> particles;
-  final double particleMaxRadius;
+  // Removed particles and particleMaxRadius for simplification
   final bool isDrawerMode; // Added to control opacity
 
   SideMenuBackgroundPainter(
     this.animation,
     this.primaryColor,
     this.secondaryColor,
-    this.particles,
-    this.particleMaxRadius,
     this.isDrawerMode, // Added
   ) : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Main gradient background
-    final color1 = Color.lerp(primaryColor.withOpacity(0.4), secondaryColor.withOpacity(0.6), animation.value)!;
-    final color2 = Color.lerp(secondaryColor.withOpacity(0.4), primaryColor.withOpacity(0.6), animation.value)!;
+    // Temporarily draw a simple solid color or a very basic gradient
+    // This removes all complex animation-driven painting and blur filters.
+    final paint = Paint()
+      ..color = primaryColor.withOpacity(isDrawerMode ? 1.0 : 0.8); // Adjust opacity based on mode
 
     canvas.drawRect(
       Offset.zero & size,
+      paint,
+    );
+
+    // You can also try a very simple gradient if the solid color works
+    /*
+    canvas.drawRect(
+      Offset.zero & size,
       Paint()
-        ..shader = LinearGradient( // Changed to Linear for side menu feel
-          colors: [color1, color2, Colors.transparent],
-          stops: const [0.0, 0.6, 1.0],
+        ..shader = LinearGradient(
+          colors: [primaryColor.withOpacity(0.8), secondaryColor.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ).createShader(Offset.zero & size),
     );
-
-    // Secondary subtle glow/nebula effect
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            AppConstants.textColor.withOpacity(0.05 + animation.value * 0.05),
-            AppConstants.textColor.withOpacity(0.0),
-          ],
-          stops: const [0.0, 1.0],
-          center: Alignment(math.cos(animation.value * math.pi) * 0.7, math.sin(animation.value * math.pi) * 0.7),
-          radius: 0.2 + 0.1 * animation.value,
-        ).createShader(Offset.zero & size)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10.0 * animation.value),
-    );
-
-    // Particles (inspired by ParticleFieldPainter)
-    final particlePaint = Paint()
-      ..color = AppConstants.textColor.withOpacity(0.2 + 0.3 * animation.value)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, particleMaxRadius * animation.value * 0.5);
-
-    for (var i = 0; i < particles.length; i++) {
-      final particle = particles[i];
-      final driftX = math.sin(animation.value * math.pi * 2 + i * 0.1) * 3;
-      final driftY = math.cos(animation.value * math.pi * 2 + i * 0.1) * 3;
-      final currentPosition = Offset(particle.dx * size.width + driftX, particle.dy * size.height + driftY);
-      canvas.drawCircle(currentPosition, particleMaxRadius * animation.value, particlePaint);
-    }
+    */
   }
 
   @override
   bool shouldRepaint(covariant SideMenuBackgroundPainter oldDelegate) {
+    // Only repaint if the animation, colors, or drawer mode changes
     return oldDelegate.animation != animation ||
            oldDelegate.primaryColor != primaryColor ||
            oldDelegate.secondaryColor != secondaryColor ||
-           oldDelegate.isDrawerMode != isDrawerMode; // Added
+           oldDelegate.isDrawerMode != isDrawerMode;
   }
 }
 
@@ -502,8 +479,9 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
   late Animation<double> _expandAnimation;
   late bool _isCollapsed;
 
-  final List<Offset> _particles = List.generate(50, (index) => Offset(math.Random().nextDouble(), math.Random().nextDouble()));
-  static const double _particleMaxRadius = 2.0;
+  // Removed particles list and particleMaxRadius from here as well
+  // final List<Offset> _particles = List.generate(50, (index) => Offset(math.Random().nextDouble(), math.Random().nextDouble()));
+  // static const double _particleMaxRadius = 2.0;
 
   @override
   void initState() {
@@ -562,12 +540,11 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
           // width: _isCollapsed ? 80 : 250, // Let its parent control width if not in DrawerMode
           width: widget.isDrawerMode ? MediaQuery.of(context).size.width * 0.75 : (_isCollapsed ? 80 : 250),
           child: CustomPaint(
+            // Pass only the necessary parameters to the simplified painter
             painter: SideMenuBackgroundPainter(
               _animationController,
               primaryColor,
               secondaryColor,
-              _particles,
-              _particleMaxRadius,
               widget.isDrawerMode,
             ),
             child: Container(
@@ -748,26 +725,37 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     title: 'Post-Date Feedback',
                     onTap: () {
                       context.go('/post-date-feedback');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
                   ),
                   _SideMenuItem(
                     icon: Icons.send_rounded,
                     title: 'Date Proposal',
                     onTap: () {
                       context.go('/date-proposal');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.lightbulb_rounded,
+                    title: 'Date Ideas',
+                    onTap: () {
+                      context.go('/date-ideas');
+                    },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
                   ),
                   Divider(color: dividerColor.withOpacity(0.5), height: 1),
 
-                  // --- Social & Events (Coming Soon) ---
+                  // --- Friends & Events ---
                   _SideMenuItem(
-                    icon: Icons.groups_rounded,
+                    icon: Icons.people_alt_rounded,
                     title: 'Friends Match',
-                    onTap: () { /* No-op */ },
+                    onTap: () {
+                      context.go('/friends-match');
+                    },
                     isCollapsed: _isCollapsed,
                     isComingSoon: true, // Mark as coming soon
                   ),
@@ -776,63 +764,18 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     title: 'Local Events',
                     onTap: () {
                       context.go('/events');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
                   ),
                   Divider(color: dividerColor.withOpacity(0.5), height: 1),
 
                   // --- Info & Support ---
                   _SideMenuItem(
-                    icon: Icons.feedback_rounded,
-                    title: 'Feedback',
+                    icon: Icons.settings_rounded,
+                    title: 'App Settings',
                     onTap: () {
-                      context.go('/feedback');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.gavel_rounded,
-                    title: 'Report User',
-                    onTap: () {
-                      context.go('/report');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.help_rounded,
-                    title: 'Guided Tour',
-                    onTap: () {
-                      context.go('/guided-tour');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                   _SideMenuItem(
-                    icon: Icons.security_rounded,
-                    title: 'Safety Tips',
-                    onTap: () {
-                      context.go('/safety-tips');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.privacy_tip_rounded,
-                    title: 'Privacy Policy',
-                    onTap: () {
-                      context.go('/privacy');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.policy_rounded,
-                    title: 'Terms & Conditions',
-                    onTap: () {
-                      context.go('/terms');
+                      context.go('/app-settings');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
@@ -847,90 +790,143 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
                     isCollapsed: _isCollapsed,
                   ),
                   _SideMenuItem(
-                    icon: Icons.bar_chart_rounded,
-                    title: 'User Progress',
+                    icon: Icons.security_rounded,
+                    title: 'Privacy Policy',
                     onTap: () {
-                      context.go('/user-progress');
+                      context.go('/privacy');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
                   ),
                   _SideMenuItem(
-                    icon: Icons.favorite_border_rounded,
-                    title: 'Favorites',
+                    icon: Icons.gavel_rounded,
+                    title: 'Terms & Conditions',
                     onTap: () {
-                      context.go('/favorites');
+                      context.go('/terms');
                       if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
                   ),
-                   _SideMenuItem(
+                  _SideMenuItem(
+                    icon: Icons.lightbulb_outline_rounded,
+                    title: 'Safety Tips',
+                    onTap: () {
+                      context.go('/safety-tips');
+                    },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.feedback_rounded,
+                    title: 'Feedback',
+                    onTap: () {
+                      context.go('/feedback');
+                    },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.report_rounded,
+                    title: 'Report User',
+                    onTap: () {
+                      context.go('/report');
+                    },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.admin_panel_settings_rounded,
+                    title: 'Admin Dashboard',
+                    onTap: () {
+                      context.go('/admin');
+                    },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.card_giftcard_rounded,
+                    title: 'Referral Program',
+                    onTap: () {
+                      context.go('/referral');
+                    },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
+                    icon: Icons.history_rounded,
+                    title: 'Activity Feed',
+                    onTap: () {
+                      context.go('/activity-feed');
+                    },
+                    isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
+                  ),
+                  _SideMenuItem(
                     icon: Icons.block_rounded,
                     title: 'Blocked Users',
                     onTap: () {
                       context.go('/blocked-users');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
                     },
                     isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
                   ),
                   _SideMenuItem(
-                    icon: Icons.lightbulb_rounded,
-                    title: 'Date Ideas',
+                    icon: Icons.tour_rounded,
+                    title: 'Guided Tour',
                     onTap: () {
-                      context.go('/date-ideas');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                      context.go('/guided-tour');
                     },
                     isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
                   ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Settings & Admin ---
-                   _SideMenuItem(
-                    icon: Icons.settings_rounded,
-                    title: 'App Settings', // Corrected title
+                  _SideMenuItem(
+                    icon: Icons.trending_up_rounded,
+                    title: 'User Progress',
                     onTap: () {
-                      context.go('/app-settings');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                      context.go('/user-progress');
                     },
                     isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
                   ),
-                   _SideMenuItem(
-                    icon: Icons.person_add_rounded,
-                    title: 'Referral Program',
+                  _SideMenuItem(
+                    icon: Icons.star_rounded,
+                    title: 'Favorites',
                     onTap: () {
-                      context.go('/referral');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
+                      context.go('/favorites');
                     },
                     isCollapsed: _isCollapsed,
+                    isComingSoon: true, // Mark as coming soon
                   ),
-                  // Admin Dashboard - show only if user is admin (you'll need to check this from userProfile)
-                  if (profileService.userProfile?.isAdmin == true)
-                    _SideMenuItem(
-                      icon: Icons.admin_panel_settings_rounded,
-                      title: 'Admin Dashboard',
-                      onTap: () {
-                        context.go('/admin');
-                        if (widget.isDrawerMode) Navigator.of(context).pop();
-                      },
-                      isCollapsed: _isCollapsed,
-                    ),
                   Divider(color: dividerColor.withOpacity(0.5), height: 1),
 
                   // --- Sign Out ---
-                  _SideMenuItem(
-                    icon: Icons.logout_rounded,
-                    title: 'Sign Out',
+                  ListTile(
+                    leading: Icon(Icons.logout_rounded, color: AppConstants.errorColor),
+                    title: AnimatedCrossFade(
+                      duration: AppConstants.animationDurationMedium,
+                      crossFadeState: _isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                      firstChild: const SizedBox.shrink(),
+                      secondChild: Text(
+                        'Sign Out',
+                        style: TextStyle(
+                          color: AppConstants.errorColor,
+                          fontSize: AppConstants.fontSizeMedium,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                    ),
                     onTap: () async {
-                      debugPrint('DashboardSideMenu: Sign Out button pressed.');
                       await authService.signOut();
-                      if (context.mounted) {
-                        context.go('/login'); // Redirect to login after sign out
-                      }
                       if (widget.isDrawerMode) Navigator.of(context).pop();
+                      context.go('/login'); // Redirect to login after sign out
                     },
-                    isCollapsed: _isCollapsed,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: _isCollapsed ? AppConstants.paddingSmall : AppConstants.paddingMedium,
+                      vertical: AppConstants.paddingMedium,
+                    ),
                   ),
-                  const SizedBox(height: AppConstants.paddingLarge), // Extra space at bottom
+                  const SizedBox(height: AppConstants.spacingLarge), // Extra space at the bottom
                 ],
               ),
             ),

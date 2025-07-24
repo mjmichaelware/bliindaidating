@@ -38,8 +38,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   bool _isNavigating = false;
 
 
-  XFile? _pickedImage;
-  String? _imagePreviewPath;
+  XFile? _pickedImage; // This will hold the newly picked image file
+  String? _imagePreviewPath; // This will hold the URL for existing profile picture
 
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _displayNameController = TextEditingController();
@@ -59,6 +59,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   String? _preferredGender;
   RangeValues _ageRange = const RangeValues(18, 50);
   double _maxDistance = 100;
+
+  // State variables for Ethnicity and Marital Status
+  String? _ethnicity;
+  String? _maritalStatus;
 
   bool _showFullName = false;
   bool _showDisplayName = true;
@@ -139,7 +143,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     debugPrint('ProfileSetupScreen: _onImagePicked called with image: ${image?.path ?? "null"}.');
     setState(() {
       _pickedImage = image;
-      _imagePreviewPath = image?.path;
+      // When a new image is picked, clear the old URL preview path
+      // as the XFile will be used for display directly by IdentityIDForm
+      if (image != null) {
+        _imagePreviewPath = null;
+      }
       debugPrint('ProfileSetupScreen: _pickedImage and _imagePreviewPath updated in setState for image pick.');
     });
   }
@@ -212,9 +220,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     });
   }
 
+  // NEW: Method to update marital status state
   void _onMaritalStatusChanged(String? newMaritalStatus) {
     debugPrint('ProfileSetupScreen: _onMaritalStatusChanged called with status: $newMaritalStatus.');
-    // No setState here, assuming this value is handled elsewhere or is a placeholder for future use.
+    setState(() {
+      _maritalStatus = newMaritalStatus;
+      debugPrint('ProfileSetupScreen: _maritalStatus updated to $_maritalStatus in setState.');
+    });
+  }
+
+  // NEW: Method to update ethnicity status state
+  void _onEthnicityChanged(String? newEthnicity) {
+    debugPrint('ProfileSetupScreen: _onEthnicityChanged called with ethnicity: $newEthnicity.');
+    setState(() {
+      _ethnicity = newEthnicity;
+      debugPrint('ProfileSetupScreen: _ethnicity updated to $_ethnicity in setState.');
+    });
   }
 
 
@@ -286,11 +307,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         debugPrint('ProfileSetupScreen: Agreed to Terms populated: "$_agreedToTerms".');
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
         debugPrint('ProfileSetupScreen: Agreed to Community Guidelines populated: "$_agreedToCommunityGuidelines".');
-        _imagePreviewPath = userProfile.profilePictureUrl;
-        debugPrint('ProfileSetupScreen: Image Preview Path populated: "$_imagePreviewPath".');
+        _imagePreviewPath = userProfile.profilePictureUrl; // Load existing URL
+        _pickedImage = null; // Clear picked image if loading from URL
+        debugPrint('ProfileSetupScreen: Image Preview Path populated: "$_imagePreviewPath". _pickedImage set to null.');
 
         _preferredGender = userProfile.genderIdentity ?? userProfile.gender;
         debugPrint('ProfileSetupScreen: Preferred Gender populated: "$_preferredGender".');
+
+        // Populate Ethnicity and Marital Status from fetched profile
+        _ethnicity = userProfile.ethnicity;
+        debugPrint('ProfileSetupScreen: Ethnicity populated: "$_ethnicity".');
+        _maritalStatus = userProfile.maritalStatus;
+        debugPrint('ProfileSetupScreen: Marital Status populated: "$_maritalStatus".');
+
 
         // Visibility toggles - Populating these from profile data
         _showFullName = userProfile.fullLegalName != null || userProfile.fullName != null;
@@ -303,13 +332,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showInterests = userProfile.hobbiesAndInterests.isNotEmpty || (userProfile.interests?.isNotEmpty ?? false);
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.locationZipCode != null || userProfile.addressZip != null;
-        _showEthnicity = userProfile.ethnicity != null;
+        _showEthnicity = userProfile.ethnicity != null; // Still a visibility toggle
         _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty;
         _showEducationLevel = userProfile.educationLevel != null;
         _showDesiredOccupation = userProfile.desiredOccupation != null;
         _showLoveLanguages = userProfile.loveLanguages.isNotEmpty;
         _showFavoriteMedia = userProfile.favoriteMedia.isNotEmpty;
-        _showMaritalStatus = userProfile.maritalStatus != null;
+        _showMaritalStatus = userProfile.maritalStatus != null; // Still a visibility toggle
         _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null;
         _showWillingToRelocate = userProfile.willingToRelocate != null;
         _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null;
@@ -425,7 +454,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     final profileService = Provider.of<ProfileService>(context, listen: false);
     debugPrint('ProfileSetupScreen: _savePreferences - After getting ProfileService.');
 
-    String? uploadedPhotoPath;
+    String? uploadedPhotoUrl; // Renamed for clarity, it's a URL in Supabase
 
     debugPrint('ProfileSetupScreen: Checking for picked image (_pickedImage: ${_pickedImage != null}).');
     debugPrint('ProfileSetupScreen: Existing image preview path (_imagePreviewPath: $_imagePreviewPath).');
@@ -434,13 +463,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       debugPrint('ProfileSetupScreen: Image picked, attempting to upload analysis photo from path: ${_pickedImage!.path}.');
       try {
         debugPrint('ProfileSetupScreen: _savePreferences - Calling profileService.uploadAnalysisPhoto.');
-        uploadedPhotoPath = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!.path);
-        debugPrint('ProfileSetupScreen: _savePreferences - After profileService.uploadAnalysisPhoto call. Uploaded path: $uploadedPhotoPath.');
-        if (uploadedPhotoPath == null) {
-          debugPrint('ProfileSetupScreen: Failed to get uploaded photo path from service. Upload analysis photo returned null.');
-          throw Exception('Failed to get uploaded photo path after upload.');
+        uploadedPhotoUrl = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!.path);
+        debugPrint('ProfileSetupScreen: _savePreferences - After profileService.uploadAnalysisPhoto call. Uploaded URL: $uploadedPhotoUrl.');
+        if (uploadedPhotoUrl == null) {
+          debugPrint('ProfileSetupScreen: Failed to get uploaded photo URL from service. Upload analysis photo returned null.');
+          throw Exception('Failed to get uploaded photo URL after upload.');
         }
-        debugPrint('ProfileSetupScreen: Analysis photo uploaded successfully. Final path: $uploadedPhotoPath');
+        debugPrint('ProfileSetupScreen: Analysis photo uploaded successfully. Final URL: $uploadedPhotoUrl');
       } catch (e) {
         debugPrint('ProfileSetupScreen: Error uploading photo for analysis: ${e.toString()}');
         if (mounted) {
@@ -456,13 +485,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         return; // Exit if photo upload fails
       }
     } else if (_imagePreviewPath != null && _imagePreviewPath!.startsWith('http')) {
-      uploadedPhotoPath = _imagePreviewPath;
-      debugPrint('ProfileSetupScreen: No new image picked. Using existing image preview path: $uploadedPhotoPath for profile.');
+      // If no new image was picked, but there's an existing URL from a previous load
+      uploadedPhotoUrl = _imagePreviewPath;
+      debugPrint('ProfileSetupScreen: No new image picked. Using existing image preview URL: $uploadedPhotoUrl for profile.');
     } else {
+      // No image picked and no existing URL
+      uploadedPhotoUrl = null;
       debugPrint('ProfileSetupScreen: No new image picked and no existing URL found. Continuing without photo upload.');
-      uploadedPhotoPath = null;
     }
-    debugPrint('ProfileSetupScreen: _savePreferences - After all image handling logic. Final uploadedPhotoPath: $uploadedPhotoPath.');
+    debugPrint('ProfileSetupScreen: _savePreferences - After all image handling logic. Final uploadedPhotoUrl: $uploadedPhotoUrl.');
 
 
     try {
@@ -480,7 +511,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           createdAt: DateTime.now(),
           fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
           displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
-          profilePictureUrl: uploadedPhotoPath,
+          profilePictureUrl: uploadedPhotoUrl, // Use the determined URL
           dateOfBirth: _dateOfBirth,
           phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : null,
           locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : null,
@@ -495,10 +526,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
           isPhase2Complete: false, // Ensure Phase 2 is false for new profiles here
 
-          // Default values for other fields to satisfy the constructor
-          ethnicity: null, languagesSpoken: const [], educationLevel: null,
+          // Populate ethnicity and maritalStatus from state variables
+          ethnicity: _ethnicity,
+          maritalStatus: _maritalStatus,
+
+          // Default values for other fields to satisfy the constructor (ensure all required are met)
+          languagesSpoken: const [], educationLevel: null,
           desiredOccupation: null, loveLanguages: const [], favoriteMedia: const [],
-          maritalStatus: null, hasChildren: null, wantsChildren: null,
+          hasChildren: null, wantsChildren: null,
           willingToRelocate: null, monogamyVsPolyamoryPreferences: null,
           relationshipGoals: null, dealbreakers: const [], astrologicalSign: null,
           attachmentStyle: null, communicationStyle: null, mentalHealthDisclosures: null,
@@ -513,7 +548,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           locationCity: null, locationState: null,
         );
         debugPrint('ProfileSetupScreen: New UserProfile object created. Calling profileService.insertProfile for ID: ${newProfile.id}.');
-        debugPrint('ProfileSetupScreen: New Profile Data: fullLegalName: ${newProfile.fullLegalName}, displayName: ${newProfile.displayName}, isPhase1Complete: ${newProfile.isPhase1Complete}');
+        debugPrint('ProfileSetupScreen: New Profile Data: fullLegalName: ${newProfile.fullLegalName}, displayName: ${newProfile.displayName}, ethnicity: ${newProfile.ethnicity}, maritalStatus: ${newProfile.maritalStatus}, isPhase1Complete: ${newProfile.isPhase1Complete}');
         await profileService.insertProfile(newProfile);
         debugPrint('ProfileSetupScreen: User profile ${currentUser.id} INSERTED successfully into Supabase.');
         if (mounted) {
@@ -527,7 +562,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           updatedAt: DateTime.now(),
           fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : existingProfile.fullLegalName,
           displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : existingProfile.displayName,
-          profilePictureUrl: uploadedPhotoPath ?? existingProfile.profilePictureUrl,
+          profilePictureUrl: uploadedPhotoUrl ?? existingProfile.profilePictureUrl, // Use the determined URL
           dateOfBirth: _dateOfBirth ?? existingProfile.dateOfBirth,
           phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : existingProfile.phoneNumber,
           locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : existingProfile.locationZipCode,
@@ -540,10 +575,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           agreedToTerms: _agreedToTerms,
           agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
           bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : existingProfile.bio,
+
+          // Populate ethnicity and maritalStatus from state variables
+          ethnicity: _ethnicity ?? existingProfile.ethnicity,
+          maritalStatus: _maritalStatus ?? existingProfile.maritalStatus,
+
           // isPhase2Complete: existingProfile.isPhase2Complete, // Keep existing Phase 2 status
         );
         debugPrint('ProfileSetupScreen: Updated UserProfile object created. Calling profileService.updateProfile for ID: ${updatedProfile.id}.');
-        debugPrint('ProfileSetupScreen: Updated Profile Data: fullLegalName: ${updatedProfile.fullLegalName}, displayName: ${updatedProfile.displayName}, isPhase1Complete: ${updatedProfile.isPhase1Complete}');
+        debugPrint('ProfileSetupScreen: Updated Profile Data: fullLegalName: ${updatedProfile.fullLegalName}, displayName: ${updatedProfile.displayName}, ethnicity: ${updatedProfile.ethnicity}, maritalStatus: ${updatedProfile.maritalStatus}, isPhase1Complete: ${updatedProfile.isPhase1Complete}');
         await profileService.updateProfile(profile: updatedProfile);
         debugPrint('ProfileSetupScreen: User profile ${currentUser.id} UPDATED successfully in Supabase.');
         if (mounted) {
@@ -577,14 +617,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         debugPrint('ProfileSetupScreen: Widget unmounted, cannot perform navigation after profile save.');
       }
     } on PostgrestException catch (e) {
-      // FIX APPLIED HERE: PostgrestException does not have a 'stackTrace' getter directly.
       debugPrint('ProfileSetupScreen: Supabase Postgrest Error occurred while saving profile data: CODE: ${e.code ?? "N/A"}, MESSAGE: ${e.message}.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Database error: ${e.message}')),
         );
       }
-    } catch (e, stackTrace) { // This generic catch correctly provides stackTrace
+    } catch (e, stackTrace) {
       debugPrint('ProfileSetupScreen: Generic Error occurred while saving profile data: ${e.toString()}. Stack: ${stackTrace}.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -597,171 +636,199 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _isNavigating = false; // Reset navigation flag in finally block
+          debugPrint('ProfileSetupScreen: _isLoading set to false and _isNavigating reset in finally block.');
         });
-        debugPrint('ProfileSetupScreen: _isLoading set to false via setState in finally block.');
-      } else {
-        debugPrint('ProfileSetupScreen: Widget unmounted in finally block, cannot call setState to set _isLoading to false.');
       }
-      _isNavigating = false; // Reset navigation flag
-      debugPrint('ProfileSetupScreen: _savePreferences function finished execution.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('ProfileSetupScreen: build method started.');
     final themeController = Provider.of<ThemeController>(context);
     final isDarkMode = themeController.isDarkMode;
-    debugPrint('ProfileSetupScreen: Theme loaded. Dark Mode: $isDarkMode.');
-
-    final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
-    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final Color accentColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final Color iconColor = isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor;
-    debugPrint('ProfileSetupScreen: Theme colors determined.');
+    final primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+    final accentColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+    final cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
 
     return Scaffold(
       body: Stack(
         children: [
-          const Positioned.fill(child: AnimatedOrbBackground()),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    (isDarkMode ? Colors.deepPurple.shade900 : Colors.blue.shade900).withOpacity(0.7),
-                    (isDarkMode ? Colors.black : Colors.blue.shade500).withOpacity(0.85),
-                  ],
-                  center: Alignment.topLeft,
-                  radius: 1.5,
-                ),
-              ),
-            ),
+          // Animated Background
+          const AnimatedOrbBackground(),
+          // Semi-transparent overlay to make content readable
+          Container(
+            color: (isDarkMode ? Colors.black : Colors.white).withOpacity(0.6),
           ),
-          Scaffold(
-            backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              title: Text(
-                'Complete Your Profile',
-                style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold, color: textColor),
-              ),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              bottom: TabBar(
-                controller: _tabController,
-                tabs: _profileTabs,
-                labelColor: accentColor,
-                unselectedLabelColor: textColor.withOpacity(0.7),
-                indicatorColor: accentColor,
-                labelStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold),
-                unselectedLabelStyle: const TextStyle(fontFamily: 'Inter'),
-                isScrollable: true,
-              ),
-            ),
-            body: _isLoading
-                ? Center(child: CircularProgressIndicator(color: accentColor))
-                : TabBarView(
+          SafeArea(
+            child: Column(
+              children: [
+                // Top AppBar-like area for title and progress
+                Padding(
+                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Profile Setup (Phase 1)',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            'Step ${_tabController.index + 1} of ${_profileTabs.length}',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: textColor.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppConstants.spacingSmall),
+                      LinearProgressIndicator(
+                        value: (_tabController.index + 1) / _profileTabs.length,
+                        backgroundColor: textColor.withOpacity(0.3),
+                        valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                      ),
+                    ],
+                  ),
+                ),
+                // Tabs
+                TabBar(
+                  controller: _tabController,
+                  tabs: _profileTabs,
+                  labelColor: accentColor,
+                  unselectedLabelColor: textColor.withOpacity(0.7),
+                  indicatorColor: accentColor,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicatorWeight: 4.0,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Inter'),
+                  unselectedLabelStyle: const TextStyle(fontFamily: 'Inter'),
+                ),
+                // Tab Bar View (Content of each tab)
+                Expanded(
+                  child: TabBarView(
                     controller: _tabController,
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics: const NeverScrollableScrollPhysics(), // Disable swipe
                     children: [
                       BasicInfoForm(
                         formKey: _formKeys[0],
                         fullNameController: _fullNameController,
                         displayNameController: _displayNameController,
-                        heightController: _heightController,
-                        onDateOfBirthSelected: _onDateOfBirthSelected,
-                        onGenderChanged: _onGenderChanged,
                         dateOfBirth: _dateOfBirth,
+                        onDateOfBirthSelected: _onDateOfBirthSelected,
                         gender: _gender,
+                        onGenderChanged: _onGenderChanged,
+                        heightController: _heightController,
+                        // Removed parameters that BasicInfoForm no longer accepts
+                        // phoneNumberController: _phoneNumberController,
+                        // addressZipController: _addressZipController,
+                        // onImagePicked: _onImagePicked,
+                        // imagePreviewPath: _imagePreviewPath,
                       ),
-                      IdentityIDForm(
+                      IdentityIDForm( // Corrected to IdentityIDForm
                         formKey: _formKeys[1],
                         onImagePicked: _onImagePicked,
                         phoneNumberController: _phoneNumberController,
                         addressZipController: _addressZipController,
-                        imagePreviewPath: _imagePreviewPath,
-                        pickedImageFile: _pickedImage,
+                        imagePreviewPath: _imagePreviewPath, // Pass existing URL
+                        pickedImageFile: _pickedImage, // Pass newly picked XFile
                       ),
                       PreferencesForm(
                         formKey: _formKeys[2],
                         bioController: _bioController,
+                        sexualOrientation: _sexualOrientation,
                         onSexualOrientationChanged: _onSexualOrientationChanged,
+                        lookingFor: _lookingFor,
                         onLookingForChanged: _onLookingForChanged,
+                        selectedInterests: _selectedInterests,
                         onInterestSelected: _onInterestSelected,
                         onInterestDeselected: _onInterestDeselected,
-                        sexualOrientation: _sexualOrientation,
-                        lookingFor: _lookingFor,
-                        selectedInterests: _selectedInterests,
+                        // Pass state variables and callbacks for marital status and ethnicity
+                        maritalStatus: _maritalStatus,
                         onMaritalStatusChanged: _onMaritalStatusChanged,
+                        ethnicity: _ethnicity,
+                        onEthnicityChanged: _onEthnicityChanged,
                       ),
                       ConsentForm(
                         formKey: _formKeys[3],
                         agreedToTerms: _agreedToTerms,
-                        agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
                         onTermsChanged: _onTermsChanged,
+                        agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
                         onCommunityGuidelinesChanged: _onCommunityGuidelinesChanged,
                       ),
                     ],
                   ),
-            bottomNavigationBar: BottomAppBar(
-              color: isDarkMode ? AppConstants.backgroundColor : AppConstants.lightBackgroundColor,
-              elevation: 0,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : () {
-                    debugPrint('ProfileSetupScreen: ElevatedButton onPressed handler activated. Current tab index: ${_tabController.index}.');
-                    if (_tabController.index == _profileTabs.length - 1) {
-                      debugPrint('ProfileSetupScreen: "Complete Profile" button pressed (last tab). Calling _savePreferences().');
-                      _savePreferences();
-                    } else {
-                      debugPrint('ProfileSetupScreen: "Next" button pressed. Current tab index: ${_tabController.index}.');
-                      // Validate the current form before moving to the next tab
-                      final currentFormKey = _formKeys[_tabController.index];
-                      if (currentFormKey.currentState == null) {
-                        debugPrint('ProfileSetupScreen: ERROR: currentFormKey.currentState is NULL for "Next" button. Cannot validate.');
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Error: Form state not available for validation on this tab.')),
-                          );
-                        }
-                        return; // Exit if form state is null
-                      }
-
-                      if (currentFormKey.currentState!.validate()) {
-                        debugPrint('ProfileSetupScreen: Current form validation successful. Moving to next tab (index: ${_tabController.index + 1}).');
-                        _tabController.animateTo(_tabController.index + 1);
-                      } else {
-                        debugPrint('ProfileSetupScreen: Current form validation failed. Showing snackbar.');
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please fill out all required fields on this tab.')),
-                          );
-                        }
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: secondaryColor,
-                    foregroundColor: textColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
-                      : Text(
-                          _tabController.index == _profileTabs.length - 1 ? 'Complete Profile' : 'Next',
-                          style: const TextStyle(fontFamily: 'Inter'),
-                        ),
                 ),
-              ),
+                // Navigation Buttons
+                Padding(
+                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (_tabController.index > 0)
+                        ElevatedButton.icon(
+                          onPressed: _isLoading ? null : () {
+                            setState(() {
+                              _tabController.animateTo(_tabController.index - 1);
+                            });
+                          },
+                          icon: const Icon(Icons.arrow_back_ios_rounded),
+                          label: const Text('Previous'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentColor.withOpacity(0.2),
+                            foregroundColor: accentColor,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
+                            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
+                          ),
+                        ),
+                      const Spacer(),
+                      ElevatedButton.icon(
+                        onPressed: _isLoading ? null : () async {
+                          if (_tabController.index < _profileTabs.length - 1) {
+                            // Validate current form before moving to next tab
+                            if (_formKeys[_tabController.index].currentState?.validate() ?? false) {
+                              setState(() {
+                                _tabController.animateTo(_tabController.index + 1);
+                              });
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please fill out all required fields on this tab before proceeding.')),
+                              );
+                            }
+                          } else {
+                            // Last tab, save preferences
+                            await _savePreferences();
+                          }
+                        },
+                        icon: Icon(_tabController.index == _profileTabs.length - 1 ? Icons.check_circle_rounded : Icons.arrow_forward_ios_rounded),
+                        label: Text(_tabController.index == _profileTabs.length - 1 ? 'Finish Setup' : 'Next'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: accentColor,
+                          foregroundColor: textColor,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
+                          padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
         ],
       ),
     );
