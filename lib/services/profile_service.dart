@@ -36,6 +36,15 @@ class ProfileService with ChangeNotifier {
     notifyListeners();
   }
 
+  // NEW METHOD: To update the internal profile state without re-fetching from DB
+  void updateProfileLocally(UserProfile newProfile) {
+    if (_userProfile != newProfile) { // Only update if it's actually different
+      _userProfile = newProfile;
+      notifyListeners();
+      debugPrint('ProfileService: Profile updated locally by subscription.');
+    }
+  }
+
   void clearProfile() {
     _userProfile = null;
     _isProfileLoaded = false;
@@ -44,20 +53,31 @@ class ProfileService with ChangeNotifier {
   }
 
   Future<void> initializeProfile() async {
+    // Only fetch if profile isn't already loaded or being loaded
+    if (_isProfileLoaded || _isLoading) {
+      debugPrint('ProfileService: initializeProfile skipped, profile already loaded or loading.');
+      return;
+    }
+
+    _setLoading(true); // Indicate loading
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      await fetchUserProfile(id: user.id);
+      await fetchUserProfile(id: user.id, isInitialization: true); // Add a flag
     } else {
       clearProfile();
-      _setProfileLoaded(true);
+      _setProfileLoaded(true); // Mark as loaded even if no user
+      _setLoading(false); // End loading
     }
   }
 
-  Future<UserProfile?> fetchUserProfile({required String id}) async {
-    _setLoading(true);
-    debugPrint('ProfileService: Attempting to fetch user profile for ID: $id');
+  Future<UserProfile?> fetchUserProfile({required String id, bool isInitialization = false}) async {
+    // Only set loading/notify if it's NOT part of initial setup,
+    // or if it's a re-fetch initiated from elsewhere
+    if (!isInitialization) {
+      _setLoading(true);
+    }
+    debugPrint('ProfileService: Attempting to fetch user profile for ID: $id (isInitialization: $isInitialization)');
     try {
-      // CHANGE HERE: from 'profiles' to 'user_profiles'
       final response = await _supabase.from('user_profiles').select().eq('id', id).single();
       _userProfile = UserProfile.fromJson(response);
       debugPrint('ProfileService: User profile fetched: ${_userProfile?.toJson()}');
@@ -81,6 +101,7 @@ class ProfileService with ChangeNotifier {
       _userProfile = null;
       return null;
     } finally {
+      // These only call notifyListeners once the fetch is truly done and state is finalized
       _setProfileLoaded(true);
       _setLoading(false);
     }
@@ -89,11 +110,10 @@ class ProfileService with ChangeNotifier {
   Future<void> updateProfile({required UserProfile profile}) async {
     _setLoading(true);
     try {
-      // CHANGE HERE: from 'profiles' to 'user_profiles'
       final response = await _supabase.from('user_profiles').upsert(profile.toJson()).select().single();
       _userProfile = UserProfile.fromJson(response);
+      notifyListeners(); // Notify after a successful update operation
       debugPrint('ProfileService: Profile updated: ${_userProfile?.toJson()}');
-      notifyListeners();
     } on PostgrestException catch (e) {
       debugPrint('ProfileService: Postgrest error updating profile: ${e.message}');
       rethrow;
@@ -117,7 +137,6 @@ class ProfileService with ChangeNotifier {
           );
       debugPrint('ProfileService: Avatar uploaded to: $publicUrl');
 
-      // CHANGE HERE: from 'profiles' to 'user_profiles'
       await _supabase.from('user_profiles').update({
         'profile_picture_url': publicUrl,
       }).eq('id', _supabase.auth.currentUser!.id);
@@ -208,7 +227,6 @@ class ProfileService with ChangeNotifier {
   Future<void> insertProfile(UserProfile profile) async {
     _setLoading(true);
     try {
-      // CHANGE HERE: from 'profiles' to 'user_profiles'
       await _supabase.from('user_profiles').insert(profile.toJson());
       _userProfile = profile;
       notifyListeners();
@@ -227,7 +245,6 @@ class ProfileService with ChangeNotifier {
   Future<List<UserProfile>> fetchAllUserProfiles() async {
     _setLoading(true);
     try {
-      // CHANGE HERE: from 'profiles' to 'user_profiles'
       final response = await _supabase.from('user_profiles').select();
       final List<UserProfile> profiles = (response as List).map((json) => UserProfile.fromJson(json)).toList();
       debugPrint('ProfileService: Fetched ${profiles.length} user profiles.');
@@ -255,7 +272,6 @@ class ProfileService with ChangeNotifier {
           isPhase1Complete: true,
           isPhase2Complete: true,
         );
-        // CHANGE HERE: from 'profiles' to 'user_profiles'
         await _supabase.from('user_profiles').insert(dummyProfile.toJson());
         debugPrint('Generated dummy user: $dummyEmail');
       }

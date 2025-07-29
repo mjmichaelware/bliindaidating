@@ -1,26 +1,21 @@
-// lib/screens/profile_setup/profile_setup_screen.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bliindaidating/models/user_profile.dart';
-import 'package:bliindaidating/services/profile_service.dart';
-import 'package:bliindaidating/app_constants.dart';
-import 'package:provider/provider.dart';
-import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:cross_file/cross_file.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart'; // Keep this for debugPrint
-import 'dart:io';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io'; // Required for File
 
-// Import custom background/effects for immersion
-import 'package:bliindaidating/landing_page/widgets/animated_orb_background.dart';
+// Local Imports
+import 'package:bliindaidating/services/profile_service.dart';
+import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/controllers/theme_controller.dart'; // Ensure this is imported
+import 'package:bliindaidating/widgets/animated_orb_background.dart'; // Ensure this path is correct
 
-// Import the modular form widgets
+// Form Widgets
 import 'package:bliindaidating/screens/profile_setup/widgets/basic_info_form.dart';
-import 'package:bliindaidating/screens/profile_setup/widgets/identity_id_form.dart'; // Corrected import path
+import 'package:bliindaidating/screens/profile_setup/widgets/identity_id_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/preferences_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/consent_form.dart';
-
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -29,42 +24,45 @@ class ProfileSetupScreen extends StatefulWidget {
   State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
-class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTickerProviderStateMixin {
+class _ProfileSetupScreenState extends State<ProfileSetupScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<GlobalKey<FormState>> _formKeys = List.generate(4, (_) => GlobalKey<FormState>());
+  final List<Tab> _profileTabs = const [
+    Tab(text: 'Basic Info'),
+    Tab(text: 'Identity & Contact'),
+    Tab(text: 'Preferences'),
+    Tab(text: 'Consent'),
+  ];
 
-  bool _isLoading = true;
-  // Track if a navigation attempt has already been made to avoid multiple redirects
-  bool _isNavigating = false;
+  // Form Keys for validation per tab
+  final List<GlobalKey<FormState>> _formKeys = List.generate(4, (index) => GlobalKey<FormState>());
 
-
-  XFile? _pickedImage; // This will hold the newly picked image file
-  String? _imagePreviewPath; // This will hold the URL for existing profile picture
-
+  // Text Controllers
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _addressZipController = TextEditingController(); // Corresponds to locationZipCode
+  final TextEditingController _addressZipController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
 
+  // State Variables for Profile Fields
   DateTime? _dateOfBirth;
-  String? _gender; // Will be mapped to genderIdentity
+  String? _gender;
   String? _sexualOrientation;
   String? _lookingFor;
-  List<String> _selectedInterests = []; // Will be mapped to hobbiesAndInterests
+  List<String> _selectedInterests = [];
   bool _agreedToTerms = false;
   bool _agreedToCommunityGuidelines = false;
+  XFile? _pickedImage; // For the newly picked image file
+  String? _imagePreviewPath; // For displaying existing image from URL or new picked image
+  String? _maritalStatus; // NEW: Marital Status
+  String? _ethnicity; // NEW: Ethnicity
 
+  // Placeholder for future use, remove if not needed for phase 1
   String? _preferredGender;
-  RangeValues _ageRange = const RangeValues(18, 50);
-  double _maxDistance = 100;
 
-  // State variables for Ethnicity and Marital Status
-  String? _ethnicity;
-  String? _maritalStatus;
-
-  bool _showFullName = false;
+  // Visibility toggles (initialize to true or based on default profile setup)
+  bool _showFullName = true;
   bool _showDisplayName = true;
   bool _showAge = true;
   bool _showGender = true;
@@ -74,53 +72,52 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
   bool _showInterests = true;
   bool _showLookingFor = true;
   bool _showLocation = true;
-  bool _showEthnicity = false;
-  bool _showLanguagesSpoken = false;
-  bool _showEducationLevel = false;
-  bool _showDesiredOccupation = false;
-  bool _showLoveLanguages = false;
-  bool _showFavoriteMedia = false;
-  bool _showMaritalStatus = false;
-  bool _showChildrenPreference = false;
-  bool _showWillingToRelocate = false;
-  bool _showMonogamyPolyamory = false;
-  bool _showLoveRelationshipGoals = false;
-  bool _showDealbreakersBoundaries = false;
-  bool _showAstrologicalSign = false;
-  bool _showAttachmentStyle = false;
-  bool _showCommunicationStyle = false;
-  bool _showMentalHealthDisclosures = false;
-  bool _showPetOwnership = false;
-  bool _showTravelFrequencyDestinations = false;
-  bool _showPoliticalViews = false;
-  bool _showReligionBeliefs = false;
-  bool _showDiet = false;
-  bool _showSmokingHabits = false;
-  bool _showDrinkingHabits = false;
-  bool _showSleepSchedule = false;
+  bool _showEthnicity = true; // NEW
+  bool _showLanguagesSpoken = true;
+  bool _showEducationLevel = true;
+  bool _showDesiredOccupation = true;
+  bool _showLoveLanguages = true;
+  bool _showFavoriteMedia = true;
+  bool _showMaritalStatus = true; // NEW
+  bool _showChildrenPreference = true;
+  bool _showWillingToRelocate = true;
+  bool _showMonogamyPolyamory = true;
+  bool _showLoveRelationshipGoals = true;
+  bool _showDealbreakersBoundaries = true;
+  bool _showAstrologicalSign = true;
+  bool _showAttachmentStyle = true;
+  bool _showCommunicationStyle = true;
+  bool _showMentalHealthDisclosures = true;
+  bool _showPetOwnership = true;
+  bool _showTravelFrequencyDestinations = true;
+  bool _showPoliticalViews = true;
+  bool _showReligionBeliefs = true;
+  bool _showDiet = true;
+  bool _showSmokingHabits = true;
+  bool _showDrinkingHabits = true;
+  bool _showSleepSchedule = true;
 
-  static const List<Tab> _profileTabs = <Tab>[
-    Tab(text: 'Basic Info', icon: Icon(Icons.person)),
-    Tab(text: 'Identity & Connection', icon: Icon(Icons.perm_identity)),
-    Tab(text: 'Preferences', icon: Icon(Icons.favorite)),
-    Tab(text: 'Consent', icon: Icon(Icons.policy)),
-  ];
+  // Loading state
+  bool _isLoading = false;
+  bool _isNavigating = false; // Flag to prevent multiple navigations
 
   @override
   void initState() {
     super.initState();
     debugPrint('ProfileSetupScreen: initState called.');
     _tabController = TabController(length: _profileTabs.length, vsync: this);
-    _tabController.addListener(_handleTabChange);
-    debugPrint('ProfileSetupScreen: TabController initialized and listener added.');
-    _loadPreferences();
-    debugPrint('ProfileSetupScreen: _loadPreferences called from initState.');
+    _tabController.addListener(_handleTabSelection);
+
+    // Load preferences after the first frame to ensure context is fully available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadPreferences();
+    });
   }
 
   @override
   void dispose() {
-    debugPrint('ProfileSetupScreen: dispose called. Disposing controllers and listeners.');
-    _tabController.removeListener(_handleTabChange);
+    debugPrint('ProfileSetupScreen: dispose called.');
+    _tabController.removeListener(_handleTabSelection);
     _tabController.dispose();
     _fullNameController.dispose();
     _displayNameController.dispose();
@@ -128,27 +125,30 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     _phoneNumberController.dispose();
     _addressZipController.dispose();
     _bioController.dispose();
-    debugPrint('ProfileSetupScreen: All controllers disposed.');
     super.dispose();
   }
 
-  void _handleTabChange() {
-    debugPrint('ProfileSetupScreen: Tab change listener fired. Tab index changed to ${_tabController.index}.');
-    setState(() {
-      debugPrint('ProfileSetupScreen: setState called from _handleTabChange.');
-    });
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging) {
+      debugPrint('ProfileSetupScreen: Tab index is changing to ${_tabController.index}');
+      // Optional: Add validation here before allowing tab change
+      // if (!_formKeys[_tabController.previousIndex].currentState!.validate()) {
+      //   // Prevent tab change if validation fails
+      //   _tabController.index = _tabController.previousIndex;
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('Please fill out all required fields on this tab before proceeding.')),
+      //   );
+      // }
+    }
   }
 
   void _onImagePicked(XFile? image) {
-    debugPrint('ProfileSetupScreen: _onImagePicked called with image: ${image?.path ?? "null"}.');
+    debugPrint('ProfileSetupScreen: _onImagePicked called with image: ${image?.path}.');
     setState(() {
       _pickedImage = image;
-      // When a new image is picked, clear the old URL preview path
-      // as the XFile will be used for display directly by IdentityIDForm
-      if (image != null) {
-        _imagePreviewPath = null;
-      }
-      debugPrint('ProfileSetupScreen: _pickedImage and _imagePreviewPath updated in setState for image pick.');
+      // If a new image is picked, update the preview path to the new image's path
+      _imagePreviewPath = image?.path; // Use path for XFile
+      debugPrint('ProfileSetupScreen: _pickedImage and _imagePreviewPath updated.');
     });
   }
 
@@ -220,7 +220,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     });
   }
 
-  // NEW: Method to update marital status state
   void _onMaritalStatusChanged(String? newMaritalStatus) {
     debugPrint('ProfileSetupScreen: _onMaritalStatusChanged called with status: $newMaritalStatus.');
     setState(() {
@@ -229,7 +228,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     });
   }
 
-  // NEW: Method to update ethnicity status state
   void _onEthnicityChanged(String? newEthnicity) {
     debugPrint('ProfileSetupScreen: _onEthnicityChanged called with ethnicity: $newEthnicity.');
     setState(() {
@@ -237,7 +235,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       debugPrint('ProfileSetupScreen: _ethnicity updated to $_ethnicity in setState.');
     });
   }
-
 
   Future<void> _loadPreferences() async {
     debugPrint('ProfileSetupScreen: _loadPreferences started.');
@@ -307,19 +304,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         debugPrint('ProfileSetupScreen: Agreed to Terms populated: "$_agreedToTerms".');
         _agreedToCommunityGuidelines = userProfile.agreedToCommunityGuidelines;
         debugPrint('ProfileSetupScreen: Agreed to Community Guidelines populated: "$_agreedToCommunityGuidelines".');
-        _imagePreviewPath = userProfile.profilePictureUrl; // Load existing URL
-        _pickedImage = null; // Clear picked image if loading from URL
-        debugPrint('ProfileSetupScreen: Image Preview Path populated: "$_imagePreviewPath". _pickedImage set to null.');
+        _imagePreviewPath = userProfile.profilePictureUrl;
+        debugPrint('ProfileSetupScreen: Image Preview Path populated: "$_imagePreviewPath".');
+
+        _maritalStatus = userProfile.maritalStatus; // NEW: Populate marital status
+        debugPrint('ProfileSetupScreen: Marital Status populated: "$_maritalStatus".');
+        _ethnicity = userProfile.ethnicity; // NEW: Populate ethnicity
+        debugPrint('ProfileSetupScreen: Ethnicity populated: "$_ethnicity".');
 
         _preferredGender = userProfile.genderIdentity ?? userProfile.gender;
         debugPrint('ProfileSetupScreen: Preferred Gender populated: "$_preferredGender".');
-
-        // Populate Ethnicity and Marital Status from fetched profile
-        _ethnicity = userProfile.ethnicity;
-        debugPrint('ProfileSetupScreen: Ethnicity populated: "$_ethnicity".');
-        _maritalStatus = userProfile.maritalStatus;
-        debugPrint('ProfileSetupScreen: Marital Status populated: "$_maritalStatus".');
-
 
         // Visibility toggles - Populating these from profile data
         _showFullName = userProfile.fullLegalName != null || userProfile.fullName != null;
@@ -332,13 +326,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showInterests = userProfile.hobbiesAndInterests.isNotEmpty || (userProfile.interests?.isNotEmpty ?? false);
         _showLookingFor = userProfile.lookingFor != null;
         _showLocation = userProfile.locationZipCode != null || userProfile.addressZip != null;
-        _showEthnicity = userProfile.ethnicity != null; // Still a visibility toggle
+        _showEthnicity = userProfile.ethnicity != null;
         _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty;
         _showEducationLevel = userProfile.educationLevel != null;
         _showDesiredOccupation = userProfile.desiredOccupation != null;
         _showLoveLanguages = userProfile.loveLanguages.isNotEmpty;
         _showFavoriteMedia = userProfile.favoriteMedia.isNotEmpty;
-        _showMaritalStatus = userProfile.maritalStatus != null; // Still a visibility toggle
+        _showMaritalStatus = userProfile.maritalStatus != null;
         _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null;
         _showWillingToRelocate = userProfile.willingToRelocate != null;
         _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null;
@@ -358,6 +352,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         _showSleepSchedule = userProfile.sleepSchedule != null;
         debugPrint('ProfileSetupScreen: Visibility toggles updated based on existing profile data.');
 
+        if (mounted) {
+          setState(() {
+            debugPrint('ProfileSetupScreen: setState called after populating fields in _loadPreferences.');
+          });
+        }
       } else {
         debugPrint('ProfileSetupScreen: No existing user profile found for ID: ${currentUser.id}. Initializing with default/empty values.');
       }
@@ -377,10 +376,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-        debugPrint('ProfileSetupScreen: _loadPreferences finally block executed. _isLoading set to false.');
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          debugPrint('ProfileSetupScreen: _loadPreferences finally block executed. _isLoading set to false.');
+        });
+      }
     }
   }
 
@@ -396,8 +397,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           const SnackBar(content: Text('Error: Form state not available for validation.')),
         );
       }
-      setState(() { _isLoading = false; }); // Ensure loading is off if a critical error occurs
-      _isNavigating = false; // Reset navigation flag
+      setState(() { _isLoading = false; });
+      _isNavigating = false;
       return;
     }
 
@@ -408,9 +409,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           const SnackBar(content: Text('Please fill out all required fields on this tab.')),
         );
       }
-      setState(() { _isLoading = false; }); // Ensure loading is off if validation fails
-      _isNavigating = false; // Reset navigation flag
-      return; // Exit if validation fails
+      setState(() { _isLoading = false; });
+      _isNavigating = false;
+      return;
     }
     debugPrint('ProfileSetupScreen: _savePreferences - After initial form validation, validation successful.');
 
@@ -429,7 +430,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error: User not logged in!')),
         );
-        // Prevent multiple navigations
         if (!_isNavigating) {
           _isNavigating = true;
           debugPrint('ProfileSetupScreen: _isNavigating set to true. Calling context.go(/login).');
@@ -442,11 +442,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         debugPrint('ProfileSetupScreen: Widget unmounted, cannot redirect to login from _savePreferences (no user).');
       }
       setState(() {
-        _isLoading = false; // Ensure loading state is reset
+        _isLoading = false;
         debugPrint('ProfileSetupScreen: _isLoading set to false due to no current user (save scenario).');
       });
-      _isNavigating = false; // Reset navigation flag
-      return; // Exit if no user
+      _isNavigating = false;
+      return;
     }
     debugPrint('ProfileSetupScreen: Current user ID: ${currentUser.id}. Email: ${currentUser.email ?? "N/A"}.');
 
@@ -454,7 +454,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
     final profileService = Provider.of<ProfileService>(context, listen: false);
     debugPrint('ProfileSetupScreen: _savePreferences - After getting ProfileService.');
 
-    String? uploadedPhotoUrl; // Renamed for clarity, it's a URL in Supabase
+    String? uploadedPhotoPath;
 
     debugPrint('ProfileSetupScreen: Checking for picked image (_pickedImage: ${_pickedImage != null}).');
     debugPrint('ProfileSetupScreen: Existing image preview path (_imagePreviewPath: $_imagePreviewPath).');
@@ -463,13 +463,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
       debugPrint('ProfileSetupScreen: Image picked, attempting to upload analysis photo from path: ${_pickedImage!.path}.');
       try {
         debugPrint('ProfileSetupScreen: _savePreferences - Calling profileService.uploadAnalysisPhoto.');
-        uploadedPhotoUrl = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!.path);
-        debugPrint('ProfileSetupScreen: _savePreferences - After profileService.uploadAnalysisPhoto call. Uploaded URL: $uploadedPhotoUrl.');
-        if (uploadedPhotoUrl == null) {
-          debugPrint('ProfileSetupScreen: Failed to get uploaded photo URL from service. Upload analysis photo returned null.');
-          throw Exception('Failed to get uploaded photo URL after upload.');
+        uploadedPhotoPath = await profileService.uploadAnalysisPhoto(currentUser.id, _pickedImage!.path);
+        debugPrint('ProfileSetupScreen: _savePreferences - After profileService.uploadAnalysisPhoto call. Uploaded path: $uploadedPhotoPath.');
+        if (uploadedPhotoPath == null) {
+          debugPrint('ProfileSetupScreen: Failed to get uploaded photo path from service. Upload analysis photo returned null.');
+          throw Exception('Failed to get uploaded photo path after upload.');
         }
-        debugPrint('ProfileSetupScreen: Analysis photo uploaded successfully. Final URL: $uploadedPhotoUrl');
+        debugPrint('ProfileSetupScreen: Analysis photo uploaded successfully. Final path: $uploadedPhotoPath');
       } catch (e) {
         debugPrint('ProfileSetupScreen: Error uploading photo for analysis: ${e.toString()}');
         if (mounted) {
@@ -478,28 +478,25 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           );
         }
         setState(() {
-          _isLoading = false; // Ensure loading is off if photo upload fails
+          _isLoading = false;
           debugPrint('ProfileSetupScreen: _isLoading set to false after photo upload error.');
         });
-        _isNavigating = false; // Reset navigation flag
-        return; // Exit if photo upload fails
+        _isNavigating = false;
+        return;
       }
     } else if (_imagePreviewPath != null && _imagePreviewPath!.startsWith('http')) {
-      // If no new image was picked, but there's an existing URL from a previous load
-      uploadedPhotoUrl = _imagePreviewPath;
-      debugPrint('ProfileSetupScreen: No new image picked. Using existing image preview URL: $uploadedPhotoUrl for profile.');
+      uploadedPhotoPath = _imagePreviewPath;
+      debugPrint('ProfileSetupScreen: No new image picked. Using existing image preview path: $uploadedPhotoPath for profile.');
     } else {
-      // No image picked and no existing URL
-      uploadedPhotoUrl = null;
       debugPrint('ProfileSetupScreen: No new image picked and no existing URL found. Continuing without photo upload.');
+      uploadedPhotoPath = null;
     }
-    debugPrint('ProfileSetupScreen: _savePreferences - After all image handling logic. Final uploadedPhotoUrl: $uploadedPhotoUrl.');
-
+    debugPrint('ProfileSetupScreen: _savePreferences - After all image handling logic. Final uploadedPhotoPath: $uploadedPhotoPath.');
 
     try {
       debugPrint('ProfileSetupScreen: Attempting to save profile data to Supabase database.');
       debugPrint('ProfileSetupScreen: _savePreferences - Before fetching existing profile from ProfileService\'s internal state.');
-      final UserProfile? existingProfile = profileService.userProfile; // This reads from ProfileService's internal state
+      final UserProfile? existingProfile = profileService.userProfile;
       debugPrint('ProfileSetupScreen: Existing profile status: ${existingProfile != null ? 'Found' : 'Not Found'}.');
       debugPrint('ProfileSetupScreen: _savePreferences - After fetching existing profile, before insert/update decision.');
 
@@ -511,7 +508,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           createdAt: DateTime.now(),
           fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : null,
           displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : null,
-          profilePictureUrl: uploadedPhotoUrl, // Use the determined URL
+          profilePictureUrl: uploadedPhotoPath,
           dateOfBirth: _dateOfBirth,
           phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : null,
           locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : null,
@@ -520,17 +517,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           heightCm: double.tryParse(_heightController.text.trim()),
           hobbiesAndInterests: _selectedInterests,
           lookingFor: _lookingFor,
-          isPhase1Complete: true, // Mark Phase 1 as complete
+          isPhase1Complete: true,
           agreedToTerms: _agreedToTerms,
           agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
           bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
-          isPhase2Complete: false, // Ensure Phase 2 is false for new profiles here
+          maritalStatus: _maritalStatus, // NEW
+          ethnicity: _ethnicity, // NEW
+          isPhase2Complete: false,
 
-          // Populate ethnicity and maritalStatus from state variables
-          ethnicity: _ethnicity,
-          maritalStatus: _maritalStatus,
-
-          // Default values for other fields to satisfy the constructor (ensure all required are met)
+          // Default values for other fields to satisfy the constructor
           languagesSpoken: const [], educationLevel: null,
           desiredOccupation: null, loveLanguages: const [], favoriteMedia: const [],
           hasChildren: null, wantsChildren: null,
@@ -548,7 +543,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           locationCity: null, locationState: null,
         );
         debugPrint('ProfileSetupScreen: New UserProfile object created. Calling profileService.insertProfile for ID: ${newProfile.id}.');
-        debugPrint('ProfileSetupScreen: New Profile Data: fullLegalName: ${newProfile.fullLegalName}, displayName: ${newProfile.displayName}, ethnicity: ${newProfile.ethnicity}, maritalStatus: ${newProfile.maritalStatus}, isPhase1Complete: ${newProfile.isPhase1Complete}');
+        debugPrint('ProfileSetupScreen: New Profile Data: fullLegalName: ${newProfile.fullLegalName}, displayName: ${newProfile.displayName}, isPhase1Complete: ${newProfile.isPhase1Complete}');
         await profileService.insertProfile(newProfile);
         debugPrint('ProfileSetupScreen: User profile ${currentUser.id} INSERTED successfully into Supabase.');
         if (mounted) {
@@ -562,7 +557,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           updatedAt: DateTime.now(),
           fullLegalName: _fullNameController.text.trim().isNotEmpty ? _fullNameController.text.trim() : existingProfile.fullLegalName,
           displayName: _displayNameController.text.trim().isNotEmpty ? _displayNameController.text.trim() : existingProfile.displayName,
-          profilePictureUrl: uploadedPhotoUrl ?? existingProfile.profilePictureUrl, // Use the determined URL
+          profilePictureUrl: uploadedPhotoPath ?? existingProfile.profilePictureUrl,
           dateOfBirth: _dateOfBirth ?? existingProfile.dateOfBirth,
           phoneNumber: _phoneNumberController.text.trim().isNotEmpty ? _phoneNumberController.text.trim() : existingProfile.phoneNumber,
           locationZipCode: _addressZipController.text.trim().isNotEmpty ? _addressZipController.text.trim() : existingProfile.locationZipCode,
@@ -571,19 +566,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
           heightCm: double.tryParse(_heightController.text.trim()) ?? existingProfile.heightCm,
           hobbiesAndInterests: _selectedInterests,
           lookingFor: _lookingFor ?? existingProfile.lookingFor,
-          isPhase1Complete: true, // Ensure Phase 1 is marked as complete
+          isPhase1Complete: true,
           agreedToTerms: _agreedToTerms,
           agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
           bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : existingProfile.bio,
-
-          // Populate ethnicity and maritalStatus from state variables
-          ethnicity: _ethnicity ?? existingProfile.ethnicity,
-          maritalStatus: _maritalStatus ?? existingProfile.maritalStatus,
-
-          // isPhase2Complete: existingProfile.isPhase2Complete, // Keep existing Phase 2 status
+          maritalStatus: _maritalStatus ?? existingProfile.maritalStatus, // NEW
+          ethnicity: _ethnicity ?? existingProfile.ethnicity, // NEW
         );
         debugPrint('ProfileSetupScreen: Updated UserProfile object created. Calling profileService.updateProfile for ID: ${updatedProfile.id}.');
-        debugPrint('ProfileSetupScreen: Updated Profile Data: fullLegalName: ${updatedProfile.fullLegalName}, displayName: ${updatedProfile.displayName}, ethnicity: ${updatedProfile.ethnicity}, maritalStatus: ${updatedProfile.maritalStatus}, isPhase1Complete: ${updatedProfile.isPhase1Complete}');
+        debugPrint('ProfileSetupScreen: Updated Profile Data: fullLegalName: ${updatedProfile.fullLegalName}, displayName: ${updatedProfile.displayName}, isPhase1Complete: ${updatedProfile.isPhase1Complete}');
         await profileService.updateProfile(profile: updatedProfile);
         debugPrint('ProfileSetupScreen: User profile ${currentUser.id} UPDATED successfully in Supabase.');
         if (mounted) {
@@ -593,11 +584,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         }
       }
 
-      // NAVIGATE TO DASHBOARD AFTER SUCCESSFUL PHASE 1 COMPLETION
       debugPrint('ProfileSetupScreen: Profile saved successfully. Initiating post-save actions.');
       debugPrint('ProfileSetupScreen: Re-initializing ProfileService to trigger GoRouter refresh mechanism.');
       debugPrint('ProfileSetupScreen: _savePreferences - Before calling profileService.initializeProfile.');
-      await profileService.initializeProfile(); // Explicitly re-fetch and update profile state
+      await profileService.initializeProfile();
       debugPrint('ProfileSetupScreen: _savePreferences - After calling profileService.initializeProfile. ProfileService state updated.');
       debugPrint('ProfileSetupScreen: ProfileService re-initialized. Current isPhase1Complete: ${profileService.userProfile?.isPhase1Complete}.');
 
@@ -606,7 +596,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         debugPrint('ProfileSetupScreen: About to issue navigation command to /dashboard-overview.');
         debugPrint('ProfileSetupScreen: _savePreferences - Before GoRouter context.go navigation.');
         if (!_isNavigating) {
-          _isNavigating = true; // Set flag to prevent multiple navigations
+          _isNavigating = true;
           debugPrint('ProfileSetupScreen: _isNavigating set to true. Calling context.go(/dashboard-overview).');
           context.go('/dashboard-overview');
           debugPrint('ProfileSetupScreen: Navigation command issued for /dashboard-overview. Should now transition.');
@@ -631,205 +621,125 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with SingleTick
         );
       }
     } finally {
-      debugPrint('ProfileSetupScreen: _savePreferences finally block reached. Resetting loading state and navigation flag.');
-      debugPrint('ProfileSetupScreen: _savePreferences - Before setting _isLoading to false in finally block (mounted: $mounted).');
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _isNavigating = false; // Reset navigation flag in finally block
-          debugPrint('ProfileSetupScreen: _isLoading set to false and _isNavigating reset in finally block.');
+          debugPrint('ProfileSetupScreen: _savePreferences finally block reached. Resetting loading state.');
         });
       }
+      _isNavigating = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
-    final isDarkMode = themeController.isDarkMode;
-    final primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
-    final accentColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
-    final cardColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile Setup'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: _profileTabs,
+        ),
+      ),
       body: Stack(
         children: [
-          // Animated Background
-          const AnimatedOrbBackground(),
-          // Semi-transparent overlay to make content readable
-          Container(
-            color: (isDarkMode ? Colors.black : Colors.white).withOpacity(0.6),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                // Top AppBar-like area for title and progress
-                Padding(
-                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Profile Setup (Phase 1)',
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: textColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            'Step ${_tabController.index + 1} of ${_profileTabs.length}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: textColor.withOpacity(0.8),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppConstants.spacingSmall),
-                      LinearProgressIndicator(
-                        value: (_tabController.index + 1) / _profileTabs.length,
-                        backgroundColor: textColor.withOpacity(0.3),
-                        valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-                      ),
-                    ],
-                  ),
-                ),
-                // Tabs
-                TabBar(
-                  controller: _tabController,
-                  tabs: _profileTabs,
-                  labelColor: accentColor,
-                  unselectedLabelColor: textColor.withOpacity(0.7),
-                  indicatorColor: accentColor,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  indicatorWeight: 4.0,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Inter'),
-                  unselectedLabelStyle: const TextStyle(fontFamily: 'Inter'),
-                ),
-                // Tab Bar View (Content of each tab)
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    physics: const NeverScrollableScrollPhysics(), // Disable swipe
-                    children: [
-                      BasicInfoForm(
-                        formKey: _formKeys[0],
-                        fullNameController: _fullNameController,
-                        displayNameController: _displayNameController,
-                        dateOfBirth: _dateOfBirth,
-                        onDateOfBirthSelected: _onDateOfBirthSelected,
-                        gender: _gender,
-                        onGenderChanged: _onGenderChanged,
-                        heightController: _heightController,
-                        // Removed parameters that BasicInfoForm no longer accepts
-                        // phoneNumberController: _phoneNumberController,
-                        // addressZipController: _addressZipController,
-                        // onImagePicked: _onImagePicked,
-                        // imagePreviewPath: _imagePreviewPath,
-                      ),
-                      IdentityIDForm( // Corrected to IdentityIDForm
-                        formKey: _formKeys[1],
-                        onImagePicked: _onImagePicked,
-                        phoneNumberController: _phoneNumberController,
-                        addressZipController: _addressZipController,
-                        imagePreviewPath: _imagePreviewPath, // Pass existing URL
-                        pickedImageFile: _pickedImage, // Pass newly picked XFile
-                      ),
-                      PreferencesForm(
-                        formKey: _formKeys[2],
-                        bioController: _bioController,
-                        sexualOrientation: _sexualOrientation,
-                        onSexualOrientationChanged: _onSexualOrientationChanged,
-                        lookingFor: _lookingFor,
-                        onLookingForChanged: _onLookingForChanged,
-                        selectedInterests: _selectedInterests,
-                        onInterestSelected: _onInterestSelected,
-                        onInterestDeselected: _onInterestDeselected,
-                        // Pass state variables and callbacks for marital status and ethnicity
-                        maritalStatus: _maritalStatus,
-                        onMaritalStatusChanged: _onMaritalStatusChanged,
-                        ethnicity: _ethnicity,
-                        onEthnicityChanged: _onEthnicityChanged,
-                      ),
-                      ConsentForm(
-                        formKey: _formKeys[3],
-                        agreedToTerms: _agreedToTerms,
-                        onTermsChanged: _onTermsChanged,
-                        agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
-                        onCommunityGuidelinesChanged: _onCommunityGuidelinesChanged,
-                      ),
-                    ],
-                  ),
-                ),
-                // Navigation Buttons
-                Padding(
-                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (_tabController.index > 0)
-                        ElevatedButton.icon(
-                          onPressed: _isLoading ? null : () {
-                            setState(() {
-                              _tabController.animateTo(_tabController.index - 1);
-                            });
-                          },
-                          icon: const Icon(Icons.arrow_back_ios_rounded),
-                          label: const Text('Previous'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor.withOpacity(0.2),
-                            foregroundColor: accentColor,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
-                            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
-                          ),
-                        ),
-                      const Spacer(),
-                      ElevatedButton.icon(
-                        onPressed: _isLoading ? null : () async {
-                          if (_tabController.index < _profileTabs.length - 1) {
-                            // Validate current form before moving to next tab
-                            if (_formKeys[_tabController.index].currentState?.validate() ?? false) {
-                              setState(() {
-                                _tabController.animateTo(_tabController.index + 1);
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please fill out all required fields on this tab before proceeding.')),
-                              );
-                            }
-                          } else {
-                            // Last tab, save preferences
-                            await _savePreferences();
-                          }
-                        },
-                        icon: Icon(_tabController.index == _profileTabs.length - 1 ? Icons.check_circle_rounded : Icons.arrow_forward_ios_rounded),
-                        label: Text(_tabController.index == _profileTabs.length - 1 ? 'Finish Setup' : 'Next'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accentColor,
-                          foregroundColor: textColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium)),
-                          padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          const AnimatedOrbBackground(), // This will now resolve if file exists/is created
+          TabBarView(
+            controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              BasicInfoForm(
+                formKey: _formKeys[0], // CHANGED: 'key' to 'formKey'
+                fullNameController: _fullNameController,
+                displayNameController: _displayNameController,
+                heightController: _heightController,
+                onDateOfBirthSelected: _onDateOfBirthSelected,
+                onGenderChanged: _onGenderChanged,
+                dateOfBirth: _dateOfBirth,
+                gender: _gender,
+              ),
+              IdentityIDForm(
+                formKey: _formKeys[1],
+                onImagePicked: _onImagePicked,
+                phoneNumberController: _phoneNumberController,
+                addressZipController: _addressZipController,
+                imagePreviewPath: _imagePreviewPath,
+                pickedImageFile: _pickedImage,
+              ),
+              PreferencesForm(
+                formKey: _formKeys[2], // Ensure this is also 'formKey'
+                bioController: _bioController,
+                onSexualOrientationChanged: _onSexualOrientationChanged,
+                onLookingForChanged: _onLookingForChanged,
+                onInterestSelected: _onInterestSelected,
+                onInterestDeselected: _onInterestDeselected,
+                sexualOrientation: _sexualOrientation,
+                lookingFor: _lookingFor,
+                selectedInterests: _selectedInterests,
+                maritalStatus: _maritalStatus,
+                onMaritalStatusChanged: _onMaritalStatusChanged,
+                ethnicity: _ethnicity,
+                onEthnicityChanged: _onEthnicityChanged,
+              ),
+              ConsentForm(
+                formKey: _formKeys[3],
+                agreedToTerms: _agreedToTerms,
+                onTermsChanged: _onTermsChanged,
+                agreedToCommunityGuidelines: _agreedToCommunityGuidelines,
+                onCommunityGuidelinesChanged: _onCommunityGuidelinesChanged,
+              ),
+            ],
           ),
           if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+            const Center(
+              child: CircularProgressIndicator(),
             ),
         ],
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (_tabController.index > 0)
+              ElevatedButton(
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                  setState(() {
+                    _tabController.animateTo(_tabController.index - 1);
+                  });
+                },
+                child: const Text('Back'),
+              ),
+            ElevatedButton(
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                if (_tabController.index < _profileTabs.length - 1) {
+                  if (_formKeys[_tabController.index].currentState?.validate() ?? false) {
+                    setState(() {
+                      _tabController.animateTo(_tabController.index + 1);
+                    });
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please fill out all required fields before proceeding.')),
+                      );
+                    }
+                  }
+                } else {
+                  await _savePreferences();
+                }
+              },
+              child: Text(_tabController.index == _profileTabs.length - 1
+                  ? 'Finish Setup'
+                  : 'Next'),
+            ),
+          ],
+        ),
       ),
     );
   }

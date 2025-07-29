@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider';
 import 'dart:math' as math; // For math.pi and other math functions
 
 import 'package:bliindaidating/app_constants.dart';
@@ -66,59 +66,7 @@ import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart'; // Explic
 
 // NEW IMPORT for the new dashboard overview screen
 import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart';
-// REMOVED: import 'package:bliindaidating/widgets/global/custom_network_image.dart'; // This was causing the error
 
-
-// --- Custom Painter for Side Menu Background (SIMPLIFIED FOR DEBUGGING) ---
-class SideMenuBackgroundPainter extends CustomPainter {
-  final Animation<double> animation;
-  final Color primaryColor;
-  final Color secondaryColor;
-  // Removed particles and particleMaxRadius for simplification
-  final bool isDrawerMode; // Added to control opacity
-
-  SideMenuBackgroundPainter(
-    this.animation,
-    this.primaryColor,
-    this.secondaryColor,
-    this.isDrawerMode, // Added
-  ) : super(repaint: animation);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Temporarily draw a simple solid color or a very basic gradient
-    // This removes all complex animation-driven painting and blur filters.
-    final paint = Paint()
-      ..color = primaryColor.withOpacity(isDrawerMode ? 1.0 : 0.8); // Adjust opacity based on mode
-
-    canvas.drawRect(
-      Offset.zero & size,
-      paint,
-    );
-
-    // You can also try a very simple gradient if the solid color works
-    /*
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()
-        ..shader = LinearGradient(
-          colors: [primaryColor.withOpacity(0.8), secondaryColor.withOpacity(0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ).createShader(Offset.zero & size),
-    );
-    */
-  }
-
-  @override
-  bool shouldRepaint(covariant SideMenuBackgroundPainter oldDelegate) {
-    // Only repaint if the animation, colors, or drawer mode changes
-    return oldDelegate.animation != animation ||
-           oldDelegate.primaryColor != primaryColor ||
-           oldDelegate.secondaryColor != secondaryColor ||
-           oldDelegate.isDrawerMode != isDrawerMode;
-  }
-}
 
 // --- Side Menu Profile Header (Enhanced) ---
 class _SideMenuProfileHeader extends StatelessWidget {
@@ -479,10 +427,6 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
   late Animation<double> _expandAnimation;
   late bool _isCollapsed;
 
-  // Removed particles list and particleMaxRadius from here as well
-  // final List<Offset> _particles = List.generate(50, (index) => Offset(math.Random().nextDouble(), math.Random().nextDouble()));
-  // static const double _particleMaxRadius = 2.0;
-
   @override
   void initState() {
     super.initState();
@@ -536,399 +480,403 @@ class _DashboardSideMenuState extends State<DashboardSideMenu> with SingleTicker
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
+        // Determine the background color based on theme and drawer mode
+        final Color backgroundColor = isDarkMode
+            ? primaryColor.withOpacity(widget.isDrawerMode ? 1.0 : 0.9)
+            : AppConstants.lightBackgroundColor; // Use a distinct light background if needed
+
         return Drawer(
-          // width: _isCollapsed ? 80 : 250, // Let its parent control width if not in DrawerMode
           width: widget.isDrawerMode ? MediaQuery.of(context).size.width * 0.75 : (_isCollapsed ? 80 : 250),
-          child: CustomPaint(
-            // Pass only the necessary parameters to the simplified painter
-            painter: SideMenuBackgroundPainter(
-              _animationController,
-              primaryColor,
-              secondaryColor,
-              widget.isDrawerMode,
+          // Directly use a Container with BoxDecoration for the background
+          child: Container(
+            decoration: BoxDecoration(
+              color: backgroundColor, // Use the determined background color
+              // You can add a simple gradient here if desired, but avoid complex shaders/filters for stability
+              // gradient: LinearGradient(
+              //   colors: [backgroundColor, secondaryColor.withOpacity(0.8)],
+              //   begin: Alignment.topLeft,
+              //   end: Alignment.bottomRight,
+              // ),
             ),
-            child: Container(
-              color: Colors.transparent,
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  // Profile Header
-                  _SideMenuProfileHeader(
-                    userProfile: profileService.userProfile, // Use profileService.userProfile
-                    profilePictureUrl: profileService.userProfile?.profilePictureUrl, // Use profileService.userProfile
-                    expandAnimation: _expandAnimation,
-                    isCollapsed: _isCollapsed,
-                  ),
-                  // Toggle Collapse Button - only show if not in drawer mode
-                  if (!widget.isDrawerMode)
-                    ListTile(
-                      title: AnimatedCrossFade(
-                        duration: AppConstants.animationDurationShort,
-                        crossFadeState: _isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                        firstChild: Align(
-                          alignment: Alignment.centerRight,
-                          child: Icon(Icons.arrow_forward_ios_rounded, color: textColor.withOpacity(0.7)),
-                        ),
-                        secondChild: Align(
-                          alignment: Alignment.centerRight,
-                          child: Icon(Icons.arrow_back_ios_rounded, color: textColor.withOpacity(0.7)),
-                        ),
-                      ),
-                      onTap: () {
-                        setState(() {
-                          _isCollapsed = !_isCollapsed;
-                          widget.onCollapseToggle(_isCollapsed);
-                        });
-                      },
-                      contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
-                    ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Core Navigation ---
-                  _SideMenuItem(
-                    icon: Icons.dashboard_rounded,
-                    title: 'Dashboard',
-                    onTap: () {
-                      context.go('/dashboard-overview');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.person_search_rounded,
-                    title: 'Discovery',
-                    onTap: () {
-                      context.go('/discovery');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.favorite_rounded,
-                    title: 'Matches',
-                    onTap: () {
-                      context.go('/matches');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                    _SideMenuItem(
-                    icon: Icons.rss_feed_rounded,
-                    title: 'Newsfeed',
-                    onTap: () {
-                      context.go('/newsfeed');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.notifications_active_rounded,
-                    title: 'Notifications',
-                    onTap: () {
-                      context.go('/notifications');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                    showNotificationBadge: true,
-                    notificationCount: 5,
-                  ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Profile & AI Section ---
-                  _SideMenuItem(
-                    icon: Icons.person_rounded,
-                    title: 'My Profile',
-                    onTap: () {
-                      context.go('/my-profile');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.settings_accessibility_rounded,
-                    title: 'Profile Setup',
-                    onTap: () {
-                      if (!isPhase1Complete) {
-                        context.go('/profile_setup');
-                      } else if (!isPhase2Complete) {
-                        context.go('/questionnaire-phase2');
-                      } else {
-                        // If both complete, perhaps go to a profile completion summary or just My Profile
-                        context.go('/my-profile');
-                      }
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.quiz_rounded,
-                    title: 'AI Questionnaire',
-                    onTap: () {
-                      context.go('/questionnaire');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.lightbulb_outline_rounded,
-                    title: 'Daily Prompts',
-                    onTap: () {
-                      context.go('/daily-prompts');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Match Insights ---
-                  _SideMenuItem(
-                    icon: Icons.auto_awesome_rounded,
-                    title: 'Compatibility Insights',
-                    onTap: () {
-                      context.go('/compatibility-results');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.quiz_rounded, // Corrected icon
-                    title: 'Daily Personality Question',
-                    onTap: () {
-                      context.go('/daily-personality-question');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.psychology_alt_rounded,
-                    title: 'Personality Quiz',
-                    onTap: () {
-                      context.go('/personality-quiz');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Date Management ---
-                  _SideMenuItem(
-                    icon: Icons.calendar_today_rounded,
-                    title: 'Scheduled Dates',
-                    onTap: () {
-                      context.go('/scheduled-dates-list');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.rate_review_rounded,
-                    title: 'Post-Date Feedback',
-                    onTap: () {
-                      context.go('/post-date-feedback');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.send_rounded,
-                    title: 'Date Proposal',
-                    onTap: () {
-                      context.go('/date-proposal');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.lightbulb_rounded,
-                    title: 'Date Ideas',
-                    onTap: () {
-                      context.go('/date-ideas');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Friends & Events ---
-                  _SideMenuItem(
-                    icon: Icons.people_alt_rounded,
-                    title: 'Friends Match',
-                    onTap: () {
-                      context.go('/friends-match');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.event_note_rounded,
-                    title: 'Local Events',
-                    onTap: () {
-                      context.go('/events');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Info & Support ---
-                  _SideMenuItem(
-                    icon: Icons.settings_rounded,
-                    title: 'App Settings',
-                    onTap: () {
-                      context.go('/app-settings');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.info_rounded,
-                    title: 'About Us',
-                    onTap: () {
-                      context.go('/about-us');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.security_rounded,
-                    title: 'Privacy Policy',
-                    onTap: () {
-                      context.go('/privacy');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.gavel_rounded,
-                    title: 'Terms & Conditions',
-                    onTap: () {
-                      context.go('/terms');
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                    },
-                    isCollapsed: _isCollapsed,
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.lightbulb_outline_rounded,
-                    title: 'Safety Tips',
-                    onTap: () {
-                      context.go('/safety-tips');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.feedback_rounded,
-                    title: 'Feedback',
-                    onTap: () {
-                      context.go('/feedback');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.report_rounded,
-                    title: 'Report User',
-                    onTap: () {
-                      context.go('/report');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.admin_panel_settings_rounded,
-                    title: 'Admin Dashboard',
-                    onTap: () {
-                      context.go('/admin');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.card_giftcard_rounded,
-                    title: 'Referral Program',
-                    onTap: () {
-                      context.go('/referral');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.history_rounded,
-                    title: 'Activity Feed',
-                    onTap: () {
-                      context.go('/activity-feed');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.block_rounded,
-                    title: 'Blocked Users',
-                    onTap: () {
-                      context.go('/blocked-users');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.tour_rounded,
-                    title: 'Guided Tour',
-                    onTap: () {
-                      context.go('/guided-tour');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.trending_up_rounded,
-                    title: 'User Progress',
-                    onTap: () {
-                      context.go('/user-progress');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  _SideMenuItem(
-                    icon: Icons.star_rounded,
-                    title: 'Favorites',
-                    onTap: () {
-                      context.go('/favorites');
-                    },
-                    isCollapsed: _isCollapsed,
-                    isComingSoon: true, // Mark as coming soon
-                  ),
-                  Divider(color: dividerColor.withOpacity(0.5), height: 1),
-
-                  // --- Sign Out ---
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                // Profile Header
+                _SideMenuProfileHeader(
+                  userProfile: profileService.userProfile, // Use profileService.userProfile
+                  profilePictureUrl: profileService.userProfile?.profilePictureUrl, // Use profileService.userProfile
+                  expandAnimation: _expandAnimation,
+                  isCollapsed: _isCollapsed,
+                ),
+                // Toggle Collapse Button - only show if not in drawer mode
+                if (!widget.isDrawerMode)
                   ListTile(
-                    leading: Icon(Icons.logout_rounded, color: AppConstants.errorColor),
                     title: AnimatedCrossFade(
-                      duration: AppConstants.animationDurationMedium,
+                      duration: AppConstants.animationDurationShort,
                       crossFadeState: _isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                      firstChild: const SizedBox.shrink(),
-                      secondChild: Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          color: AppConstants.errorColor,
-                          fontSize: AppConstants.fontSizeMedium,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Inter',
-                        ),
+                      firstChild: Align(
+                        alignment: Alignment.centerRight,
+                        child: Icon(Icons.arrow_forward_ios_rounded, color: textColor.withOpacity(0.7)),
+                      ),
+                      secondChild: Align(
+                        alignment: Alignment.centerRight,
+                        child: Icon(Icons.arrow_back_ios_rounded, color: textColor.withOpacity(0.7)),
                       ),
                     ),
-                    onTap: () async {
-                      await authService.signOut();
-                      if (widget.isDrawerMode) Navigator.of(context).pop();
-                      context.go('/login'); // Redirect to login after sign out
+                    onTap: () {
+                      setState(() {
+                        _isCollapsed = !_isCollapsed;
+                        widget.onCollapseToggle(_isCollapsed);
+                      });
                     },
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: _isCollapsed ? AppConstants.paddingSmall : AppConstants.paddingMedium,
-                      vertical: AppConstants.paddingMedium,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+                  ),
+                Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                // --- Core Navigation ---
+                _SideMenuItem(
+                  icon: Icons.dashboard_rounded,
+                  title: 'Dashboard',
+                  onTap: () {
+                    context.go('/dashboard-overview');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.person_search_rounded,
+                  title: 'Discovery',
+                  onTap: () {
+                    context.go('/discovery');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.favorite_rounded,
+                  title: 'Matches',
+                  onTap: () {
+                    context.go('/matches');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                  _SideMenuItem(
+                  icon: Icons.rss_feed_rounded,
+                  title: 'Newsfeed',
+                  onTap: () {
+                    context.go('/newsfeed');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.notifications_active_rounded,
+                  title: 'Notifications',
+                  onTap: () {
+                    context.go('/notifications');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                  showNotificationBadge: true,
+                  notificationCount: 5,
+                ),
+                Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                // --- Profile & AI Section ---
+                _SideMenuItem(
+                  icon: Icons.person_rounded,
+                  title: 'My Profile',
+                  onTap: () {
+                    context.go('/my-profile');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.settings_accessibility_rounded,
+                  title: 'Profile Setup',
+                  onTap: () {
+                    if (!isPhase1Complete) {
+                      context.go('/profile_setup');
+                    } else if (!isPhase2Complete) {
+                      context.go('/questionnaire-phase2');
+                    } else {
+                      // If both complete, perhaps go to a profile completion summary or just My Profile
+                      context.go('/my-profile');
+                    }
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.quiz_rounded,
+                  title: 'AI Questionnaire',
+                  onTap: () {
+                    context.go('/questionnaire');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.lightbulb_outline_rounded,
+                  title: 'Daily Prompts',
+                  onTap: () {
+                    context.go('/daily-prompts');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                // --- Match Insights ---
+                _SideMenuItem(
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'Compatibility Insights',
+                  onTap: () {
+                    context.go('/compatibility-results');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.quiz_rounded, // Corrected icon
+                  title: 'Daily Personality Question',
+                  onTap: () {
+                    context.go('/daily-personality-question');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.psychology_alt_rounded,
+                  title: 'Personality Quiz',
+                  onTap: () {
+                    context.go('/personality-quiz');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                // --- Date Management ---
+                _SideMenuItem(
+                  icon: Icons.calendar_today_rounded,
+                  title: 'Scheduled Dates',
+                  onTap: () {
+                    context.go('/scheduled-dates-list');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.rate_review_rounded,
+                  title: 'Post-Date Feedback',
+                  onTap: () {
+                    context.go('/post-date-feedback');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.send_rounded,
+                  title: 'Date Proposal',
+                  onTap: () {
+                    context.go('/date-proposal');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.lightbulb_rounded,
+                  title: 'Date Ideas',
+                  onTap: () {
+                    context.go('/date-ideas');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                // --- Friends & Events ---
+                _SideMenuItem(
+                  icon: Icons.people_alt_rounded,
+                  title: 'Friends Match',
+                  onTap: () {
+                    context.go('/friends-match');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.event_note_rounded,
+                  title: 'Local Events',
+                  onTap: () {
+                    context.go('/events');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                // --- Info & Support ---
+                _SideMenuItem(
+                  icon: Icons.settings_rounded,
+                  title: 'App Settings',
+                  onTap: () {
+                    context.go('/app-settings');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.info_rounded,
+                  title: 'About Us',
+                  onTap: () {
+                    context.go('/about-us');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.security_rounded,
+                  title: 'Privacy Policy',
+                  onTap: () {
+                    context.go('/privacy');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.gavel_rounded,
+                  title: 'Terms & Conditions',
+                  onTap: () {
+                    context.go('/terms');
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                  },
+                  isCollapsed: _isCollapsed,
+                ),
+                _SideMenuItem(
+                  icon: Icons.lightbulb_outline_rounded,
+                  title: 'Safety Tips',
+                  onTap: () {
+                    context.go('/safety-tips');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.feedback_rounded,
+                  title: 'Feedback',
+                  onTap: () {
+                    context.go('/feedback');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.report_rounded,
+                  title: 'Report User',
+                  onTap: () {
+                    context.go('/report');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.admin_panel_settings_rounded,
+                  title: 'Admin Dashboard',
+                  onTap: () {
+                    context.go('/admin');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.card_giftcard_rounded,
+                  title: 'Referral Program',
+                  onTap: () {
+                    context.go('/referral');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.history_rounded,
+                  title: 'Activity Feed',
+                  onTap: () {
+                    context.go('/activity-feed');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.block_rounded,
+                  title: 'Blocked Users',
+                  onTap: () {
+                    context.go('/blocked-users');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.tour_rounded,
+                  title: 'Guided Tour',
+                  onTap: () {
+                    context.go('/guided-tour');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.trending_up_rounded,
+                  title: 'User Progress',
+                  onTap: () {
+                    context.go('/user-progress');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                _SideMenuItem(
+                  icon: Icons.star_rounded,
+                  title: 'Favorites',
+                  onTap: () {
+                    context.go('/favorites');
+                  },
+                  isCollapsed: _isCollapsed,
+                  isComingSoon: true, // Mark as coming soon
+                ),
+                Divider(color: dividerColor.withOpacity(0.5), height: 1),
+
+                // --- Sign Out ---
+                ListTile(
+                  leading: Icon(Icons.logout_rounded, color: AppConstants.errorColor),
+                  title: AnimatedCrossFade(
+                    duration: AppConstants.animationDurationMedium,
+                    crossFadeState: _isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                    firstChild: const SizedBox.shrink(),
+                    secondChild: Text(
+                      'Sign Out',
+                      style: TextStyle(
+                        color: AppConstants.errorColor,
+                        fontSize: AppConstants.fontSizeMedium,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Inter',
+                      ),
                     ),
                   ),
-                  const SizedBox(height: AppConstants.spacingLarge), // Extra space at the bottom
-                ],
-              ),
+                  onTap: () async {
+                    await authService.signOut();
+                    if (widget.isDrawerMode) Navigator.of(context).pop();
+                    context.go('/login'); // Redirect to login after sign out
+                  },
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: _isCollapsed ? AppConstants.paddingSmall : AppConstants.paddingMedium,
+                    vertical: AppConstants.paddingMedium,
+                  ),
+                ),
+                const SizedBox(height: AppConstants.spacingLarge), // Extra space at the bottom
+              ],
             ),
           ),
         );

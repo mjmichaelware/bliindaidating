@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:io' show Platform; // IMPORTANT: Add this import for Platform detection
-import 'package:flutter/foundation.dart'; // Import this for kDebugMode
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 
 class AppConstants {
   static const String appName = 'Blind AI Dating';
@@ -11,25 +11,25 @@ class AppConstants {
 
   // --- API Base URL ---
   static String get baseUrl {
-    // kDebugMode is true in debug builds and false in release builds.
-    // This allows you to easily switch between a local dev backend and deployed prod backend.
-    if (kDebugMode) {
-      // For Android emulator, use 10.0.2.2 to access your host machine's localhost
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:8000'; // Your local backend development URL
-      }
-      // For iOS simulator, localhost/127.0.0.1 typically works
-      else if (Platform.isIOS) {
-        return 'http://127.0.0.1:8000'; // Your local backend development URL
-      }
-      // For Flutter Web and Desktop, 127.0.0.1 works
-      else {
-        return 'http://127.0.0.1:8000'; // Your local backend development URL
+    const String supabaseProjectId = 'kynzpohycwdphorxsnzy'; // Centralize your Supabase Project ID
+
+    if (kIsWeb) {
+      if (kDebugMode) {
+        return 'http://localhost:8000';
+      } else {
+        return 'https://$supabaseProjectId.supabase.co/functions/v1';
       }
     } else {
-      // For Release (production) builds, use your deployed Supabase Edge Function base URL.
-      // REPLACE 'kynzpohycwdphorxsnzy' with YOUR ACTUAL SUPABASE PROJECT REFERENCE ID
-      return 'https://kynzpohycwdphorxsnzy.supabase.co/functions/v1';
+      if (kDebugMode) {
+        if (Platform.isAndroid) {
+          return 'http://10.0.2.2:8000';
+        } else {
+          // For iOS simulator, Desktop (Windows, macOS, Linux)
+          return 'http://127.0.0.1:8000';
+        }
+      } else {
+        return 'https://$supabaseProjectId.supabase.co/functions/v1';
+      }
     }
   }
   // --- END API Base URL ---
@@ -141,7 +141,7 @@ class AppConstants {
   static const Color lightPrimaryColor = Color(0xFFFFCDD2);
   static const Color lightPrimaryColorShade900 = Color(0xFFB71C1C);
   static const Color lightPrimaryColorShade700 = Color(0xFFD32F2F);
-  static const Color lightPrimaryColorShade400 = Color(0xFFEF5350); // Corrected syntax here
+  static const Color lightPrimaryColorShade400 = Color(0xFFEF5350);
 
   static const Color lightSecondaryColor = Color(0xFFBBDEFB);
   static const Color lightSecondaryColorShade900 = Color(0xFF0D47A1);

@@ -15,21 +15,21 @@ import 'package:bliindaidating/services/profile_service.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/theme/app_theme.dart';
 import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/profile/profile_setup_screen.dart';
 
 // Service Imports
 import 'package:bliindaidating/services/newsfeed_service.dart';
 import 'package:bliindaidating/services/questionnaire_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart'; // NEW: Import AiLogicService
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/matches_service.dart';
 
-// Platform utilities
-import 'package:bliindaidating/platform_utils/platform_helper_factory.dart';
+// REMOVED: All platform_utils imports and usage from previous iteration
 
 // Screen Imports
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
-import 'package:bliindaidating/profile/profile_setup_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
@@ -44,9 +44,9 @@ Future<void> main() async {
 
   // --- CONDITIONAL LOGIC FOR ENVIRONMENT VARIABLES ---
   if (kReleaseMode) {
-    supabaseUrl = const String.fromEnvironment('SUPABASE_URL');
-    supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY');
-    geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY');
+    supabaseUrl = const String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+    supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
+    geminiApiKey = const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
     debugPrint('main: Running in Release Mode. Variables from --dart-define.');
   } else {
     try {
@@ -55,7 +55,6 @@ Future<void> main() async {
       supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY']!;
       geminiApiKey = dotenv.env['GEMINI_API_KEY']!;
       debugPrint('main: Running in Debug Mode. .env file loaded successfully!');
-      debugPrint('main: Loaded env variables in debug: ${dotenv.env}');
     } catch (e) {
       debugPrint('main: Error loading .env file in Debug Mode: $e');
       throw Exception('Missing .env file for local debug or keys not found: $e');
@@ -70,20 +69,13 @@ Future<void> main() async {
   debugPrint('Gemini API Key (after load): ${geminiApiKey.isNotEmpty ? '*** (loaded)' : 'NOT LOADED / EMPTY'}');
   debugPrint('-----------------------------------------');
 
-  // --- Start of NEW PLATFORM UTILS INTEGRATION ---
-  final platformHelper = getPlatformHelpers();
-  debugPrint('main: Current platform type: ${platformHelper.getPlatformType()}');
-  platformHelper.doSomethingPlatformSpecific();
-  // --- End of NEW PLATFORM UTILS INTEGRATION ---
-
   // --- Initialize Supabase using the determined environment variables ---
   try {
-    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty || supabaseUrl == 'SUPABASE_URL' || supabaseAnonKey == 'SUPABASE_ANON_KEY') {
-      debugPrint('main: Supabase URL or Anon Key not found! Throwing exception. (Values were: URL="$supabaseUrl", Key="${supabaseAnonKey.isNotEmpty ? '***' : 'empty'}")');
+    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty || supabaseUrl == 'YOUR_SUPABASE_URL' || supabaseAnonKey == 'YOUR_SUPABASE_ANON_KEY') {
+      debugPrint('main: Supabase URL or Anon Key not found or are default placeholders! Throwing exception. (Values were: URL="$supabaseUrl", Key="${supabaseAnonKey.isNotEmpty ? '***' : 'empty'}")');
       throw Exception('Missing Supabase environment variables. Please ensure they are correctly set for the current build mode (via .env for debug, or --dart-define for release).');
     }
 
-    // Set Gemini API Key in AppConstants
     AppConstants.geminiApiKey = geminiApiKey;
 
     await Supabase.initialize(
@@ -110,22 +102,23 @@ Future<void> main() async {
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
-        // NEW ADDITION/ORDERING: Provide AiLogicService first, as NewsfeedService depends on it
-        // AiLogicService is NOT a ChangeNotifier itself based on your provided file,
-        // so we use a regular Provider, not ChangeNotifierProvider.
+        // AiLogicService
         Provider<AiLogicService>(
           create: (context) => AiLogicService(),
         ),
         ChangeNotifierProvider<NewsfeedService>(
-          // NOW, NewsfeedService can depend on AiLogicService
-          create: (context) => NewsfeedService(
-            // Use context.read to get AiLogicService without rebuilding
-            // if AiLogicService is not a ChangeNotifier
-            context.read<AiLogicService>(),
-          ),
+          // FIXED: Pass AiLogicService as a positional argument, matching the constructor error
+          // NewsfeedService(this._aiLogicService) { ... }
+          create: (context) => NewsfeedService(context.read<AiLogicService>()),
         ),
         ChangeNotifierProvider<QuestionnaireService>(
+          // Assuming QuestionnaireService still has a 0-argument constructor
           create: (context) => QuestionnaireService(),
+        ),
+        // MatchesService Provider
+        Provider<MatchesService>(
+          // Assuming MatchesService still has a 0-argument constructor
+          create: (context) => MatchesService(),
         ),
       ],
       child: const BlindAIDatingApp(),
@@ -150,8 +143,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
     final ProfileService profileService = Provider.of<ProfileService>(context, listen: false);
 
-    // FIX: Schedule initializeProfile to run after the current frame is built
-    // This prevents calling notifyListeners during the build phase.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       profileService.initializeProfile();
       debugPrint('BlindAIDatingApp: profileService.initializeProfile() scheduled via postFrameCallback.');
@@ -165,8 +156,8 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         Provider.of<ProfileService>(context, listen: false),
       ]),
       redirect: (BuildContext context, GoRouterState state) {
-        final AuthService authService = Provider.of<AuthService>(context, listen: false);
-        final ProfileService profileService = Provider.of<ProfileService>(context, listen: false);
+        final AuthService authService = context.read<AuthService>();
+        final ProfileService profileService = context.read<ProfileService>();
 
         final bool isLoggedIn = authService.isLoggedIn;
         final bool isProfileLoaded = profileService.isProfileLoaded;
