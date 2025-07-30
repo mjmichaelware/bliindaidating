@@ -1,0 +1,51 @@
+// .devcontainer/devcontainer.json
+{
+    "name": "Flutter Dev with Supabase",
+    // Use the official Dev Containers Universal Image as a base
+    // This image includes common tools and can be extended with features.
+    "image": "mcr.microsoft.com/devcontainers/universal:2",
+
+    "features": {
+        // Feature to install Flutter SDK.
+        // This is the most critical part for your setup.
+        "ghcr.io/devcontainers/features/flutter:1": {
+            "version": "latest" // Installs the latest stable Flutter
+        },
+        // It's good practice to also ensure Node.js is available for web development tools,
+        // as some Flutter web tools might indirectly rely on it.
+        "ghcr.io/devcontainers/features/node:2": {
+            "version": "lts" // Installs the latest LTS Node.js
+        }
+    },
+
+    // Customize VS Code settings specifically for this Codespace
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "Dart-Code.dart-code",
+                "Dart-Code.flutter",
+                "GitHub.codespaces" // Good for Codespaces-specific features
+            ],
+            "settings": {
+                // Ensure the Dart SDK is found automatically.
+                // This might be redundant with the feature, but good for robustness.
+                "dart.sdkPath": "/usr/local/sdk/flutter/bin/cache/dart-sdk",
+                // This ensures files are saved automatically, useful in Codespaces
+                "files.autoSave": "afterDelay"
+            }
+        }
+    },
+
+    // Forward the port your Flutter web app will run on
+    "forwardPorts": [3000],
+
+    // Commands to run after the container is created.
+    // This ensures dependencies are fetched immediately.
+    "postCreateCommand": "flutter doctor && flutter pub get",
+
+    // This can sometimes help with network/DNS issues inside the container,
+    // though less common for your specific error.
+    "remoteEnv": {
+        "DART_PUB_CACHE": "/usr/local/sdk/flutter/.pub-cache"
+    }
+}
