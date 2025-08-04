@@ -15,8 +15,8 @@ class SideMenuItem extends StatefulWidget {
   final bool isSelected;
   final bool isEnabled;
   final bool isCollapsed;
-  final ValueChanged<int>? onTabSelected; // For main dashboard tabs
-  final int? tabIndex; // Corresponding tab index for onTabSelected
+  final ValueChanged<int>? onTabSelected;
+  final int? tabIndex;
   final Animation<double> expandAnimation;
 
   const SideMenuItem({

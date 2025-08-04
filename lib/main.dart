@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -27,8 +29,8 @@ import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
-// NOTE: The dummy_dashboard_screen import has been removed as the file is missing.
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // <--- ADDED THIS IMPORT
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -242,41 +244,42 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
         GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
 
-        // All dashboard-related routes now point to a placeholder.
-        GoRoute(path: '/dashboard-overview', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/newsfeed', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/matches', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/discovery', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/my-profile', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/questionnaire', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/daily-prompts', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/notifications', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/favorites', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/compatibility-results', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/daily-personality-question', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/personality-quiz', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/match-display/:id', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/date-proposal', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/scheduled-dates-list', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/scheduled-date-details/:id', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/post-date-feedback', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/date-ideas', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/friends-match', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/events', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/event-details/:id', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/app-settings', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/about-us', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/privacy', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/safety-tips', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/terms', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/feedback', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/report', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/admin', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/referral', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/activity-feed', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/blocked-users', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/guided-tour', builder: (context, state) => const PlaceholderScreen()),
-        GoRoute(path: '/user-progress', builder: (context, state) => const PlaceholderScreen()),
+        // All dashboard-related routes now point to the MainDashboardScreen.
+        // This is the core change that fixes the issue.
+        GoRoute(path: '/dashboard-overview', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/newsfeed', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/matches', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/discovery', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/my-profile', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/questionnaire', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/daily-prompts', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/notifications', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/favorites', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/compatibility-results', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/daily-personality-question', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/personality-quiz', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/match-display/:id', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/date-proposal', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/scheduled-dates-list', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/scheduled-date-details/:id', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/post-date-feedback', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/date-ideas', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/friends-match', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/events', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/event-details/:id', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/app-settings', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/about-us', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/privacy', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/safety-tips', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/terms', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/feedback', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/report', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/admin', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/referral', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/activity-feed', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/blocked-users', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/guided-tour', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/user-progress', builder: (context, state) => const MainDashboardScreen()),
       ],
       errorBuilder: (context, state) => Scaffold(
         appBar: AppBar(title: const Text('Error')),

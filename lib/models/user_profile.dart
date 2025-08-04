@@ -1,4 +1,5 @@
 // lib/models/user_profile.dart
+
 import 'dart:convert'; // Essential for jsonEncode and jsonDecode
 import 'package:flutter/foundation.dart'; // For debugPrint
 
@@ -36,7 +37,7 @@ class UserProfile {
   final String? politicalViews;
   final String? diet;
   final String? smokingHabits;
-  final String? drinkingHabits; // Correctly named here
+  final String? drinkingHabits;
   final String? sleepSchedule;
   final bool? willingToRelocate;
   final String? monogamyVsPolyamoryPreferences;
@@ -101,7 +102,7 @@ class UserProfile {
     this.politicalViews,
     this.diet,
     this.smokingHabits,
-    this.drinkingHabits, // Correctly named here
+    this.drinkingHabits,
     this.sleepSchedule,
     this.willingToRelocate,
     this.monogamyVsPolyamoryPreferences,
@@ -241,7 +242,7 @@ class UserProfile {
       politicalViews: json['political_views'] as String?,
       diet: json['diet'] as String?,
       smokingHabits: json['smoking_habits'] as String?,
-      drinkingHabits: json['drinking_habits'] as String?, // Corrected: fetching 'drinking_habits'
+      drinkingHabits: json['drinking_habits'] as String?,
       sleepSchedule: json['sleep_schedule'] as String?,
       willingToRelocate: json['willing_to_relocate'] as bool?,
       monogamyVsPolyamoryPreferences: json['monogamy_vs_polyamory_preferences'] as String?,
@@ -309,7 +310,7 @@ class UserProfile {
       'political_views': politicalViews,
       'diet': diet,
       'smoking_habits': smokingHabits,
-      'drinking_habits': drinkingHabits, // Correctly named here
+      'drinking_habits': drinkingHabits,
       'sleep_schedule': sleepSchedule,
       'willing_to_relocate': willingToRelocate,
       'monogamy_vs_polyamory_preferences': monogamyVsPolyamoryPreferences,
@@ -329,6 +330,9 @@ class UserProfile {
     };
   }
 
+  // The copyWith method is a utility for creating a new instance with some fields updated.
+  // It's cleaner to only include the actively used fields to avoid clutter and potential
+  // confusion with the deprecated fields.
   UserProfile copyWith({
     String? id,
     String? email,
@@ -363,7 +367,7 @@ class UserProfile {
     String? politicalViews,
     String? diet,
     String? smokingHabits,
-    String? drinkingHabits, // Parameter name corrected here
+    String? drinkingHabits,
     String? sleepSchedule,
     bool? willingToRelocate,
     String? monogamyVsPolyamoryPreferences,
@@ -380,17 +384,6 @@ class UserProfile {
     bool? isAdmin,
     Map<String, dynamic>? questionnaireAnswers,
     Map<String, dynamic>? personalityAssessmentResults,
-    String? addressZip,
-    String? gender,
-    double? height,
-    String? interests,
-    String? governmentIdFrontUrl,
-    String? governmentIdBackUrl,
-    String? fullName,
-    String? hobbiesAndInterestsNew,
-    String? loveLanguagesNew,
-    String? locationCity,
-    String? locationState,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -426,7 +419,6 @@ class UserProfile {
       politicalViews: politicalViews ?? this.politicalViews,
       diet: diet ?? this.diet,
       smokingHabits: smokingHabits ?? this.smokingHabits,
-      // CORRECTED LINE: Changed 'drinkingHabings' to 'drinkingHabits'
       drinkingHabits: drinkingHabits ?? this.drinkingHabits,
       sleepSchedule: sleepSchedule ?? this.sleepSchedule,
       willingToRelocate: willingToRelocate ?? this.willingToRelocate,
@@ -444,17 +436,6 @@ class UserProfile {
       isAdmin: isAdmin ?? this.isAdmin,
       questionnaireAnswers: questionnaireAnswers ?? this.questionnaireAnswers,
       personalityAssessmentResults: personalityAssessmentResults ?? this.personalityAssessmentResults,
-      addressZip: addressZip ?? this.addressZip,
-      gender: gender ?? this.gender,
-      height: height ?? this.height,
-      interests: interests ?? this.interests,
-      governmentIdFrontUrl: governmentIdFrontUrl ?? this.governmentIdFrontUrl,
-      governmentIdBackUrl: governmentIdBackUrl ?? this.governmentIdBackUrl,
-      fullName: fullName ?? this.fullName,
-      hobbiesAndInterestsNew: hobbiesAndInterestsNew ?? this.hobbiesAndInterestsNew,
-      loveLanguagesNew: loveLanguagesNew ?? this.loveLanguagesNew,
-      locationCity: locationCity ?? this.locationCity,
-      locationState: locationState ?? this.locationState,
     );
   }
 }

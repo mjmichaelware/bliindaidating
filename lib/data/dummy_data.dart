@@ -134,7 +134,7 @@ List<Question> dummyQuestionnaireQuestions = [
 List<UserProfile> dummyDiscoveryProfiles = [
   // Profile 1
   UserProfile(
-    userId: _uuid.v4(),
+    id: _uuid.v4(),
     email: 'user1@example.com',
     fullLegalName: 'Alice Wonderland',
     displayName: 'WonderAlice',
@@ -170,9 +170,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     diet: 'Vegetarian',
     smokingHabits: 'Never',
     drinkingHabits: 'Socially',
-    exerciseFrequencyOrFitnessLevel: '3 times a week',
     sleepSchedule: 'Early bird',
-    personalityTraits: ['Introverted', 'empathetic', 'curious'],
     willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Pisces',
@@ -185,16 +183,10 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
     createdAt: DateTime.now().subtract(const Duration(days: 30)),
     updatedAt: DateTime.now().subtract(const Duration(days: 5)),
-    // Keeping deprecated fields for compatibility.
-    fullName: 'Alice Wonderland', // Deprecated - new code should use fullLegalName
-    gender: 'Female', // Deprecated - new code should use genderIdentity
-    addressZip: '84101', // Deprecated - new code should use locationZipCode
-    interests: 'Books, Writing', // Deprecated - new code should use hobbiesAndInterests (List<String>)
-    height: 165.0, // Deprecated - new code should use heightCm
   ),
   // Profile 2
   UserProfile(
-    userId: _uuid.v4(),
+    id: _uuid.v4(),
     email: 'user2@example.com',
     fullLegalName: 'Bob The Builder',
     displayName: 'BobBuilds',
@@ -230,9 +222,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     diet: 'Omnivore',
     smokingHabits: 'Occasionally',
     drinkingHabits: 'Often',
-    exerciseFrequencyOrFitnessLevel: 'Daily',
     sleepSchedule: 'Night owl',
-    personalityTraits: ['Extroverted', 'logical', 'adventurous'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Cancer',
@@ -245,16 +235,10 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': false, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 45)),
     updatedAt: DateTime.now().subtract(const Duration(days: 10)),
-    // Keeping deprecated fields for compatibility
-    fullName: 'Bob The Builder',
-    gender: 'Male',
-    addressZip: '84102',
-    interests: 'Coding, Woodworking',
-    height: 180.0,
   ),
   // Profile 3
   UserProfile(
-    userId: _uuid.v4(),
+    id: _uuid.v4(),
     email: 'user3@example.com',
     fullLegalName: 'Charlie Chaplin',
     displayName: 'SilentFilmFan',
@@ -290,9 +274,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     diet: 'Pescatarian',
     smokingHabits: 'Never',
     drinkingHabits: 'Rarely',
-    exerciseFrequencyOrFitnessLevel: 'Walking daily',
     sleepSchedule: 'Flexible',
-    personalityTraits: ['Calm', 'thoughtful', 'artistic'],
     willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Sagittarius',
@@ -305,16 +287,10 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 60)),
     updatedAt: DateTime.now().subtract(const Duration(days: 15)),
-    // Keeping deprecated fields for compatibility
-    fullName: 'Charlie Chaplin',
-    gender: 'Male',
-    addressZip: '84103',
-    interests: 'Movies, Jazz Music',
-    height: 175.0,
   ),
   // Profile 4
   UserProfile(
-    userId: _uuid.v4(),
+    id: _uuid.v4(),
     email: 'user4@example.com',
     fullLegalName: 'Diana Prince',
     displayName: 'WonderWoman',
@@ -350,9 +326,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     diet: 'Keto',
     smokingHabits: 'Never',
     drinkingHabits: 'Rarely',
-    exerciseFrequencyOrFitnessLevel: 'Daily',
     sleepSchedule: 'Consistent',
-    personalityTraits: ['Energetic', 'confident', 'direct'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Virgo',
@@ -365,16 +339,10 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': false},
     createdAt: DateTime.now().subtract(const Duration(days: 25)),
     updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-    // Keeping deprecated fields for compatibility
-    fullName: 'Diana Prince',
-    gender: 'Female',
-    addressZip: '84104',
-    interests: 'Fitness, Hiking',
-    height: 170.0,
   ),
   // Profile 5
   UserProfile(
-    userId: _uuid.v4(),
+    id: _uuid.v4(),
     email: 'user5@example.com',
     fullLegalName: 'Eve Adams',
     displayName: 'GardenEve',
@@ -410,9 +378,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     diet: 'Vegan',
     smokingHabits: 'Never',
     drinkingHabits: 'Rarely',
-    exerciseFrequencyOrFitnessLevel: 'Yoga',
     sleepSchedule: 'Early to bed',
-    personalityTraits: ['Calm', 'observant', 'creative'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Taurus',
@@ -425,16 +391,10 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 50)),
     updatedAt: DateTime.now().subtract(const Duration(days: 7)),
-    // Keeping deprecated fields for compatibility
-    fullName: 'Eve Adams',
-    gender: 'Female',
-    addressZip: '84105',
-    interests: 'Gardening, Astronomy',
-    height: 160.0,
   ),
   // Profile 6
   UserProfile(
-    userId: _uuid.v4(),
+    id: _uuid.v4(),
     email: 'user6@example.com',
     fullLegalName: 'Frank Ocean',
     displayName: 'OceanVibes',
@@ -470,9 +430,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     diet: 'Omnivore',
     smokingHabits: 'Never',
     drinkingHabits: 'Socially',
-    exerciseFrequencyOrFitnessLevel: 'Occasionally',
     sleepSchedule: 'Flexible',
-    personalityTraits: ['Creative', 'laid-back', 'empathetic'],
     willingToRelocate: true,
     monogamyVsPolyamoryPreferences: 'Open Relationship',
     astrologicalSign: 'Leo',
@@ -485,16 +443,10 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 35)),
     updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-    // Keeping deprecated fields for compatibility
-    fullName: 'Frank Ocean',
-    gender: 'Male',
-    addressZip: '84106',
-    interests: 'Music, Travel',
-    height: 178.0,
   ),
   // Profile 7
   UserProfile(
-    userId: _uuid.v4(),
+    id: _uuid.v4(),
     email: 'user7@example.com',
     fullLegalName: 'Grace Hopper',
     displayName: 'CodeGrace',
@@ -530,9 +482,7 @@ List<UserProfile> dummyDiscoveryProfiles = [
     diet: 'Omnivore',
     smokingHabits: 'Never',
     drinkingHabits: 'Rarely',
-    exerciseFrequencyOrFitnessLevel: 'Occasionally',
     sleepSchedule: 'Late to bed',
-    personalityTraits: ['Analytical', 'curious', 'introverted'],
     willingToRelocate: false,
     monogamyVsPolyamoryPreferences: 'Monogamy',
     astrologicalSign: 'Aquarius',
@@ -545,12 +495,6 @@ List<UserProfile> dummyDiscoveryProfiles = [
     pushNotificationPreferences: {'messages': true, 'matches': true, 'events': true},
     createdAt: DateTime.now().subtract(const Duration(days: 20)),
     updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-    // Keeping deprecated fields for compatibility
-    fullName: 'Grace Hopper',
-    gender: 'Female',
-    addressZip: '84107',
-    interests: 'Technology, Coding',
-    height: 168.0,
   ),
   // Add more dummy users as needed, ensuring all required fields are provided
   // and renamed fields are updated.

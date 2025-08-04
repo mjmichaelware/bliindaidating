@@ -1,3 +1,5 @@
+// lib/screens/settings/settings_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,54 +25,15 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<GlobalKey<FormState>> _formKeys = List.generate(5, (_) => GlobalKey<FormState>());
-  final ProfileService _profileService = ProfileService();
+  late final ProfileService _profileService;
 
   bool _isLoading = true;
+  UserProfile? _userProfile;
 
   // --- Dating Preferences State ---
   String? _preferredGender;
   RangeValues _ageRange = const RangeValues(18, 50);
   double _maxDistance = 100; // in miles
-
-  // --- Profile Visibility State ---
-  // Initializing all to false for demonstration; these would be loaded from DB
-  bool _showFullName = false;
-  bool _showDisplayName = true;
-  bool _showAge = true;
-  bool _showGender = true;
-  bool _showBio = true;
-  bool _showSexualOrientation = true;
-  bool _showHeight = true;
-  bool _showInterests = true;
-  bool _showLookingFor = true;
-  bool _showLocation = true;
-  bool _showEthnicity = false;
-  bool _showLanguagesSpoken = false;
-  bool _showEducationLevel = false;
-  bool _showDesiredOccupation = false;
-  bool _showLoveLanguages = false;
-  bool _showFavoriteMedia = false;
-  bool _showMaritalStatus = false;
-  bool _showChildrenPreference = false;
-  bool _showWillingToRelocate = false;
-  bool _showMonogamyPolyamory = false;
-  bool _showLoveRelationshipGoals = false;
-  bool _showDealbreakersBoundaries = false;
-  bool _showAstrologicalSign = false;
-  bool _showAttachmentStyle = false;
-  bool _showCommunicationStyle = false;
-  bool _showMentalHealthDisclosures = false;
-  bool _showPetOwnership = false;
-  bool _showTravelFrequencyDestinations = false;
-  bool _showPoliticalViews = false;
-  bool _showReligionBeliefs = false;
-  bool _showDiet = false;
-  bool _showSmokingHabits = false;
-  bool _showDrinkingHabits = false;
-  bool _showExerciseFrequency = false;
-  bool _showSleepSchedule = false;
-  bool _showPersonalityTraits = false;
-
 
   // Tab Definitions
   static const List<Tab> _settingsTabs = <Tab>[
@@ -84,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
+    _profileService = ProfileService(Supabase.instance.client);
     _tabController = TabController(length: _settingsTabs.length, vsync: this);
     _tabController.addListener(_handleTabChange);
     _loadPreferences();
@@ -105,52 +69,22 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
 
     try {
-      final UserProfile? userProfile = await _profileService.fetchUserProfile(currentUser.id);
+      final userProfile = await _profileService.fetchUserProfile(id: currentUser.id);
       if (userProfile != null) {
-        // TODO: Load actual saved settings from user_profile or a dedicated settings table
-        _preferredGender = 'Any';
-        _ageRange = const RangeValues(20, 40);
-        _maxDistance = 50;
-
-        // Mock loading visibility settings (assuming they would be stored in UserProfile or a separate settings model)
-        _showFullName = userProfile.fullLegalName != null; // Corrected: Use fullLegalName
-        _showDisplayName = userProfile.displayName != null;
-        _showAge = userProfile.dateOfBirth != null;
-        _showGender = userProfile.genderIdentity != null; // Corrected: Use genderIdentity
-        _showBio = userProfile.bio != null;
-        _showSexualOrientation = userProfile.sexualOrientation != null;
-        _showHeight = userProfile.heightCm != null; // Corrected: Use heightCm
-        _showInterests = userProfile.hobbiesAndInterests.isNotEmpty; // Corrected: Use hobbiesAndInterests (List<String>)
-        _showLookingFor = userProfile.lookingFor != null;
-        _showLocation = userProfile.locationZipCode != null; // Corrected: Use locationZipCode
-        _showEthnicity = userProfile.ethnicity != null;
-        _showLanguagesSpoken = userProfile.languagesSpoken.isNotEmpty; // Removed redundant ?? []
-        _showEducationLevel = userProfile.educationLevel != null;
-        _showDesiredOccupation = userProfile.desiredOccupation != null;
-        _showLoveLanguages = userProfile.loveLanguages.isNotEmpty; // Removed redundant ?? []
-        _showFavoriteMedia = userProfile.favoriteMedia.isNotEmpty; // Removed redundant ?? []
-        _showMaritalStatus = userProfile.maritalStatus != null;
-        _showChildrenPreference = userProfile.hasChildren != null || userProfile.wantsChildren != null;
-        _showWillingToRelocate = userProfile.willingToRelocate != null;
-        _showMonogamyPolyamory = userProfile.monogamyVsPolyamoryPreferences != null;
-        _showLoveRelationshipGoals = userProfile.relationshipGoals != null;
-        _showDealbreakersBoundaries = userProfile.dealbreakers.isNotEmpty; // Removed redundant ?? []
-        _showAstrologicalSign = userProfile.astrologicalSign != null;
-        _showAttachmentStyle = userProfile.attachmentStyle != null;
-        _showCommunicationStyle = userProfile.communicationStyle != null;
-        _showMentalHealthDisclosures = userProfile.mentalHealthDisclosures != null;
-        _showPetOwnership = userProfile.petOwnership != null;
-        _showTravelFrequencyDestinations = userProfile.travelFrequencyOrFavoriteDestinations != null;
-        _showPoliticalViews = userProfile.politicalViews != null;
-        _showReligionBeliefs = userProfile.religionOrSpiritualBeliefs != null;
-        _showDiet = userProfile.diet != null;
-        _showSmokingHabits = userProfile.smokingHabits != null;
-        _showDrinkingHabits = userProfile.drinkingHabits != null;
-        _showExerciseFrequency = userProfile.exerciseFrequencyOrFitnessLevel != null;
-        _showSleepSchedule = userProfile.sleepSchedule != null;
-        _showPersonalityTraits = userProfile.personalityTraits.isNotEmpty; // Removed redundant ?? []
+        setState(() {
+          _userProfile = userProfile;
+          // Load dating preferences from a separate table or from userProfile if they exist there
+          _preferredGender = userProfile.datingPreferences?['preferredGender'] as String? ?? 'Any';
+          _ageRange = userProfile.datingPreferences?['ageRange'] != null
+              ? RangeValues(
+                  (userProfile.datingPreferences!['ageRange'] as List)[0].toDouble(),
+                  (userProfile.datingPreferences!['ageRange'] as List)[1].toDouble(),
+                )
+              : const RangeValues(20, 40);
+          _maxDistance = (userProfile.datingPreferences?['maxDistance'] as double? ?? 50.0);
+        });
       }
-      debugPrint('SettingsScreen: Preferences loaded (mock/initial)');
+      debugPrint('SettingsScreen: Preferences loaded.');
     } catch (e) {
       debugPrint('SettingsScreen: Error loading preferences: $e');
       if (mounted) {
@@ -170,13 +104,11 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
 
     setState(() { _isLoading = true; });
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
+    if (_userProfile == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: User not logged in!')),
+          const SnackBar(content: Text('Error: User profile not loaded!')),
         );
-        context.go('/login');
       }
       setState(() { _isLoading = false; });
       return;
@@ -184,31 +116,22 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
 
     try {
       debugPrint('SettingsScreen: Saving preferences...');
-      debugPrint('  Dating: Preferred Gender: $_preferredGender, Age: ${_ageRange.start.toInt()}-${_ageRange.end.toInt()}, Distance: ${_maxDistance.toInt()} miles');
-      debugPrint('  Visibility: FullName: $_showFullName, DisplayName: $_showDisplayName, etc.');
-      debugPrint('  All visibility states: $_showFullName, $_showDisplayName, $_showAge, $_showGender, $_showBio, $_showSexualOrientation, $_showHeight, $_showInterests, $_showLookingFor, $_showLocation, $_showEthnicity, $_showLanguagesSpoken, $_showEducationLevel, $_showDesiredOccupation, $_showLoveLanguages, $_showFavoriteMedia, $_showMaritalStatus, $_showChildrenPreference, $_showWillingToRelocate, $_showMonogamyPolyamory, $_showLoveRelationshipGoals, $_showDealbreakersBoundaries, $_showAstrologicalSign, $_showAttachmentStyle, $_showCommunicationStyle, $_showMentalHealthDisclosures, $_showPetOwnership, $_showTravelFrequencyDestinations, $_showPoliticalViews, $_showReligionBeliefs, $_showDiet, $_showSmokingHabits, $_showDrinkingHabits, $_showExerciseFrequency, $_showSleepSchedule, $_showPersonalityTraits');
+      // Prepare a map of dating preferences to save
+      final datingPreferencesToSave = {
+        'preferredGender': _preferredGender,
+        'ageRange': [_ageRange.start.toInt(), _ageRange.end.toInt()],
+        'maxDistance': _maxDistance.toInt(),
+      };
+      
+      // Update the local profile object with new dating preferences
+      final updatedProfile = _userProfile!.copyWith(
+        datingPreferences: datingPreferencesToSave,
+      );
 
-      // TODO: Implement actual saving logic to Supabase
-      // This will involve updating UserProfile with new fields or a dedicated UserSettings table.
-      // Example:
-      // final UserProfile? currentProfile = await _profileService.fetchUserProfile(currentUser.id);
-      // if (currentProfile != null) {
-      //   final UserProfile updatedProfile = currentProfile.copyWith(
-      //     // Add all new preference and visibility fields here
-      //     preferredGender: _preferredGender,
-      //     minAgePreference: _ageRange.start.toInt(),
-      //     maxAgePreference: _ageRange.end.toInt(),
-      //     maxSearchDistanceMiles: _maxDistance,
-      //     showFullName: _showFullName,
-      //     showDisplayName: _showDisplayName,
-      //     // ... and so on for all 30+ visibility settings
-      //   );
-      //   await _profileService.createOrUpdateProfile(profile: updatedProfile);
-      // }
+      // Call the service to update the profile in the database
+      await _profileService.updateProfile(profile: updatedProfile);
 
-
-      await Future.delayed(const Duration(seconds: 1)); // Simulate network request
-      debugPrint('SettingsScreen: Preferences saved successfully (mock)!');
+      debugPrint('SettingsScreen: Preferences saved successfully!');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Settings saved successfully!')),
@@ -231,44 +154,13 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   void _onAgeRangeChanged(RangeValues newValues) { setState(() { _ageRange = newValues; }); }
   void _onMaxDistanceChanged(double newValue) { setState(() { _maxDistance = newValue; }); }
 
-  // Callbacks for Profile Visibility Toggles
-  void _onShowFullNameChanged(bool newValue) { setState(() { _showFullName = newValue; }); }
-  void _onShowDisplayNameChanged(bool newValue) { setState(() { _showDisplayName = newValue; }); }
-  void _onShowAgeChanged(bool newValue) { setState(() { _showAge = newValue; }); }
-  void _onShowGenderChanged(bool newValue) { setState(() { _showGender = newValue; }); }
-  void _onShowBioChanged(bool newValue) { setState(() { _showBio = newValue; }); }
-  void _onShowSexualOrientationChanged(bool newValue) { setState(() { _showSexualOrientation = newValue; }); }
-  void _onShowHeightChanged(bool newValue) { setState(() { _showHeight = newValue; }); }
-  void _onShowInterestsChanged(bool newValue) { setState(() { _showInterests = newValue; }); }
-  void _onShowLookingForChanged(bool newValue) { setState(() { _showLookingFor = newValue; }); }
-  void _onShowLocationChanged(bool newValue) { setState(() { _showLocation = newValue; }); }
-  void _onShowEthnicityChanged(bool newValue) { setState(() { _showEthnicity = newValue; }); }
-  void _onShowLanguagesSpokenChanged(bool newValue) { setState(() { _showLanguagesSpoken = newValue; }); }
-  void _onShowEducationLevelChanged(bool newValue) { setState(() { _showEducationLevel = newValue; }); }
-  void _onShowDesiredOccupationChanged(bool newValue) { setState(() { _showDesiredOccupation = newValue; }); }
-  void _onShowLoveLanguagesChanged(bool newValue) { setState(() { _showLoveLanguages = newValue; }); }
-  void _onShowFavoriteMediaChanged(bool newValue) { setState(() { _showFavoriteMedia = newValue; }); }
-  void _onShowMaritalStatusChanged(bool newValue) { setState(() { _showMaritalStatus = newValue; }); }
-  void _onShowChildrenPreferenceChanged(bool newValue) { setState(() { _showChildrenPreference = newValue; }); }
-  void _onShowWillingToRelocateChanged(bool newValue) { setState(() { _showWillingToRelocate = newValue; }); }
-  void _onShowMonogamyPolyamoryChanged(bool newValue) { setState(() { _showMonogamyPolyamory = newValue; }); }
-  void _onShowLoveRelationshipGoalsChanged(bool newValue) { setState(() { _showLoveRelationshipGoals = newValue; }); }
-  void _onShowDealbreakersBoundariesChanged(bool newValue) { setState(() { _showDealbreakersBoundaries = newValue; }); }
-  void _onShowAstrologicalSignChanged(bool newValue) { setState(() { _showAstrologicalSign = newValue; }); }
-  void _onShowAttachmentStyleChanged(bool newValue) { setState(() { _showAttachmentStyle = newValue; }); }
-  void _onShowCommunicationStyleChanged(bool newValue) { setState(() { _showCommunicationStyle = newValue; }); }
-  void _onShowMentalHealthDisclosuresChanged(bool newValue) { setState(() { _showMentalHealthDisclosures = newValue; }); }
-  void _onShowPetOwnershipChanged(bool newValue) { setState(() { _showPetOwnership = newValue; }); }
-  void _onShowTravelFrequencyDestinationsChanged(bool newValue) { setState(() { _showTravelFrequencyDestinations = newValue; }); }
-  void _onShowPoliticalViewsChanged(bool newValue) { setState(() { _showPoliticalViews = newValue; }); }
-  void _onShowReligionBeliefsChanged(bool newValue) { setState(() { _showReligionBeliefs = newValue; }); }
-  void _onShowDietChanged(bool newValue) { setState(() { _showDiet = newValue; }); }
-  void _onShowSmokingHabitsChanged(bool newValue) { setState(() { _showSmokingHabits = newValue; }); }
-  void _onShowDrinkingHabitsChanged(bool newValue) { setState(() { _showDrinkingHabits = newValue; }); }
-  void _onShowExerciseFrequencyChanged(bool newValue) { setState(() { _showExerciseFrequency = newValue; }); }
-  void _onShowSleepScheduleChanged(bool newValue) { setState(() { _showSleepSchedule = newValue; }); }
-  void _onShowPersonalityTraitsChanged(bool newValue) { setState(() { _showPersonalityTraits = newValue; }); }
-
+  void _onProfileVisibilityChanged(Map<String, bool> newPrefs) {
+    if (_userProfile != null) {
+      setState(() {
+        _userProfile = _userProfile!.copyWith(profileVisibilityPreferences: newPrefs);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -283,11 +175,11 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     final isDarkMode = themeController.isDarkMode;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final Color primaryColor = isDarkMode ? Colors.deepPurpleAccent : Colors.blue.shade700;
-    final Color secondaryColor = isDarkMode ? Colors.pinkAccent : Colors.red.shade600;
-    final Color accentColor = isDarkMode ? Colors.cyanAccent : Colors.orangeAccent;
-    final Color textColor = isDarkMode ? Colors.white : Colors.black87;
-    final Color iconColor = isDarkMode ? Colors.white70 : Colors.black54;
+    final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
+    final Color accentColor = isDarkMode ? AppConstants.accentColor : AppConstants.lightAccentColor;
+    final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
+    final Color iconColor = isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor;
 
     return Scaffold(
       appBar: AppBar(
@@ -334,79 +226,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 ),
                 ProfileVisibilitySettings(
                   formKey: _formKeys[1],
-                  showFullName: _showFullName,
-                  showDisplayName: _showDisplayName,
-                  showAge: _showAge,
-                  showGender: _showGender,
-                  showBio: _showBio,
-                  showSexualOrientation: _showSexualOrientation,
-                  showHeight: _showHeight,
-                  showInterests: _showInterests,
-                  showLookingFor: _showLookingFor,
-                  showLocation: _showLocation,
-                  onShowFullNameChanged: _onShowFullNameChanged,
-                  onShowDisplayNameChanged: _onShowDisplayNameChanged,
-                  onShowAgeChanged: _onShowAgeChanged,
-                  onShowGenderChanged: _onShowGenderChanged,
-                  onShowBioChanged: _onShowBioChanged,
-                  onShowSexualOrientationChanged: _onShowSexualOrientationChanged,
-                  onShowHeightChanged: _onShowHeightChanged,
-                  onShowInterestsChanged: _onShowInterestsChanged,
-                  onShowLookingForChanged: _onShowLookingForChanged,
-                  onShowLocationChanged: _onShowLocationChanged,
-                  // Pass all new visibility parameters
-                  showEthnicity: _showEthnicity,
-                  showLanguagesSpoken: _showLanguagesSpoken,
-                  showEducationLevel: _showEducationLevel,
-                  showDesiredOccupation: _showDesiredOccupation,
-                  showLoveLanguages: _showLoveLanguages,
-                  showFavoriteMedia: _showFavoriteMedia,
-                  showMaritalStatus: _showMaritalStatus,
-                  showChildrenPreference: _showChildrenPreference,
-                  showWillingToRelocate: _showWillingToRelocate,
-                  showMonogamyPolyamory: _showMonogamyPolyamory,
-                  showLoveRelationshipGoals: _showLoveRelationshipGoals,
-                  showDealbreakersBoundaries: _showDealbreakersBoundaries,
-                  showAstrologicalSign: _showAstrologicalSign,
-                  showAttachmentStyle: _showAttachmentStyle,
-                  showCommunicationStyle: _showCommunicationStyle,
-                  showMentalHealthDisclosures: _showMentalHealthDisclosures,
-                  showPetOwnership: _showPetOwnership,
-                  showTravelFrequencyDestinations: _showTravelFrequencyDestinations,
-                  showPoliticalViews: _showPoliticalViews,
-                  showReligionBeliefs: _showReligionBeliefs,
-                  showDiet: _showDiet,
-                  showSmokingHabits: _showSmokingHabits,
-                  showDrinkingHabits: _showDrinkingHabits,
-                  showExerciseFrequency: _showExerciseFrequency,
-                  showSleepSchedule: _showSleepSchedule,
-                  showPersonalityTraits: _showPersonalityTraits,
-                  onShowEthnicityChanged: _onShowEthnicityChanged,
-                  onShowLanguagesSpokenChanged: _onShowLanguagesSpokenChanged,
-                  onShowEducationLevelChanged: _onShowEducationLevelChanged,
-                  onShowDesiredOccupationChanged: _onShowDesiredOccupationChanged,
-                  onShowLoveLanguagesChanged: _onShowLoveLanguagesChanged,
-                  onShowFavoriteMediaChanged: _onShowFavoriteMediaChanged,
-                  onShowMaritalStatusChanged: _onShowMaritalStatusChanged,
-                  onShowChildrenPreferenceChanged: _onShowChildrenPreferenceChanged,
-                  onShowWillingToRelocateChanged: _onShowWillingToRelocateChanged,
-                  onShowMonogamyPolyamoryChanged: _onShowMonogamyPolyamoryChanged,
-                  onShowLoveRelationshipGoalsChanged: _onShowLoveRelationshipGoalsChanged,
-                  onShowDealbreakersBoundariesChanged: _onShowDealbreakersBoundariesChanged,
-                  onShowAstrologicalSignChanged: _onShowAstrologicalSignChanged,
-                  onShowAttachmentStyleChanged: _onShowAttachmentStyleChanged,
-                  onShowCommunicationStyleChanged: _onShowCommunicationStyleChanged,
-                  onShowMentalHealthDisclosuresChanged: _onShowMentalHealthDisclosuresChanged,
-                  onShowPetOwnershipChanged: _onShowPetOwnershipChanged,
-                  onShowTravelFrequencyDestinationsChanged: _onShowTravelFrequencyDestinationsChanged,
-                  onShowPoliticalViewsChanged: _onShowPoliticalViewsChanged,
-                  onShowReligionBeliefsChanged: _onShowReligionBeliefsChanged,
-                  onShowDietChanged: _onShowDietChanged,
-                  onShowSmokingHabitsChanged: _onShowSmokingHabitsChanged,
-                  onShowDrinkingHabitsChanged: _onShowDrinkingHabitsChanged,
-                  onShowExerciseFrequencyChanged: _onShowExerciseFrequencyChanged,
-                  onShowSleepScheduleChanged: _onShowSleepScheduleChanged,
-                  onShowPersonalityTraitsChanged: _onShowPersonalityTraitsChanged,
+                  profile: _userProfile!,
+                  onVisibilityChange: _onProfileVisibilityChanged,
                 ),
                 AccountSettingsForm(formKey: _formKeys[2]),
                 NotificationSettings(formKey: _formKeys[3]),
@@ -430,12 +251,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    child: CircularProgressIndicator(color: Colors.white)
                   )
-                : const Text(
-                    'Save All Settings',
-                    style: TextStyle(fontFamily: 'Inter'),
-                  ),
+                : const Text('Save Settings'),
           ),
         ),
       ),
