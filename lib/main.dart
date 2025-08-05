@@ -30,7 +30,7 @@ import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
-import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // <--- ADDED THIS IMPORT
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +40,6 @@ Future<void> main() async {
   String supabaseAnonKey;
   String geminiApiKey;
 
-  // --- CONDITIONAL LOGIC FOR ENVIRONMENT VARIABLES ---
   if (kReleaseMode) {
     supabaseUrl = const String.fromEnvironment('SUPABASE_URL', defaultValue: '');
     supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
@@ -58,16 +57,13 @@ Future<void> main() async {
       throw Exception('Missing .env file for local debug or keys not found: $e');
     }
   }
-  // --- END CONDITIONAL LOGIC ---
 
-  // --- Environment Variable Verification Prints ---
   debugPrint('--- Environment Variable Verification ---');
   debugPrint('Supabase URL (after load): "$supabaseUrl"');
   debugPrint('Supabase Anon Key (after load): ${supabaseAnonKey.isNotEmpty ? '*** (loaded)' : 'NOT LOADED / EMPTY'}');
   debugPrint('Gemini API Key (after load): ${geminiApiKey.isNotEmpty ? '*** (loaded)' : 'NOT LOADED / EMPTY'}');
   debugPrint('-----------------------------------------');
 
-  // --- Initialize Supabase using the determined environment variables ---
   try {
     if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty || supabaseUrl == 'YOUR_SUPABASE_URL' || supabaseAnonKey == 'YOUR_SUPABASE_ANON_KEY') {
       debugPrint('main: Supabase URL or Anon Key not found or are default placeholders! Throwing exception. (Values were: URL="$supabaseUrl", Key="${supabaseAnonKey.isNotEmpty ? '***' : 'empty'}")');
@@ -100,22 +96,16 @@ Future<void> main() async {
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
-        // AiLogicService
         Provider<AiLogicService>(
           create: (context) => AiLogicService(),
         ),
         ChangeNotifierProvider<NewsfeedService>(
-          // FIXED: Pass AiLogicService as a positional argument, matching the constructor error
-          // NewsfeedService(this._aiLogicService) { ... }
           create: (context) => NewsfeedService(context.read<AiLogicService>()),
         ),
         ChangeNotifierProvider<QuestionnaireService>(
-          // Assuming QuestionnaireService still has a 0-argument constructor
           create: (context) => QuestionnaireService(),
         ),
-        // MatchesService Provider
         Provider<MatchesService>(
-          // Assuming MatchesService still has a 0-argument constructor
           create: (context) => MatchesService(),
         ),
       ],
@@ -133,17 +123,22 @@ class BlindAIDatingApp extends StatefulWidget {
 
 class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   late final GoRouter _router;
+  late final StreamSubscription<AuthState> _authStateSubscription;
 
   @override
   void initState() {
     super.initState();
     debugPrint('BlindAIDatingApp: initState called.');
+    final profileService = Provider.of<ProfileService>(context, listen: false);
 
-    final ProfileService profileService = Provider.of<ProfileService>(context, listen: false);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      profileService.initializeProfile();
-      debugPrint('BlindAIDatingApp: profileService.initializeProfile() scheduled via postFrameCallback.');
+    // Listen for auth state changes to trigger profile initialization.
+    // This is more reliable than addPostFrameCallback.
+    _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      final AuthChangeEvent event = data.event;
+      if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.signedOut) {
+        debugPrint('Auth state changed: $event. Triggering profileService.initializeProfile().');
+        profileService.initializeProfile();
+      }
     });
 
     _router = GoRouter(
@@ -151,7 +146,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
       debugLogDiagnostics: kDebugMode,
       refreshListenable: Listenable.merge([
         Provider.of<AuthService>(context, listen: false),
-        Provider.of<ProfileService>(context, listen: false),
+        profileService,
       ]),
       redirect: (BuildContext context, GoRouterState state) {
         final AuthService authService = context.read<AuthService>();
@@ -159,83 +154,66 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         final bool isLoggedIn = authService.isLoggedIn;
         final bool isProfileLoaded = profileService.isProfileLoaded;
-        final UserProfile? userProfile = profileService.userProfile;
-
-        final bool phase1Complete = userProfile?.isPhase1Complete ?? false;
-        final bool phase2Complete = userProfile?.isPhase2Complete ?? false;
+        final bool isProfileSetupComplete = profileService.userProfile?.isProfileSetupComplete ?? false;
+        final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
+        final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
 
         final String currentPath = state.fullPath ?? '/';
 
-        final bool isAuthPath = currentPath == '/login' ||
-            currentPath == '/signup' ||
-            currentPath == '/forgot-password';
-        final bool isLandingPath = currentPath == '/';
+        final bool isAuthPath = ['/login', '/signup', '/forgot-password', '/'].contains(currentPath);
         final bool isUtilityPath = currentPath == '/loading';
 
         debugPrint('--- GoRouter Redirect Evaluation ---');
         debugPrint('Current Path: $currentPath');
         debugPrint('Is Logged In: $isLoggedIn');
-        debugPrint('Is Profile Loaded (initial attempt done): $isProfileLoaded');
-        debugPrint('User Profile Exists: ${userProfile != null}');
-        debugPrint('Phase 1 Complete: $phase1Complete');
-        debugPrint('Phase 2 Complete: $phase2Complete');
+        debugPrint('Is Profile Loaded: $isProfileLoaded');
+        debugPrint('Is Profile Setup Complete: $isProfileSetupComplete');
+        debugPrint('Is Phase 1 Complete: $isPhase1Complete');
+        debugPrint('Is Phase 2 Complete: $isPhase2Complete');
 
-        // SCENARIO 1: User is NOT logged in
+        // SCENARIO 1: User is NOT logged in.
         if (!isLoggedIn) {
           debugPrint('Redirect Logic: User NOT logged in.');
-          if (isAuthPath || isLandingPath) {
-            debugPrint('Redirect Logic: Allowed on public/landing path.');
-            return null; // Stay on current page
-          }
-          debugPrint('Redirect Logic: Not logged in and not on public/landing path, redirecting to /login.');
-          return '/login'; // Redirect to login for any other path
+          return isAuthPath ? null : '/login';
         }
 
-        // SCENARIO 2: User IS logged in
+        // SCENARIO 2: User IS logged in.
         debugPrint('Redirect Logic: User IS logged in.');
 
-        // If logged in, but profile data is still being initially loaded
+        // If the profile data hasn't finished its initial load, show a loading screen.
         if (!isProfileLoaded) {
-          debugPrint('Redirect Logic: Profile data not yet initially loaded. Current path: $currentPath');
-          return currentPath == '/loading' ? null : '/loading';
+          debugPrint('Redirect Logic: Profile data not yet loaded. Redirecting to /loading.');
+          return isUtilityPath ? null : '/loading';
         }
+        
+        // At this point, the user is logged in, and profile data is loaded.
 
-        // At this point, the user is logged in, and profile data initial load is complete (`isProfileLoaded` is true).
-
-        // If the user is on a public/auth/loading page, but is now logged in and profile is loaded,
-        // redirect them to the appropriate onboarding or dashboard screen.
-        if (isAuthPath || isLandingPath || isUtilityPath) {
-          debugPrint('Redirect Logic: Logged in & profile loaded, currently on auth/landing/loading page.');
-          if (!phase1Complete) {
-            debugPrint('Redirect Logic: Redirecting from public/landing/loading to /profile_setup (Phase 1 incomplete).');
-            return '/profile_setup';
-          }
-          if (!phase2Complete) {
-            debugPrint('Redirect Logic: Redirecting from public/landing/loading to /dashboard-overview (Phase 2 incomplete, show banner).');
-            return '/dashboard-overview';
-          }
-          debugPrint('Redirect Logic: Redirecting from public/landing/loading to /dashboard-overview (all phases complete).');
+        // If the profile setup is not complete.
+        if (!isProfileSetupComplete) {
+            debugPrint('Redirect Logic: Profile setup is NOT complete.');
+            // Check which phase needs to be completed
+            if (!isPhase1Complete) {
+                // User needs to complete Phase 1.
+                return currentPath == '/profile_setup' ? null : '/profile_setup';
+            } else if (!isPhase2Complete) {
+                // User has completed Phase 1 but not Phase 2.
+                // Redirect them to the Phase 2 questionnaire.
+                return currentPath == '/questionnaire-phase2' ? null : '/questionnaire-phase2';
+            }
+        }
+        
+        // If the user is logged in and their profile is complete
+        // but they are on a public or utility path, redirect them to the dashboard.
+        if (isAuthPath || isUtilityPath) {
+          debugPrint('Redirect Logic: Logged in and profile complete, redirecting from public/utility path to /dashboard-overview.');
           return '/dashboard-overview';
         }
 
-        // If logged in, profile loaded, and on an authenticated path:
-        // Enforce completion of profile setup phases.
-        if (!phase1Complete) {
-          debugPrint('Redirect Logic: Logged in, profile loaded, Phase 1 incomplete. Current path: $currentPath');
-          return currentPath == '/profile_setup' ? null : '/profile_setup';
-        }
-
-        if (!phase2Complete) {
-          debugPrint('Redirect Logic: Logged in, Phase 1 complete, Phase 2 incomplete. Redirecting to /dashboard-overview to show banner.');
-          return currentPath == '/dashboard-overview' ? null : '/dashboard-overview';
-        }
-
-        // If user is logged in, and both phases are complete, they can access any authenticated route.
-        debugPrint('Redirect Logic: Logged in, and all profile phases complete. Allowing current path: $currentPath');
-        return null; // Allow access to the requested path
+        // Otherwise, if the user is logged in, profile is complete, and they're on a valid app page, let them through.
+        debugPrint('Redirect Logic: Logged in and profile complete. Allowing current path.');
+        return null;
       },
       routes: [
-        // Standard Routes
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
         GoRoute(path: '/loading', builder: (context, state) => const LoadingScreen()),
         GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
@@ -243,9 +221,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
         GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
-
-        // All dashboard-related routes now point to the MainDashboardScreen.
-        // This is the core change that fixes the issue.
         GoRoute(path: '/dashboard-overview', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/newsfeed', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/matches', builder: (context, state) => const MainDashboardScreen()),
@@ -291,6 +266,12 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   }
 
   @override
+  void dispose() {
+    _authStateSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
 
@@ -299,23 +280,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
       debugShowCheckedModeBanner: false,
       theme: themeController.isDarkMode ? AppTheme.galaxyTheme : AppTheme.lightTheme,
       routerConfig: _router,
-    );
-  }
-}
-
-// A simple placeholder screen to replace the missing DummyDashboardScreen
-class PlaceholderScreen extends StatelessWidget {
-  const PlaceholderScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Placeholder Screen'),
-      ),
-      body: const Center(
-        child: Text('This screen has not been implemented yet.'),
-      ),
     );
   }
 }

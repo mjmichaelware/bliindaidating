@@ -1,7 +1,7 @@
 // lib/models/user_profile.dart
 
-import 'dart:convert'; // Essential for jsonEncode and jsonDecode
-import 'package:flutter/foundation.dart'; // For debugPrint
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 class UserProfile {
   final String id;
@@ -54,8 +54,8 @@ class UserProfile {
   final bool isAdmin;
   final Map<String, dynamic> questionnaireAnswers;
   final Map<String, dynamic> personalityAssessmentResults;
-
-  // Deprecated fields (for migration purposes, not actively used for new data)
+  
+  // Deprecated fields
   final String? addressZip;
   final String? gender;
   final double? height;
@@ -132,7 +132,11 @@ class UserProfile {
     this.locationState,
   });
 
+  // A consolidated getter to check if the entire profile setup is complete
+  bool get isProfileSetupComplete => isPhase1Complete && isPhase2Complete;
+
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    // Helper function to handle dynamic values that might be List or JSON string
     List<String> _decodeStringList(dynamic value) {
       if (value == null) return [];
       if (value is List) {
@@ -151,6 +155,7 @@ class UserProfile {
       return [];
     }
 
+    // Helper function to handle dynamic values for Map<String, bool>
     Map<String, bool> _decodeStringBoolMap(dynamic value) {
       if (value == null) return {};
       if (value is Map) {
@@ -169,6 +174,7 @@ class UserProfile {
       return {};
     }
 
+    // Helper function to handle dynamic values for Map<String, dynamic>
     Map<String, dynamic> _decodeStringDynamicMap(dynamic value) {
       if (value == null) return {};
       if (value is Map) {
@@ -186,7 +192,8 @@ class UserProfile {
       }
       return {};
     }
-
+    
+    // Logic for resolving deprecated fields
     final String? resolvedFullLegalName = json['full_legal_name'] as String? ?? json['full_name'] as String?;
     final String? resolvedGenderIdentity = json['gender_identity'] as String? ?? json['gender'] as String?;
     final double? resolvedHeightCm = (json['height_cm'] as num?)?.toDouble() ?? (json['height'] as num?)?.toDouble();
@@ -207,7 +214,7 @@ class UserProfile {
     } else if (json['love_languages_new'] != null) {
       resolvedLoveLanguages = _decodeStringList(json['love_languages_new']);
     }
-
+    
     return UserProfile(
       id: json['id'] as String,
       email: json['email'] as String,
@@ -260,7 +267,7 @@ class UserProfile {
       questionnaireAnswers: _decodeStringDynamicMap(json['questionnaire_answers']),
       personalityAssessmentResults: _decodeStringDynamicMap(json['personality_assessment_results']),
 
-      // Deprecated fields (populated for backward compatibility if needed, but not actively used)
+      // Deprecated fields (populated for backward compatibility)
       addressZip: json['address_zip'] as String?,
       gender: json['gender'] as String?,
       height: (json['height'] as num?)?.toDouble(),
@@ -330,111 +337,54 @@ class UserProfile {
     };
   }
 
-  // The copyWith method is a utility for creating a new instance with some fields updated.
-  // It's cleaner to only include the actively used fields to avoid clutter and potential
-  // confusion with the deprecated fields.
   UserProfile copyWith({
-    String? id,
-    String? email,
-    String? displayName,
-    String? bio,
-    String? lookingFor,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? profilePictureUrl,
-    DateTime? dateOfBirth,
-    String? phoneNumber,
-    String? locationZipCode,
-    String? sexualOrientation,
-    double? heightCm,
-    bool? agreedToTerms,
-    bool? agreedToCommunityGuidelines,
-    String? fullLegalName,
-    String? genderIdentity,
-    String? ethnicity,
-    List<String>? languagesSpoken,
-    String? desiredOccupation,
-    String? educationLevel,
-    List<String>? hobbiesAndInterests,
-    List<String>? loveLanguages,
-    List<String>? favoriteMedia,
-    String? maritalStatus,
-    bool? hasChildren,
-    bool? wantsChildren,
-    String? relationshipGoals,
-    List<String>? dealbreakers,
-    String? religionOrSpiritualBeliefs,
-    String? politicalViews,
-    String? diet,
-    String? smokingHabits,
-    String? drinkingHabits,
-    String? sleepSchedule,
-    bool? willingToRelocate,
-    String? monogamyVsPolyamoryPreferences,
-    String? astrologicalSign,
-    String? attachmentStyle,
-    String? communicationStyle,
-    String? mentalHealthDisclosures,
-    String? petOwnership,
-    String? travelFrequencyOrFavoriteDestinations,
-    Map<String, bool>? profileVisibilityPreferences,
-    Map<String, bool>? pushNotificationPreferences,
-    bool? isPhase1Complete,
-    bool? isPhase2Complete,
-    bool? isAdmin,
-    Map<String, dynamic>? questionnaireAnswers,
+    String? id, String? email, String? displayName, String? bio, String? lookingFor,
+    DateTime? createdAt, DateTime? updatedAt, String? profilePictureUrl,
+    DateTime? dateOfBirth, String? phoneNumber, String? locationZipCode,
+    String? sexualOrientation, double? heightCm, bool? agreedToTerms,
+    bool? agreedToCommunityGuidelines, String? fullLegalName, String? genderIdentity,
+    String? ethnicity, List<String>? languagesSpoken, String? desiredOccupation,
+    String? educationLevel, List<String>? hobbiesAndInterests, List<String>? loveLanguages,
+    List<String>? favoriteMedia, String? maritalStatus, bool? hasChildren,
+    bool? wantsChildren, String? relationshipGoals, List<String>? dealbreakers,
+    String? religionOrSpiritualBeliefs, String? politicalViews, String? diet,
+    String? smokingHabits, String? drinkingHabits, String? sleepSchedule,
+    bool? willingToRelocate, String? monogamyVsPolyamoryPreferences,
+    String? astrologicalSign, String? attachmentStyle, String? communicationStyle,
+    String? mentalHealthDisclosures, String? petOwnership,
+    String? travelFrequencyOrFavoriteDestinations, Map<String, bool>? profileVisibilityPreferences,
+    Map<String, bool>? pushNotificationPreferences, bool? isPhase1Complete,
+    bool? isPhase2Complete, bool? isAdmin, Map<String, dynamic>? questionnaireAnswers,
     Map<String, dynamic>? personalityAssessmentResults,
   }) {
     return UserProfile(
-      id: id ?? this.id,
-      email: email ?? this.email,
-      displayName: displayName ?? this.displayName,
-      bio: bio ?? this.bio,
-      lookingFor: lookingFor ?? this.lookingFor,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      id: id ?? this.id, email: email ?? this.email, displayName: displayName ?? this.displayName,
+      bio: bio ?? this.bio, lookingFor: lookingFor ?? this.lookingFor,
+      createdAt: createdAt ?? this.createdAt, updatedAt: updatedAt ?? this.updatedAt,
       profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
-      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      locationZipCode: locationZipCode ?? this.locationZipCode,
-      sexualOrientation: sexualOrientation ?? this.sexualOrientation,
-      heightCm: heightCm ?? this.heightCm,
-      agreedToTerms: agreedToTerms ?? this.agreedToTerms,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth, phoneNumber: phoneNumber ?? this.phoneNumber,
+      locationZipCode: locationZipCode ?? this.locationZipCode, sexualOrientation: sexualOrientation ?? this.sexualOrientation,
+      heightCm: heightCm ?? this.heightCm, agreedToTerms: agreedToTerms ?? this.agreedToTerms,
       agreedToCommunityGuidelines: agreedToCommunityGuidelines ?? this.agreedToCommunityGuidelines,
-      fullLegalName: fullLegalName ?? this.fullLegalName,
-      genderIdentity: genderIdentity ?? this.genderIdentity,
-      ethnicity: ethnicity ?? this.ethnicity,
-      languagesSpoken: languagesSpoken ?? this.languagesSpoken,
-      desiredOccupation: desiredOccupation ?? this.desiredOccupation,
-      educationLevel: educationLevel ?? this.educationLevel,
-      hobbiesAndInterests: hobbiesAndInterests ?? this.hobbiesAndInterests,
-      loveLanguages: loveLanguages ?? this.loveLanguages,
-      favoriteMedia: favoriteMedia ?? this.favoriteMedia,
-      maritalStatus: maritalStatus ?? this.maritalStatus,
-      hasChildren: hasChildren ?? this.hasChildren,
-      wantsChildren: wantsChildren ?? this.wantsChildren,
-      relationshipGoals: relationshipGoals ?? this.relationshipGoals,
-      dealbreakers: dealbreakers ?? this.dealbreakers,
+      fullLegalName: fullLegalName ?? this.fullLegalName, genderIdentity: genderIdentity ?? this.genderIdentity,
+      ethnicity: ethnicity ?? this.ethnicity, languagesSpoken: languagesSpoken ?? this.languagesSpoken,
+      desiredOccupation: desiredOccupation ?? this.desiredOccupation, educationLevel: educationLevel ?? this.educationLevel,
+      hobbiesAndInterests: hobbiesAndInterests ?? this.hobbiesAndInterests, loveLanguages: loveLanguages ?? this.loveLanguages,
+      favoriteMedia: favoriteMedia ?? this.favoriteMedia, maritalStatus: maritalStatus ?? this.maritalStatus,
+      hasChildren: hasChildren ?? this.hasChildren, wantsChildren: wantsChildren ?? this.wantsChildren,
+      relationshipGoals: relationshipGoals ?? this.relationshipGoals, dealbreakers: dealbreakers ?? this.dealbreakers,
       religionOrSpiritualBeliefs: religionOrSpiritualBeliefs ?? this.religionOrSpiritualBeliefs,
-      politicalViews: politicalViews ?? this.politicalViews,
-      diet: diet ?? this.diet,
-      smokingHabits: smokingHabits ?? this.smokingHabits,
-      drinkingHabits: drinkingHabits ?? this.drinkingHabits,
-      sleepSchedule: sleepSchedule ?? this.sleepSchedule,
-      willingToRelocate: willingToRelocate ?? this.willingToRelocate,
+      politicalViews: politicalViews ?? this.politicalViews, diet: diet ?? this.diet,
+      smokingHabits: smokingHabits ?? this.smokingHabits, drinkingHabits: drinkingHabits ?? this.drinkingHabits,
+      sleepSchedule: sleepSchedule ?? this.sleepSchedule, willingToRelocate: willingToRelocate ?? this.willingToRelocate,
       monogamyVsPolyamoryPreferences: monogamyVsPolyamoryPreferences ?? this.monogamyVsPolyamoryPreferences,
-      astrologicalSign: astrologicalSign ?? this.astrologicalSign,
-      attachmentStyle: attachmentStyle ?? this.attachmentStyle,
-      communicationStyle: communicationStyle ?? this.communicationStyle,
-      mentalHealthDisclosures: mentalHealthDisclosures ?? this.mentalHealthDisclosures,
-      petOwnership: petOwnership ?? this.petOwnership,
-      travelFrequencyOrFavoriteDestinations: travelFrequencyOrFavoriteDestinations ?? this.travelFrequencyOrFavoriteDestinations,
+      astrologicalSign: astrologicalSign ?? this.astrologicalSign, attachmentStyle: attachmentStyle ?? this.attachmentStyle,
+      communicationStyle: communicationStyle ?? this.communicationStyle, mentalHealthDisclosures: mentalHealthDisclosures ?? this.mentalHealthDisclosures,
+      petOwnership: petOwnership ?? this.petOwnership, travelFrequencyOrFavoriteDestinations: travelFrequencyOrFavoriteDestinations ?? this.travelFrequencyOrFavoriteDestinations,
       profileVisibilityPreferences: profileVisibilityPreferences ?? this.profileVisibilityPreferences,
       pushNotificationPreferences: pushNotificationPreferences ?? this.pushNotificationPreferences,
-      isPhase1Complete: isPhase1Complete ?? this.isPhase1Complete,
-      isPhase2Complete: isPhase2Complete ?? this.isPhase2Complete,
-      isAdmin: isAdmin ?? this.isAdmin,
-      questionnaireAnswers: questionnaireAnswers ?? this.questionnaireAnswers,
+      isPhase1Complete: isPhase1Complete ?? this.isPhase1Complete, isPhase2Complete: isPhase2Complete ?? this.isPhase2Complete,
+      isAdmin: isAdmin ?? this.isAdmin, questionnaireAnswers: questionnaireAnswers ?? this.questionnaireAnswers,
       personalityAssessmentResults: personalityAssessmentResults ?? this.personalityAssessmentResults,
     );
   }

@@ -36,12 +36,11 @@ class ProfileService with ChangeNotifier {
     notifyListeners();
   }
 
-  // NEW METHOD: To update the internal profile state without re-fetching from DB
   void updateProfileLocally(UserProfile newProfile) {
-    if (_userProfile != newProfile) { // Only update if it's actually different
+    if (_userProfile?.id != newProfile.id || _userProfile?.toJson().toString() != newProfile.toJson().toString()) {
       _userProfile = newProfile;
       notifyListeners();
-      debugPrint('ProfileService: Profile updated locally by subscription.');
+      debugPrint('ProfileService: Profile updated locally.');
     }
   }
 
@@ -53,26 +52,23 @@ class ProfileService with ChangeNotifier {
   }
 
   Future<void> initializeProfile() async {
-    // Only fetch if profile isn't already loaded or being loaded
     if (_isProfileLoaded || _isLoading) {
       debugPrint('ProfileService: initializeProfile skipped, profile already loaded or loading.');
       return;
     }
 
-    _setLoading(true); // Indicate loading
+    _setLoading(true);
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      await fetchUserProfile(id: user.id, isInitialization: true); // Add a flag
+      await fetchUserProfile(id: user.id, isInitialization: true);
     } else {
       clearProfile();
-      _setProfileLoaded(true); // Mark as loaded even if no user
-      _setLoading(false); // End loading
+      _setProfileLoaded(true);
+      _setLoading(false);
     }
   }
 
   Future<UserProfile?> fetchUserProfile({required String id, bool isInitialization = false}) async {
-    // Only set loading/notify if it's NOT part of initial setup,
-    // or if it's a re-fetch initiated from elsewhere
     if (!isInitialization) {
       _setLoading(true);
     }
@@ -101,7 +97,6 @@ class ProfileService with ChangeNotifier {
       _userProfile = null;
       return null;
     } finally {
-      // These only call notifyListeners once the fetch is truly done and state is finalized
       _setProfileLoaded(true);
       _setLoading(false);
     }
@@ -112,7 +107,7 @@ class ProfileService with ChangeNotifier {
     try {
       final response = await _supabase.from('user_profiles').upsert(profile.toJson()).select().single();
       _userProfile = UserProfile.fromJson(response);
-      notifyListeners(); // Notify after a successful update operation
+      notifyListeners();
       debugPrint('ProfileService: Profile updated: ${_userProfile?.toJson()}');
     } on PostgrestException catch (e) {
       debugPrint('ProfileService: Postgrest error updating profile: ${e.message}');
@@ -123,6 +118,22 @@ class ProfileService with ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  /// NEW METHOD: Marks Phase 1 as complete and updates the profile in Supabase.
+  Future<void> markPhase1Complete() async {
+    if (_userProfile == null) return;
+    final updatedProfile = _userProfile!.copyWith(isPhase1Complete: true);
+    await updateProfile(profile: updatedProfile);
+    debugPrint('ProfileService: Marked Phase 1 as complete.');
+  }
+
+  /// NEW METHOD: Marks Phase 2 as complete and updates the profile in Supabase.
+  Future<void> markPhase2Complete() async {
+    if (_userProfile == null) return;
+    final updatedProfile = _userProfile!.copyWith(isPhase2Complete: true);
+    await updateProfile(profile: updatedProfile);
+    debugPrint('ProfileService: Marked Phase 2 as complete.');
   }
 
   Future<String?> uploadProfileAvatar(Uint8List fileBytes, String fileName) async {
