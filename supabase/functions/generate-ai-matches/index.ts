@@ -1,4 +1,4 @@
-// supabase/functions/generate-ai-matches/index.ts
+// Corrected code for: supabase/functions/generate-ai-matches/index.ts
 // This function generates potential matches for a user using Google Generative AI.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     
     const prompt_text = `You are an AI matchmaker for a blind dating app. The user's profile data is: ${JSON.stringify(user_profile_data)}. Based on this information, generate a short list of 3 fictional user profiles that would be a good match. Do not include any personal identifying information like names or photos. Focus on interests, personality traits, and general life goals. Return the response as a JSON array of objects, with each object having keys: "id" (a unique fake ID), "interests", "personality", and "goals".`;
 
-    const model_name = 'gemini-pro';
+    const model_name = 'gemini-1.5-pro'; // CORRECTED LINE
     const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/';
     const url = `${BASE_API_URL}models/${model_name}:generateContent?key=${GOOGLE_API_KEY}`;
     

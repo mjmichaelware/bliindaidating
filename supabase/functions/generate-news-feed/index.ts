@@ -1,4 +1,4 @@
-// supabase/functions/generate-news-feed/index.ts
+// Corrected code for: supabase/functions/generate-news-feed/index.ts
 // This function generates a personalized news feed for a user using Google Generative AI.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     const { user_preferences } = await req.json();
 
     const prompt_text = `You are an AI assistant for a blind dating app. Create a short, engaging news feed for a user based on their preferences: ${user_preferences}. Do not mention any user IDs. Focus on personality and interests, as it's a "blind" dating app.`;
-    const model_name = 'gemini-pro';
+    const model_name = 'gemini-1.5-pro'; // CORRECTED LINE
     const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/';
     const url = `${BASE_API_URL}models/${model_name}:generateContent?key=${GOOGLE_API_KEY}`;
     

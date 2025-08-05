@@ -1,4 +1,4 @@
-// supabase/functions/match-users/index.ts
+// Corrected code for: supabase/functions/match-users/index.ts
 // This function integrates Google Generative AI by making direct REST API calls,
 // avoiding the JSR client library to resolve deployment issues.
 
@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
     const {
       prompt_text,
-      model_name = 'gemini-pro',
+      model_name = 'gemini-1.5-pro', // CORRECTED LINE
       task_type = 'GENERATE_CONTENT',
       response_format = 'text',
       output_dimensionality = 768,
