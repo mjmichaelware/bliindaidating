@@ -42,8 +42,13 @@ Deno.serve(async (req) => {
     // For this example, we'll use a placeholder.
     const { user_preferences } = await req.json();
 
-    const prompt_text = `You are an AI assistant for a blind dating app. Create a short, engaging news feed for a user based on their preferences: ${user_preferences}. Do not mention any user IDs. Focus on personality and interests, as it's a "blind" dating app.`;
-    const model_name = 'gemini-1.5-pro'; // CORRECTED LINE
+    // --- CORRECTED LINE: Updated prompt_text to request JSON format ---
+    const prompt_text = `You are an AI assistant for a blind dating app. Create a short, engaging news feed for a user based on their preferences: ${user_preferences}. Do not mention any user IDs. Focus on personality and interests, as it's a "blind" dating app.
+
+Return the response as a JSON array of objects, with each object having keys: "headline", "summary", and "related_user_id" (a fictional ID).`;
+    // --- END OF CORRECTED LINE ---
+    
+    const model_name = 'gemini-1.5-pro'; // CORRECTED LINE (already done in previous step, but keeping for completeness)
     const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/';
     const url = `${BASE_API_URL}models/${model_name}:generateContent?key=${GOOGLE_API_KEY}`;
     
@@ -66,8 +71,17 @@ Deno.serve(async (req) => {
     const data = await aiResponse.json();
     const generated_text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No content generated.';
 
+    // Attempt to parse the generated_text as JSON, as per the new prompt instructions
+    let newsFeedData;
+    try {
+        newsFeedData = JSON.parse(generated_text);
+    } catch (e) {
+        console.error('Failed to parse AI response as JSON:', generated_text, e);
+        throw new Error('AI did not return valid JSON for newsfeed despite prompt instructions.');
+    }
+
     return new Response(
-      JSON.stringify({ news_feed: generated_text }),
+      JSON.stringify({ news_feed: newsFeedData }), // Return the parsed JSON
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
 
