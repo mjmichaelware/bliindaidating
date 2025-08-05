@@ -87,10 +87,12 @@ Return a JSON array of objects. Do not include any other text or formatting. Eac
     }
     // --- END OF NEW JSON PARSING LOGIC ---
 
+    // --- CRITICAL FIX: Return the JSON array directly, not wrapped in an object ---
     return new Response(
-      JSON.stringify({ news_feed: newsFeedData }), // Return the parsed JSON
+      JSON.stringify(newsFeedData), // Changed from JSON.stringify({ news_feed: newsFeedData })
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+    // --- END OF CRITICAL FIX ---
 
   } catch (error) {
     console.error('Edge Function Error:', error.message);
