@@ -1,19 +1,15 @@
 // lib/services/ai_logic_service.dart
 
-import 'dart:convert'; // For jsonEncode and jsonDecode
-import 'package:http/http.dart' as http; // Import the http package
-import 'package:flutter/foundation.dart'; // For debugPrint
-import '../app_constants.dart'; // Import AppConstants for the base URL
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import '../app_constants.dart';
 
 /// A service responsible for all AI-related logic,
 /// acting as an intermediary to a backend API that wraps external AI models.
 class AiLogicService {
-  // --- FIX: Removed the incorrect URL variable and use the correct one directly ---
-  // The base URL is now constructed directly inside each method using AppConstants.baseUrl
-  // as AppConstants.supabaseFunctionsUrl does not exist.
-  // --- END FIX ---
 
-  // A helper function to create a new headers map with the authorization token.
+  /// A helper function to create a new headers map with the authorization token.
   Map<String, String> _getHeaders(String jwtToken) {
     return {
       'Content-Type': 'application/json',
@@ -21,9 +17,15 @@ class AiLogicService {
     };
   }
 
-  // Method to generate news feed
-  Future<List<String>?> generateNewsFeed(String userProfileSummary, List<Map<String, dynamic>> recentActivity, String jwtToken, {int numItems = 3}) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/generate-news-feed'); // Using the correct Supabase function URL
+  /// Method to generate news feed
+  Future<List<String>?> generateNewsFeed(
+    String userProfileSummary,
+    List<Map<String, dynamic>> recentActivity,
+    String jwtToken,
+    {int numItems = 3}
+  ) async {
+    // This line is now correct, as baseUrl no longer has a trailing slash.
+    final url = Uri.parse('${AppConstants.baseUrl}/generate-news-feed');
     final headers = _getHeaders(jwtToken);
     final body = jsonEncode({
       'user_profile_summary': userProfileSummary,
@@ -54,9 +56,13 @@ class AiLogicService {
     }
   }
 
-  // Method to get AI-generated matches
-  Future<List<Map<String, dynamic>>?> getAiGeneratedMatches(String userProfileSummary, String jwtToken, {int numMatches = 5}) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/generate-ai-matches'); // Using the correct Supabase function URL
+  /// Method to get AI-generated matches
+  Future<List<Map<String, dynamic>>?> getAiGeneratedMatches(
+    String userProfileSummary,
+    String jwtToken,
+    {int numMatches = 5}
+  ) async {
+    final url = Uri.parse('${AppConstants.baseUrl}/generate-ai-matches');
     final headers = _getHeaders(jwtToken);
     final body = jsonEncode({
       'user_profile_summary': userProfileSummary,
@@ -86,9 +92,13 @@ class AiLogicService {
     }
   }
 
-  // Method to get AI-generated dates
-  Future<List<Map<String, dynamic>>?> getAiGeneratedDates(String userProfileSummary, String jwtToken, {int numDates = 3}) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/generate-ai-dates'); // Using the correct Supabase function URL
+  /// Method to get AI-generated dates
+  Future<List<Map<String, dynamic>>?> getAiGeneratedDates(
+    String userProfileSummary,
+    String jwtToken,
+    {int numDates = 3}
+  ) async {
+    final url = Uri.parse('${AppConstants.baseUrl}/generate-ai-dates');
     final headers = _getHeaders(jwtToken);
     final body = jsonEncode({
       'user_profile_summary': userProfileSummary,
@@ -118,9 +128,9 @@ class AiLogicService {
     }
   }
 
-  // Method to generate a daily prompt
+  /// Method to generate a daily prompt
   Future<String?> generateDailyPrompt(String jwtToken, {String? context}) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/generate-daily-prompt'); // Using the correct Supabase function URL
+    final url = Uri.parse('${AppConstants.baseUrl}/generate-daily-prompt');
     final headers = _getHeaders(jwtToken);
     final body = jsonEncode({
       'context': context,
@@ -145,9 +155,9 @@ class AiLogicService {
     }
   }
 
-  // Method to generate a profile bio
+  /// Method to generate a profile bio
   Future<String?> generateProfileBio(Map<String, String> userData, String jwtToken, {String? instructions}) async {
-    final url = Uri.parse('${AppConstants.baseUrl}/generate-profile'); // Using the correct Supabase function URL
+    final url = Uri.parse('${AppConstants.baseUrl}/generate-profile');
     final headers = _getHeaders(jwtToken);
     final body = jsonEncode({
       'user_data': userData,

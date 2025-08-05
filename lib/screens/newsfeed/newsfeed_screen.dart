@@ -1,5 +1,3 @@
-// lib/screens/newsfeed/newsfeed_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart'; // Import for debugPrint
@@ -24,7 +22,6 @@ class NewsfeedScreen extends StatefulWidget {
 }
 
 class _NewsfeedScreenState extends State<NewsfeedScreen> {
-  List<String> _newsfeedItems = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -34,12 +31,6 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
     debugPrint('NewsfeedScreen: initState START.');
     _fetchNewsfeedItems(); // Fetch newsfeed items from the backend
     debugPrint('NewsfeedScreen: initState END.');
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    debugPrint('NewsfeedScreen: didChangeDependencies called.');
   }
 
   Future<void> _fetchNewsfeedItems() async {
@@ -78,16 +69,13 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
       debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Using mock recent activity: $recentActivity');
 
       debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Calling newsfeedService.refreshNewsfeed.');
-      final List<String> items = await newsfeedService.refreshNewsfeed(
+      // FIX: Await the async method but do not assign its return value to a list
+      await newsfeedService.refreshNewsfeed(
         userProfileSummary,
         recentActivity,
         jwtToken, // Pass the JWT token
       );
-      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - newsfeedService.refreshNewsfeed COMPLETED. Items received: ${items.length}');
-      setState(() {
-        _newsfeedItems = items;
-        debugPrint('NewsfeedScreen: _fetchNewsfeedItems - _newsfeedItems updated via setState. Current count: ${_newsfeedItems.length}');
-      });
+      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - newsfeedService.refreshNewsfeed COMPLETED.');
     } catch (e) {
       debugPrint('NewsfeedScreen: ERROR fetching newsfeed items: $e');
       setState(() {
@@ -107,88 +95,94 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
     debugPrint('NewsfeedScreen: build START.');
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
-    debugPrint('NewsfeedScreen: build - isDarkMode: $isDarkMode, _isLoading: $_isLoading, _errorMessage: $_errorMessage, _newsfeedItems.isEmpty: ${_newsfeedItems.isEmpty}');
+    debugPrint('NewsfeedScreen: build - isDarkMode: $isDarkMode, _isLoading: $_isLoading, _errorMessage: $_errorMessage');
 
-
-    if (_isLoading) {
-      debugPrint('NewsfeedScreen: build - Displaying LoadingIndicatorWidget.');
-      return Center(
-        child: LoadingIndicatorWidget(
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-      );
-    }
-
-    if (_errorMessage != null) {
-      debugPrint('NewsfeedScreen: build - Displaying error message: $_errorMessage.');
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _errorMessage!,
-              style: TextStyle(color: AppConstants.errorColor),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppConstants.spacingMedium),
-            ElevatedButton(
-              onPressed: () {
-                debugPrint('NewsfeedScreen: "Try Again" button pressed. Calling _fetchNewsfeedItems.');
-                _fetchNewsfeedItems();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.secondaryColor,
-                foregroundColor: AppConstants.textColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
-              ),
-              child: const Text('Try Again'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_newsfeedItems.isEmpty) {
-      debugPrint('NewsfeedScreen: build - Displaying EmptyStateWidget (no items).');
-      return Center(
-        child: EmptyStateWidget(
-          message: 'No newsfeed items to display yet. Check back later!',
-          onRefresh: () {
-            debugPrint('NewsfeedScreen: EmptyStateWidget refresh button pressed. Calling _fetchNewsfeedItems.');
-            _fetchNewsfeedItems();
-          },
-          icon: Icons.rss_feed,
-        ),
-      );
-    }
-
-    debugPrint('NewsfeedScreen: build - Displaying ListView of newsfeed items. Item count: ${_newsfeedItems.length}');
-    return RefreshIndicator(
-      onRefresh: () {
-        debugPrint('NewsfeedScreen: RefreshIndicator triggered. Calling _fetchNewsfeedItems.');
-        return _fetchNewsfeedItems(); // Return the Future from the async function
-      },
-      color: AppConstants.primaryColor,
-      backgroundColor: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
-        itemCount: _newsfeedItems.length,
-        itemBuilder: (context, index) {
-          final item = _newsfeedItems[index];
-          debugPrint('NewsfeedScreen: ListView.builder - building item $index: "$item"');
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: AppConstants.paddingSmall,
-            ),
-            child: NewsfeedCard(
-              content: item,
+    // FIX: Use a Consumer to listen to changes in NewsfeedService
+    return Consumer<NewsfeedService>(
+      builder: (context, newsfeedService, child) {
+        final _newsfeedItems = newsfeedService.newsfeedItems;
+        
+        if (_isLoading) {
+          debugPrint('NewsfeedScreen: build - Displaying LoadingIndicatorWidget.');
+          return Center(
+            child: LoadingIndicatorWidget(
+              color: Theme.of(context).colorScheme.secondary,
             ),
           );
-        },
-      ),
+        }
+
+        if (_errorMessage != null) {
+          debugPrint('NewsfeedScreen: build - Displaying error message: $_errorMessage.');
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(color: AppConstants.errorColor),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppConstants.spacingMedium),
+                ElevatedButton(
+                  onPressed: () {
+                    debugPrint('NewsfeedScreen: "Try Again" button pressed. Calling _fetchNewsfeedItems.');
+                    _fetchNewsfeedItems();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppConstants.secondaryColor,
+                    foregroundColor: AppConstants.textColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingLarge, vertical: AppConstants.paddingMedium),
+                  ),
+                  child: const Text('Try Again'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (_newsfeedItems.isEmpty) {
+          debugPrint('NewsfeedScreen: build - Displaying EmptyStateWidget (no items).');
+          return Center(
+            child: EmptyStateWidget(
+              message: 'No newsfeed items to display yet. Check back later!',
+              onRefresh: () {
+                debugPrint('NewsfeedScreen: EmptyStateWidget refresh button pressed. Calling _fetchNewsfeedItems.');
+                _fetchNewsfeedItems();
+              },
+              icon: Icons.rss_feed,
+            ),
+          );
+        }
+
+        debugPrint('NewsfeedScreen: build - Displaying ListView of newsfeed items. Item count: ${_newsfeedItems.length}');
+        return RefreshIndicator(
+          onRefresh: () {
+            debugPrint('NewsfeedScreen: RefreshIndicator triggered. Calling _fetchNewsfeedItems.');
+            return _fetchNewsfeedItems(); // Return the Future from the async function
+          },
+          color: AppConstants.primaryColor,
+          backgroundColor: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
+          child: ListView.builder(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            itemCount: _newsfeedItems.length,
+            itemBuilder: (context, index) {
+              final item = _newsfeedItems[index];
+              debugPrint('NewsfeedScreen: ListView.builder - building item $index: "$item"');
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppConstants.paddingSmall,
+                ),
+                child: NewsfeedCard(
+                  content: item,
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

@@ -14,10 +14,12 @@ class AppConstants {
     const String supabaseProjectId = 'kynzpohycwdphorxsnzy';
 
     // Corrected for Codespaces: The public URL for port 8000.
-    const String codespacesUrl = 'https://fantastic-couscous-r4x67996r9p7cxx9g-8000.app.github.dev/';
+    // FIX: Remove the trailing slash here.
+    const String codespacesUrl = 'https://fantastic-couscous-r4x67996r9p7cxx9g-8000.app.github.dev';
 
     if (kIsWeb) {
       if (kDebugMode) {
+        // FIX: Return the URL as is. It correctly points to the Codespaces port via the subdomain.
         return codespacesUrl;
       } else {
         return 'https://$supabaseProjectId.supabase.co/functions/v1';

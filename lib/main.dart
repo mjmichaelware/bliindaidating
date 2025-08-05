@@ -1,49 +1,38 @@
-// lib/main.dart
-
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode;
-import 'dart:async';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Local Imports
 import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/services/auth_service.dart';
-import 'package:bliindaidating/services/profile_service.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/theme/app_theme.dart';
 import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/theme/app_theme.dart';
 import 'package:bliindaidating/profile/profile_setup_screen.dart';
 
 // Service Imports
-import 'package:bliindaidating/services/newsfeed_service.dart';
-import 'package:bliindaidating/services/questionnaire_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart'; // FIX: Added the missing import for AiLogicService
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/auth_service.dart';
 import 'package:bliindaidating/services/matches_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
-
-import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/newsfeed_service.dart';
+import 'package:bliindaidating/services/profile_service.dart';
+import 'package:bliindaidating/services/questionnaire_service.dart';
 
 // Screen Imports
 import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
-import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
+import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
+import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart';
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
+import 'package:bliindaidating/screens/matches/matches_list_screen.dart'; // FIX: Correct import
+import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
-import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
-import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
-import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart'; // FIX: Added the import for daily_prompts_screen.dart
+import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -112,20 +101,28 @@ Future<void> main() async {
         Provider<AiLogicService>(
           create: (context) => AiLogicService(),
         ),
-        ChangeNotifierProvider<NewsfeedService>(
-          create: (context) => NewsfeedService(context.read<AiLogicService>()),
+        // FIX: Corrected constructor calls for NewsfeedService
+        ChangeNotifierProxyProvider<AiLogicService, NewsfeedService>(
+          create: (context) => NewsfeedService(aiLogicService: context.read<AiLogicService>()),
+          update: (context, aiLogicService, newsfeedService) => newsfeedService!..updateAiLogicService(aiLogicService),
         ),
         ChangeNotifierProvider<QuestionnaireService>(
           create: (context) => QuestionnaireService(),
         ),
-        Provider<MatchesService>(
-          create: (context) => MatchesService(),
+        // FIX: Corrected constructor calls for MatchesService
+        ChangeNotifierProxyProvider<AiLogicService, MatchesService>(
+          create: (context) => MatchesService(aiLogicService: context.read<AiLogicService>()),
+          update: (context, aiLogicService, matchesService) => matchesService!..updateAiLogicService(aiLogicService),
         ),
       ],
       child: const BlindAIDatingApp(),
     ),
   );
 }
+
+// Key for the ShellRoute Navigator
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 class BlindAIDatingApp extends StatefulWidget {
   const BlindAIDatingApp({super.key});
@@ -153,6 +150,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     });
 
     _router = GoRouter(
+      navigatorKey: _rootNavigatorKey,
       initialLocation: '/',
       debugLogDiagnostics: kDebugMode,
       refreshListenable: Listenable.merge([
@@ -176,40 +174,33 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('Is Logged In: $isLoggedIn');
         debugPrint('Is Profile Loaded: $isProfileLoaded');
 
-        // SCENARIO 1: User is NOT logged in.
         if (!isLoggedIn) {
           debugPrint('Redirect Logic: User NOT logged in.');
           return isAuthPath ? null : '/login';
         }
 
-        // SCENARIO 2: User IS logged in.
         debugPrint('Redirect Logic: User IS logged in.');
         
-        // If the profile data hasn't finished its initial load, show a loading screen.
         if (!isProfileLoaded) {
           debugPrint('Redirect Logic: Profile data not yet loaded. Redirecting to /loading.');
           return isUtilityPath ? null : '/loading';
         }
 
-        // --- UPDATED LOGIC: CHECK PHASE 1 COMPLETION ---
         final UserProfile? userProfile = profileService.userProfile;
 
-        // At this point, the user is logged in, and profile data is loaded.
         if (userProfile != null) {
-            // If Phase 1 is NOT complete, redirect to the profile setup screen.
             if (!userProfile.isPhase1Complete) {
                 debugPrint('Redirect Logic: Profile exists but Phase 1 is incomplete. Redirecting to profile setup.');
-                // Only redirect if not already on the profile setup screen.
                 return currentPath == '/profile_setup' ? null : '/profile_setup';
             }
 
-            // If Phase 1 IS complete, redirect to the main dashboard.
             debugPrint('Redirect Logic: Profile Phase 1 complete. Redirecting to main dashboard.');
-            return (isAuthPath || isUtilityPath || currentPath == '/profile_setup') ? '/dashboard-overview' : null;
+            if (isAuthPath || isUtilityPath || currentPath == '/profile_setup') {
+              return '/newsfeed'; // Redirect to a child of the shell
+            }
+            return null; // Don't redirect if already in a dashboard route
         }
 
-        // If the profile data is unexpectedly null after being "loaded", something is wrong.
-        // As a fallback, redirect to the profile setup screen.
         debugPrint('Redirect Logic: Unexpected state - user is logged in but profile is null. Redirecting to setup.');
         return currentPath == '/profile_setup' ? null : '/profile_setup';
       },
@@ -221,40 +212,34 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
         GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
-        GoRoute(path: '/dashboard-overview', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/newsfeed', builder: (context, state) => const NewsfeedScreen()),
-        GoRoute(path: '/matches', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/discovery', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/my-profile', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/questionnaire', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/daily-prompts', builder: (context, state) => const DailyPromptsScreen()), // FIX: Corrected builder for daily-prompts
-        GoRoute(path: '/notifications', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/favorites', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/compatibility-results', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/daily-personality-question', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/personality-quiz', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/match-display/:id', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/date-proposal', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/scheduled-dates-list', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/scheduled-date-details/:id', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/post-date-feedback', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/date-ideas', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/friends-match', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/events', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/event-details/:id', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/app-settings', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/about-us', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/privacy', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/safety-tips', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/terms', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/feedback', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/report', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/admin', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/referral', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/activity-feed', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/blocked-users', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/guided-tour', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/user-progress', builder: (context, state) => const MainDashboardScreen()),
+        
+        // This is the ShellRoute for the main app navigation
+        ShellRoute(
+          navigatorKey: _shellNavigatorKey,
+          builder: (context, state, child) {
+            // The child is the content of the currently selected route
+            return MainDashboardShell(child: child);
+          },
+          routes: [
+            GoRoute(
+              path: '/newsfeed',
+              builder: (context, state) => const NewsfeedScreen(),
+            ),
+            GoRoute(
+              path: '/matches',
+              builder: (context, state) => const MatchesListScreen(), // FIX: Correctly call the MatchesListScreen
+            ),
+            GoRoute(
+              path: '/daily-prompts',
+              builder: (context, state) => const DailyPromptsScreen(),
+            ),
+            GoRoute(
+              path: '/my-profile',
+              builder: (context, state) => const MyProfileScreen(),
+            ),
+            // NOTE: Add your other main dashboard routes here.
+          ],
+        ),
       ],
       errorBuilder: (context, state) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
@@ -280,6 +265,71 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
       debugShowCheckedModeBanner: false,
       theme: themeController.isDarkMode ? AppTheme.galaxyTheme : AppTheme.lightTheme,
       routerConfig: _router,
+    );
+  }
+}
+
+// A new widget to act as the shell for the main dashboard screens.
+class MainDashboardShell extends StatelessWidget {
+  const MainDashboardShell({required this.child, super.key});
+
+  final Widget child;
+
+  // This method maps the current location to the index of the nav bar
+  int _calculateSelectedIndex(BuildContext context) {
+    // FIX: Replaced GoRouter.of(context).location with GoRouterState.of(context).fullPath
+    final String location = GoRouterState.of(context).fullPath ?? '/';
+    if (location.startsWith('/newsfeed')) return 0;
+    if (location.startsWith('/matches')) return 1;
+    if (location.startsWith('/daily-prompts')) return 2;
+    if (location.startsWith('/my-profile')) return 3;
+    return 0;
+  }
+
+  // This method navigates to the selected route
+  void _onItemTapped(int index, BuildContext context) {
+    switch (index) {
+      case 0:
+        GoRouter.of(context).go('/newsfeed');
+        break;
+      case 1:
+        GoRouter.of(context).go('/matches');
+        break;
+      case 2:
+        GoRouter.of(context).go('/daily-prompts');
+        break;
+      case 3:
+        GoRouter.of(context).go('/my-profile');
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: child, // The child widget is the current screen of the ShellRoute
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.public),
+            label: 'Newsfeed',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: 'Matches',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bolt),
+            label: 'Prompts',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _calculateSelectedIndex(context),
+        onTap: (index) => _onItemTapped(index, context),
+      ),
     );
   }
 }

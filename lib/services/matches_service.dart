@@ -1,58 +1,47 @@
-// lib/services/matches_service.dart
-
-import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
+import 'package:flutter/foundation.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
 import 'package:bliindaidating/models/user_profile.dart'; // Assuming UserProfile model exists
+import 'package:flutter/material.dart';
 
 /// A service to manage user matches.
 class MatchesService extends ChangeNotifier {
-  List<UserProfile> _matches = [];
-  List<UserProfile> get matches => _matches;
+  AiLogicService _aiLogicService; // FIX: Changed to non-final
+  
+  // FIX: Corrected constructor to use a named argument
+  MatchesService({required AiLogicService aiLogicService})
+      : _aiLogicService = aiLogicService;
 
-  MatchesService() {
-    _fetchMatches(); // Fetch matches on initialization
+  List<Map<String, dynamic>> _matches = [];
+  List<Map<String, dynamic>> get matches => _matches;
+
+  // FIX: Added the missing method
+  void updateAiLogicService(AiLogicService newAiLogicService) {
+    if (_aiLogicService != newAiLogicService) {
+      _aiLogicService = newAiLogicService;
+      debugPrint('MatchesService: AiLogicService updated.');
+    }
   }
 
-  Future<void> _fetchMatches() async {
+  // Placeholder for user profile data (should be fetched from a user service)
+  final String _userProfileSummary = "A 25-year-old software engineer who enjoys hiking and playing guitar.";
+
+  Future<void> refreshMatches(String jwtToken) async {
     debugPrint('MatchesService: Attempting to fetch matches...');
-    // Placeholder for actual data fetching logic
-    // In a real app, this would fetch from Supabase or your backend API
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-
-    _matches = [
-      // Example dummy matches, now providing required 'createdAt'
-      UserProfile(
-        id: 'match_user_1',
-        email: 'match1@example.com',
-        displayName: 'Astro Explorer',
-        bio: 'Loves stargazing and deep conversations about the universe.',
-        profilePictureUrl: 'https://placehold.co/150x150/FF6347/FFFFFF?text=M1',
-        isPhase1Complete: true,
-        isPhase2Complete: true,
-        astrologicalSign: 'Leo',
-        hobbiesAndInterests: {'Astronomy': true, 'Hiking': true, 'Sci-Fi Movies': true},
-        createdAt: DateTime.now().subtract(const Duration(days: 30)), // Provided
-        updatedAt: DateTime.now().subtract(const Duration(days: 5)), // Provided
-      ),
-      UserProfile(
-        id: 'match_user_2',
-        email: 'match2@example.com',
-        displayName: 'Cosmic Chef',
-        bio: 'Passionate about culinary arts and exploring new galaxies (of flavor).',
-        profilePictureUrl: 'https://placehold.co/150x150/4682B4/FFFFFF?text=M2',
-        isPhase1Complete: true,
-        isPhase2Complete: true,
-        astrologicalSign: 'Taurus',
-        hobbiesAndInterests: {'Cooking': true, 'Gardening': true, 'Travel': true},
-        createdAt: DateTime.now().subtract(const Duration(days: 60)), // Provided
-        updatedAt: DateTime.now().subtract(const Duration(days: 10)), // Provided
-      ),
-    ];
-    debugPrint('MatchesService: Fetched ${_matches.length} matches.');
-    notifyListeners();
-  }
-
-  // You can add methods here for accepting/rejecting matches, etc.
-  Future<void> refreshMatches() async {
-    await _fetchMatches();
+    try {
+      final List<Map<String, dynamic>>? fetchedMatches = await _aiLogicService.getAiGeneratedMatches(_userProfileSummary, jwtToken);
+      
+      if (fetchedMatches != null) {
+        _matches = fetchedMatches;
+      } else {
+        _matches = [];
+      }
+      debugPrint('MatchesService: Fetched ${_matches.length} matches.');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('MatchesService: Failed to refresh matches: $e');
+      _matches = [];
+      notifyListeners();
+      rethrow;
+    }
   }
 }
