@@ -1,7 +1,10 @@
+// lib/services/ai_logic_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../app_constants.dart';
+import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 
 /// A service responsible for all AI-related logic,
 /// acting as an intermediary to a backend API that wraps external AI models.
@@ -16,13 +19,12 @@ class AiLogicService {
   }
 
   /// Method to generate news feed
-  Future<List<String>?> generateNewsFeed(
+  Future<List<Map<String, dynamic>>?> generateNewsFeed(
     String userProfileSummary,
     List<Map<String, dynamic>> recentActivity,
     String jwtToken,
     {int numItems = 3}
   ) async {
-    // This line is now correct, as baseUrl no longer has a trailing slash.
     final url = Uri.parse('${AppConstants.baseUrl}/generate-news-feed');
     final headers = _getHeaders(jwtToken);
     final body = jsonEncode({
@@ -36,17 +38,14 @@ class AiLogicService {
       final response = await http.post(url, headers: headers, body: body);
 
       if (response.statusCode == 200) {
-        // --- CORRECTED CODE BLOCK ---
         final dynamic data = jsonDecode(response.body);
         if (data is List) {
-          // The backend now returns a List directly, not an object with a key.
-          final List<String> newsFeedItems = List<String>.from(data.map((item) => item.toString()));
+          final List<Map<String, dynamic>> newsFeedItems = List<Map<String, dynamic>>.from(data);
           debugPrint('AiLogicService: News feed items generated successfully (${newsFeedItems.length} items).');
           return newsFeedItems;
         }
         debugPrint('AiLogicService: News feed items returned in unexpected format from backend: ${response.body}');
         return null;
-        // --- END OF CORRECTED CODE BLOCK ---
       } else {
         debugPrint('Failed to generate news feed from backend: ${response.statusCode} - ${response.body}');
         return null;

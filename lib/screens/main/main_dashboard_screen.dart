@@ -1,3 +1,5 @@
+// lib/screens/main/main_dashboard_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +17,9 @@ import 'package:bliindaidating/services/newsfeed_service.dart';
 import 'package:bliindaidating/services/matches_service.dart';
 import 'package:bliindaidating/services/date_service.dart'; // The new service
 
+// Import the new dedicated screens
+import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
+
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
 
@@ -28,13 +33,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   late final AnimationController _sideMenuAnimationController;
   late final Animation<double> _sideMenuExpandAnimation;
   int _selectedTabIndex = 0;
-  bool _isLoading = true;
-
-  final String _userProfileSummary = "A 25-year-old software engineer who enjoys hiking and playing guitar.";
-  final List<Map<String, dynamic>> _recentActivity = [
-    {'action': 'liked_profile', 'profile_name': 'Jane Doe'},
-    {'action': 'sent_message', 'profile_name': 'John Smith'},
-  ];
+  // Removed _isLoading state
 
   @override
   void initState() {
@@ -48,7 +47,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       curve: Curves.easeInOut,
     );
     _sideMenuAnimationController.forward();
-    _fetchDashboardData();
+    // Removed the _fetchDashboardData() call from here
   }
 
   @override
@@ -57,40 +56,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     super.dispose();
   }
 
-  Future<void> _fetchDashboardData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    final session = Supabase.instance.client.auth.currentSession;
-    final jwtToken = session?.accessToken;
-
-    if (jwtToken == null) {
-      debugPrint('User is not authenticated. Cannot fetch dashboard data.');
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-
-    // Get the services via Provider
-    final newsfeedService = Provider.of<NewsfeedService>(context, listen: false);
-    final matchesService = Provider.of<MatchesService>(context, listen: false);
-    final dateService = Provider.of<DateService>(context, listen: false);
-
-    // Call the refresh methods on each service
-    // Use Future.wait to handle the asynchronous calls concurrently
-    await Future.wait([
-      newsfeedService.refreshNewsfeed(_userProfileSummary, _recentActivity, jwtToken),
-      matchesService.refreshMatches(jwtToken),
-      dateService.refreshDates(jwtToken),
-    ]);
-
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
+  // Removed _fetchDashboardData()
+  
   void _onToggleCollapse() {
     setState(() {
       _isCollapsed = !_isCollapsed;
@@ -111,86 +78,13 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     }
   }
 
-  Widget _buildDashboardOverviewScreen() {
-    // Listen to the services to get the latest data
-    final newsfeedService = Provider.of<NewsfeedService>(context);
-    final matchesService = Provider.of<MatchesService>(context);
-    final dateService = Provider.of<DateService>(context);
-
-    final newsFeedItems = newsfeedService.newsfeedItems;
-    final matches = matchesService.matches;
-    final dates = dateService.dates;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Overview'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Your AI-Generated News Feed', style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(height: 10),
-                    if (newsFeedItems.isNotEmpty)
-                      Column(
-                        children: newsFeedItems.map((item) => Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          child: ListTile(
-                            leading: const Icon(Icons.star_rounded, color: Colors.blueAccent),
-                            title: Text(item),
-                          ),
-                        )).toList(),
-                      )
-                    else
-                      const Text('No news feed items available.'),
-                    const Divider(height: 32),
-                    Text('AI-Generated Matches for you', style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(height: 10),
-                    if (matches.isNotEmpty)
-                      Column(
-                        children: matches.map((match) => Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          child: ListTile(
-                            leading: const Icon(Icons.favorite_rounded, color: Colors.redAccent),
-                            title: Text('New match with ${match['profile_name']}'),
-                            subtitle: Text('Reason: ${match['reason']}'),
-                          ),
-                        )).toList(),
-                      )
-                    else
-                      const Text('No new AI-generated matches.'),
-                    const Divider(height: 32),
-                    Text('Upcoming AI-Generated Dates', style: Theme.of(context).textTheme.headlineSmall),
-                    const SizedBox(height: 10),
-                    if (dates.isNotEmpty)
-                      Column(
-                        children: dates.map((date) => Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          child: ListTile(
-                            leading: const Icon(Icons.calendar_today_rounded, color: Colors.green),
-                            title: Text('Date with ${date['date_idea']}'),
-                            subtitle: Text('Details: ${date['details']}'),
-                          ),
-                        )).toList(),
-                      )
-                    else
-                      const Text('No upcoming AI-generated dates.'),
-                  ],
-                ),
-              ),
-      ),
-    );
-  }
-
+  // Moved all the screen widgets into the _screens list directly
   late final List<Widget> _screens = [
-    _buildDashboardOverviewScreen(),
+    // A simple dashboard overview screen with no data fetching
+    const Center(child: Text('Dashboard Overview')),
     const Center(child: Text('My Matches Screen')),
     const Center(child: Text('Discovery Screen')),
-    const Center(child: Text('Newsfeed Screen')),
+    const NewsfeedScreen(), // Use the refactored NewsfeedScreen
     const Center(child: Text('Scheduled Dates Screen')),
     const Center(child: Text('My Profile Screen')),
     const Center(child: Text('Settings Screen')),

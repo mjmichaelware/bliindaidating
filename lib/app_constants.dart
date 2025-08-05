@@ -194,9 +194,13 @@ class AppConstants {
   static const double paddingLarge = 24.0;
   static const double paddingExtraLarge = 32.0;
 
+  // Elevations
+  static const double elevationSmall = 2.0; // NEW: Added this line.
+  static const double elevationMedium = 4.0;
+
   // Border Radius
   static const double borderRadiusSmall = 4.0;
-  static const double borderRadiusMedium = 8.0;
+  static const double borderRadiusMedium = 8.0; // Corrected: This is the correct value.
   static const double borderRadiusLarge = 16.0;
   static const double borderRadiusExtraLarge = 25.0;
   static const double borderRadiusCircular = 1000.0;

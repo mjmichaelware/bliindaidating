@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode;
@@ -28,7 +30,7 @@ import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
 import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
-import 'package:bliindaidating/screens/matches/matches_list_screen.dart'; // FIX: Correct import
+import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
 import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
@@ -98,21 +100,19 @@ Future<void> main() async {
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
+        // AiLogicService should be provided first since other services depend on it
         Provider<AiLogicService>(
           create: (context) => AiLogicService(),
         ),
-        // FIX: Corrected constructor calls for NewsfeedService
-        ChangeNotifierProxyProvider<AiLogicService, NewsfeedService>(
+        // NewsfeedService and MatchesService now directly create an instance of AiLogicService
+        ChangeNotifierProvider<NewsfeedService>(
           create: (context) => NewsfeedService(aiLogicService: context.read<AiLogicService>()),
-          update: (context, aiLogicService, newsfeedService) => newsfeedService!..updateAiLogicService(aiLogicService),
+        ),
+        ChangeNotifierProvider<MatchesService>(
+          create: (context) => MatchesService(aiLogicService: context.read<AiLogicService>()),
         ),
         ChangeNotifierProvider<QuestionnaireService>(
           create: (context) => QuestionnaireService(),
-        ),
-        // FIX: Corrected constructor calls for MatchesService
-        ChangeNotifierProxyProvider<AiLogicService, MatchesService>(
-          create: (context) => MatchesService(aiLogicService: context.read<AiLogicService>()),
-          update: (context, aiLogicService, matchesService) => matchesService!..updateAiLogicService(aiLogicService),
         ),
       ],
       child: const BlindAIDatingApp(),
@@ -227,7 +227,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
             ),
             GoRoute(
               path: '/matches',
-              builder: (context, state) => const MatchesListScreen(), // FIX: Correctly call the MatchesListScreen
+              builder: (context, state) => const MatchesListScreen(),
             ),
             GoRoute(
               path: '/daily-prompts',
@@ -237,7 +237,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
               path: '/my-profile',
               builder: (context, state) => const MyProfileScreen(),
             ),
-            // NOTE: Add your other main dashboard routes here.
           ],
         ),
       ],
@@ -275,9 +274,7 @@ class MainDashboardShell extends StatelessWidget {
 
   final Widget child;
 
-  // This method maps the current location to the index of the nav bar
   int _calculateSelectedIndex(BuildContext context) {
-    // FIX: Replaced GoRouter.of(context).location with GoRouterState.of(context).fullPath
     final String location = GoRouterState.of(context).fullPath ?? '/';
     if (location.startsWith('/newsfeed')) return 0;
     if (location.startsWith('/matches')) return 1;
@@ -286,7 +283,6 @@ class MainDashboardShell extends StatelessWidget {
     return 0;
   }
 
-  // This method navigates to the selected route
   void _onItemTapped(int index, BuildContext context) {
     switch (index) {
       case 0:
@@ -307,7 +303,7 @@ class MainDashboardShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child, // The child widget is the current screen of the ShellRoute
+      body: child,
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

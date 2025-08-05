@@ -1,18 +1,17 @@
+// lib/screens/newsfeed/newsfeed_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart'; // Import for debugPrint
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase for the JWT token
-
-// Service Imports
 import 'package:bliindaidating/services/newsfeed_service.dart';
 import 'package:bliindaidating/services/profile_service.dart';
-
-// Widget Imports
 import 'package:bliindaidating/widgets/newsfeed/newsfeed_card.dart';
 import 'package:bliindaidating/widgets/common/loading_indicator_widget.dart';
 import 'package:bliindaidating/widgets/common/empty_state_widget.dart';
+import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart';
 
 class NewsfeedScreen extends StatefulWidget {
   const NewsfeedScreen({super.key});
@@ -22,71 +21,51 @@ class NewsfeedScreen extends StatefulWidget {
 }
 
 class _NewsfeedScreenState extends State<NewsfeedScreen> {
-  bool _isLoading = true;
-  String? _errorMessage;
-
   @override
   void initState() {
     super.initState();
-    debugPrint('NewsfeedScreen: initState START.');
-    _fetchNewsfeedItems(); // Fetch newsfeed items from the backend
+    debugPrint('NewsfeedScreen: initState START. Requesting news feed fetch...');
+    // Request a data fetch only when the screen is first initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchNewsfeedItems();
+    });
     debugPrint('NewsfeedScreen: initState END.');
   }
 
   Future<void> _fetchNewsfeedItems() async {
-    debugPrint('NewsfeedScreen: _fetchNewsfeedItems START. Setting isLoading to true.');
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    final newsfeedService = Provider.of<NewsfeedService>(context, listen: false);
 
+    // Only fetch if the service is not already loading
+    if (newsfeedService.isLoading) {
+      debugPrint('NewsfeedScreen: _fetchNewsfeedItems skipped because service is already loading.');
+      return;
+    }
+    
     final session = Supabase.instance.client.auth.currentSession;
     final jwtToken = session?.accessToken;
 
     if (jwtToken == null) {
       debugPrint('NewsfeedScreen: _fetchNewsfeedItems - User not authenticated.');
-      setState(() {
-        _errorMessage = 'User not authenticated. Please log in.';
-        _isLoading = false;
-      });
       return;
     }
+    
+    // Using dummy data for now
+    const String userProfileSummary = "A 25-year-old software engineer who enjoys hiking and playing guitar.";
+    final List<Map<String, dynamic>> recentActivity = [
+      {"type": "liked_profile", "target_display_name": "Alex"},
+      {"type": "new_match", "target_display_name": "Jordan"},
+    ];
 
+    debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Calling newsfeedService.refreshNewsfeed.');
     try {
-      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Accessing NewsfeedService and ProfileService.');
-      final newsfeedService = Provider.of<NewsfeedService>(context, listen: false);
-      final profileService = Provider.of<ProfileService>(context, listen: false);
-
-      final currentUserProfile = profileService.userProfile;
-      final String userProfileSummary = currentUserProfile?.bio ?? "A user on the dating app.";
-      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - User profile summary: "$userProfileSummary"');
-
-      final List<Map<String, dynamic>> recentActivity = [
-        {"type": "liked_profile", "target_display_name": "Alex"},
-        {"type": "new_match", "target_display_name": "Jordan"},
-        {"type": "viewed_event", "event_name": "Stargazing Night"},
-      ];
-      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Using mock recent activity: $recentActivity');
-
-      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Calling newsfeedService.refreshNewsfeed.');
-      // FIX: Await the async method but do not assign its return value to a list
       await newsfeedService.refreshNewsfeed(
         userProfileSummary,
         recentActivity,
-        jwtToken, // Pass the JWT token
+        jwtToken,
       );
-      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - newsfeedService.refreshNewsfeed COMPLETED.');
+      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - refreshNewsfeed completed.');
     } catch (e) {
-      debugPrint('NewsfeedScreen: ERROR fetching newsfeed items: $e');
-      setState(() {
-        _errorMessage = 'Failed to load newsfeed: ${e.toString()}';
-        debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Error message set: $_errorMessage');
-      });
-    } finally {
-      debugPrint('NewsfeedScreen: _fetchNewsfeedItems FINALLY block. Setting isLoading to false.');
-      setState(() {
-        _isLoading = false;
-      });
+      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Error during fetch: $e');
     }
   }
 
@@ -95,14 +74,10 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
     debugPrint('NewsfeedScreen: build START.');
     final theme = Provider.of<ThemeController>(context);
     final isDarkMode = theme.isDarkMode;
-    debugPrint('NewsfeedScreen: build - isDarkMode: $isDarkMode, _isLoading: $_isLoading, _errorMessage: $_errorMessage');
 
-    // FIX: Use a Consumer to listen to changes in NewsfeedService
     return Consumer<NewsfeedService>(
       builder: (context, newsfeedService, child) {
-        final _newsfeedItems = newsfeedService.newsfeedItems;
-        
-        if (_isLoading) {
+        if (newsfeedService.isLoading) {
           debugPrint('NewsfeedScreen: build - Displaying LoadingIndicatorWidget.');
           return Center(
             child: LoadingIndicatorWidget(
@@ -111,14 +86,14 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
           );
         }
 
-        if (_errorMessage != null) {
-          debugPrint('NewsfeedScreen: build - Displaying error message: $_errorMessage.');
+        if (newsfeedService.errorMessage != null) {
+          debugPrint('NewsfeedScreen: build - Displaying error message: ${newsfeedService.errorMessage}.');
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _errorMessage!,
+                  newsfeedService.errorMessage!,
                   style: TextStyle(color: AppConstants.errorColor),
                   textAlign: TextAlign.center,
                 ),
@@ -143,7 +118,7 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
           );
         }
 
-        if (_newsfeedItems.isEmpty) {
+        if (newsfeedService.newsfeedItems.isEmpty) {
           debugPrint('NewsfeedScreen: build - Displaying EmptyStateWidget (no items).');
           return Center(
             child: EmptyStateWidget(
@@ -157,19 +132,16 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
           );
         }
 
-        debugPrint('NewsfeedScreen: build - Displaying ListView of newsfeed items. Item count: ${_newsfeedItems.length}');
+        debugPrint('NewsfeedScreen: build - Displaying ListView of newsfeed items. Item count: ${newsfeedService.newsfeedItems.length}');
         return RefreshIndicator(
-          onRefresh: () {
-            debugPrint('NewsfeedScreen: RefreshIndicator triggered. Calling _fetchNewsfeedItems.');
-            return _fetchNewsfeedItems(); // Return the Future from the async function
-          },
+          onRefresh: () => _fetchNewsfeedItems(),
           color: AppConstants.primaryColor,
           backgroundColor: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
           child: ListView.builder(
             padding: const EdgeInsets.all(AppConstants.paddingMedium),
-            itemCount: _newsfeedItems.length,
+            itemCount: newsfeedService.newsfeedItems.length,
             itemBuilder: (context, index) {
-              final item = _newsfeedItems[index];
+              final NewsfeedItem item = newsfeedService.newsfeedItems[index];
               debugPrint('NewsfeedScreen: ListView.builder - building item $index: "$item"');
               return Padding(
                 padding: const EdgeInsets.symmetric(

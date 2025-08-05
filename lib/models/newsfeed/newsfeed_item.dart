@@ -5,9 +5,9 @@ import 'package:flutter/material.dart'; // Often needed for UI-related models, o
 /// Enum to define different types of newsfeed items.
 enum NewsfeedItemType {
   general,
-  match, // Added
-  profileUpdate, // Added
-  dailyPrompt, // Added
+  match,
+  profileUpdate,
+  dailyPrompt,
   event,
   dateProposal,
   dateFeedback,
@@ -20,34 +20,45 @@ class NewsfeedItem {
   final String id;
   final String title;
   final String content;
-  final String? imageUrl; // Added imageUrl
+  final String? imageUrl;
   final DateTime timestamp;
   final NewsfeedItemType type;
-  final String? relatedEntityId; // ID of the related entity (e.g., match ID, prompt ID)
+  final String? relatedEntityId;
+  
+  // New fields to match the AI generated content structure
+  final String? headline;
+  final String? summary;
+  final String? relatedUserId;
 
   NewsfeedItem({
     required this.id,
     required this.title,
     required this.content,
-    this.imageUrl, // Made optional
+    this.imageUrl,
     required this.timestamp,
     required this.type,
     this.relatedEntityId,
+    // New fields
+    this.headline,
+    this.summary,
+    this.relatedUserId,
   });
 
   // Factory constructor for creating a NewsfeedItem from a JSON map
   factory NewsfeedItem.fromJson(Map<String, dynamic> json) {
     return NewsfeedItem(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      content: json['content'] as String,
-      imageUrl: json['image_url'] as String?, // Map to 'image_url' from JSON
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      type: NewsfeedItemType.values.firstWhere(
-        (e) => e.toString().split('.').last == json['type'],
-        orElse: () => NewsfeedItemType.general, // Default to general if type not found
-      ),
-      relatedEntityId: json['related_entity_id'] as String?,
+      // The backend doesn't provide these, so we'll use placeholder or mock data
+      id: json['id'] as String? ?? 'temp-${json.hashCode}', 
+      title: json['headline'] as String? ?? 'News Feed Item',
+      content: json['summary'] as String? ?? '',
+      imageUrl: json['image_url'] as String?,
+      timestamp: DateTime.now(),
+      type: NewsfeedItemType.general,
+      relatedEntityId: json['related_user_id'] as String?,
+      // Map new fields
+      headline: json['headline'] as String?,
+      summary: json['summary'] as String?,
+      relatedUserId: json['related_user_id'] as String?,
     );
   }
 
@@ -57,10 +68,13 @@ class NewsfeedItem {
       'id': id,
       'title': title,
       'content': content,
-      'image_url': imageUrl, // Map to 'image_url' for JSON
+      'image_url': imageUrl,
       'timestamp': timestamp.toIso8601String(),
       'type': type.toString().split('.').last,
       'related_entity_id': relatedEntityId,
+      'headline': headline,
+      'summary': summary,
+      'related_user_id': relatedUserId,
     };
   }
 }
