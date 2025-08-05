@@ -2,17 +2,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math' as math; // For math.pi and other math functions
-import 'package:provider/provider.dart'; // Import Provider to access the ThemeController
+import 'package:provider/provider.dart';
 
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
-import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
-import 'package:bliindaidating/services/auth_service.dart'; // Import AuthService for sign out
-import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService for completion status
+import 'package:bliindaidating/models/user_profile.dart';
+import 'package:bliindaidating/services/auth_service.dart';
+import 'package:bliindaidating/services/profile_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// NEW IMPORTS for all screens and categories to be linked
+// Import all screens for GoRouter path lookup
 import 'package:bliindaidating/profile/profile_setup_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 import 'package:bliindaidating/screens/discovery/discover_people_screen.dart';
@@ -51,14 +50,116 @@ import 'package:bliindaidating/screens/date/scheduled_date_details_screen.dart';
 import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
 import 'package:bliindaidating/screens/dashboard/dashboard_overview_screen.dart';
 
-// We now create global instances using a singleton pattern for services,
-// but ThemeController is managed by Provider.
+
 final SupabaseClient supabaseClient = Supabase.instance.client;
 final ProfileService profileService = ProfileService(supabaseClient);
 final AuthService authService = AuthService(profileService);
 
+// Side Menu Category Item
+class SideMenuCategoryItem extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final bool isCollapsed;
+  final Animation<double> expandAnimation;
+  final List<Widget> children;
 
-// --- Side Menu Profile Header (Enhanced) ---
+  const SideMenuCategoryItem({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.isCollapsed,
+    required this.expandAnimation,
+    required this.children,
+  });
+
+  @override
+  State<SideMenuCategoryItem> createState() => _SideMenuCategoryItemState();
+}
+
+class _SideMenuCategoryItemState extends State<SideMenuCategoryItem> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final themeController = Provider.of<ThemeController>(context);
+    final isDarkMode = themeController.isDarkMode;
+
+    final itemColor = isDarkMode ? AppConstants.textColor.withOpacity(0.9) : AppConstants.lightTextColor.withOpacity(0.9);
+    final selectedItemColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
+
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() {
+              _isExpanded = !_isExpanded;
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppConstants.paddingSmall,
+              vertical: AppConstants.paddingExtraSmall,
+            ),
+            padding: const EdgeInsets.symmetric(
+              vertical: AppConstants.paddingMedium,
+              horizontal: AppConstants.paddingMedium,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  widget.icon,
+                  color: itemColor,
+                  size: AppConstants.fontSizeLarge,
+                ),
+                Expanded(
+                  child: AnimatedCrossFade(
+                    duration: AppConstants.animationDurationMedium,
+                    crossFadeState: widget.isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                    firstChild: const SizedBox.shrink(),
+                    secondChild: Row(
+                      children: [
+                        const SizedBox(width: AppConstants.spacingMedium),
+                        Expanded(
+                          child: Text(
+                            widget.title,
+                            style: TextStyle(
+                              color: itemColor,
+                              fontSize: AppConstants.fontSizeMedium,
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        AnimatedRotation(
+                          turns: _isExpanded ? 0.25 : 0.0,
+                          duration: AppConstants.animationDurationMedium,
+                          child: Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: itemColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        AnimatedCrossFade(
+          duration: AppConstants.animationDurationMedium,
+          crossFadeState: _isExpanded && !widget.isCollapsed ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          firstChild: const SizedBox.shrink(),
+          secondChild: Column(children: widget.children),
+        ),
+      ],
+    );
+  }
+}
+
+// Side Menu Profile Header
 class SideMenuProfileHeader extends StatelessWidget {
   final UserProfile? userProfile;
   final String? profilePictureUrl;
@@ -75,7 +176,6 @@ class SideMenuProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We use Consumer to listen for changes to the ThemeController.
     return Consumer<ThemeController>(
       builder: (context, themeController, child) {
         final isDarkMode = themeController.isDarkMode;
@@ -188,7 +288,7 @@ class SideMenuProfileHeader extends StatelessWidget {
 }
 
 
-// --- Side Menu Item (Generic) ---
+// Side Menu Item (Generic)
 class SideMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -211,9 +311,7 @@ class SideMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // We get the theme state from the Provider
     final isDarkMode = Provider.of<ThemeController>(context).isDarkMode;
-
     final itemColor = isDarkMode ? AppConstants.textColor.withOpacity(0.9) : AppConstants.lightTextColor.withOpacity(0.9);
     final selectedItemColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
     final badgeColor = AppConstants.errorColor;
@@ -232,9 +330,7 @@ class SideMenuItem extends StatelessWidget {
           horizontal: isCollapsed ? AppConstants.paddingSmall : AppConstants.paddingMedium,
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? selectedItemColor.withOpacity(0.2)
-              : Colors.transparent,
+          color: isSelected ? selectedItemColor.withOpacity(0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
         ),
         child: Row(
@@ -310,88 +406,53 @@ class SideMenuItem extends StatelessWidget {
 
   String _getPathFromTitle(String title) {
     switch (title) {
-      case 'Dashboard':
-        return '/dashboard-overview';
-      case 'Discovery':
-        return '/discovery';
-      case 'Matches':
-        return '/matches';
-      case 'Newsfeed':
-        return '/newsfeed';
-      case 'Daily Prompts':
-        return '/daily-prompts';
-      case 'Notifications':
-        return '/notifications';
-      case 'Profile Setup':
-        return '/profile_setup';
-      case 'AI Questionnaire':
-        return '/questionnaire';
-      case 'My Profile':
-        return '/my-profile';
-      case 'Scheduled Dates':
-        return '/scheduled-dates-list';
-      case 'Post-Date Feedback':
-        return '/post-date-feedback';
-      case 'Date Proposal':
-        return '/date-proposal';
-      case 'Compatibility Insights':
-        return '/compatibility-results';
-      case 'Daily Personality Question':
-        return '/daily-personality-question';
-      case 'Personality Quiz':
-        return '/personality-quiz';
-      case 'Local Events':
-        return '/events';
-      case 'Friends Match':
-        return '/friends-match';
-      case 'App Settings':
-        return '/app-settings';
-      case 'About Us':
-        return '/about-us';
-      case 'Privacy Policy':
-        return '/privacy';
-      case 'Terms & Conditions':
-        return '/terms';
-      case 'Feedback':
-        return '/feedback';
-      case 'Report User':
-        return '/report';
-      case 'Admin Dashboard':
-        return '/admin';
-      case 'Referral Program':
-        return '/referral';
-      case 'Activity Feed':
-        return '/activity-feed';
-      case 'Blocked Users':
-        return '/blocked-users';
-      case 'Date Ideas':
-        return '/date-ideas';
-      case 'Guided Tour':
-        return '/guided-tour';
-      case 'Safety Tips':
-        return '/safety-tips';
-      case 'User Progress':
-        return '/user-progress';
-      case 'Favorites':
-        return '/favorites';
-      case 'Match Display':
-        return '/match-display';
-      case 'Scheduled Date Details':
-        return '/scheduled-date-details';
-      default:
-        return '';
+      case 'Dashboard': return '/dashboard-overview';
+      case 'Discovery': return '/discovery';
+      case 'Matches': return '/matches';
+      case 'Newsfeed': return '/newsfeed';
+      case 'Daily Prompts': return '/daily-prompts';
+      case 'Notifications': return '/notifications';
+      case 'Profile Setup': return '/profile_setup';
+      case 'AI Questionnaire': return '/questionnaire';
+      case 'My Profile': return '/my-profile';
+      case 'Scheduled Dates': return '/scheduled-dates-list';
+      case 'Post-Date Feedback': return '/post-date-feedback';
+      case 'Date Proposal': return '/date-proposal';
+      case 'Compatibility Insights': return '/compatibility-results';
+      case 'Daily Personality Question': return '/daily-personality-question';
+      case 'Personality Quiz': return '/personality-quiz';
+      case 'Local Events': return '/events';
+      case 'Friends Match': return '/friends-match';
+      case 'App Settings': return '/app-settings';
+      case 'About Us': return '/about-us';
+      case 'Privacy Policy': return '/privacy';
+      case 'Terms & Conditions': return '/terms';
+      case 'Feedback': return '/feedback';
+      case 'Report User': return '/report';
+      case 'Admin Dashboard': return '/admin';
+      case 'Referral Program': return '/referral';
+      case 'Activity Feed': return '/activity-feed';
+      case 'Blocked Users': return '/blocked-users';
+      case 'Date Ideas': return '/date-ideas';
+      case 'Guided Tour': return '/guided-tour';
+      case 'Safety Tips': return '/safety-tips';
+      case 'User Progress': return '/user-progress';
+      case 'Favorites': return '/favorites';
+      case 'Match Display': return '/match-display';
+      case 'Scheduled Date Details': return '/scheduled-date-details';
+      default: return '';
     }
   }
 }
 
-// --- Main Side Menu Widget ---
+// Main Side Menu Widget
 class DashboardSideMenu extends StatelessWidget {
   final bool isCollapsed;
   final Animation<double> expandAnimation;
   final VoidCallback onToggleCollapse;
   final Widget profileHeader;
   final List<Widget> children;
-  final bool isDrawerMode;
+  final bool isDrawerMode; // This parameter is now deprecated in this new design
 
   const DashboardSideMenu({
     super.key,
@@ -412,40 +473,27 @@ class DashboardSideMenu extends StatelessWidget {
     final dividerColor = isDarkMode ? AppConstants.borderColor : AppConstants.lightBorderColor;
     final textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
 
-    final Color backgroundColor = isDarkMode
-        ? primaryColor.withOpacity(isDrawerMode ? 1.0 : 0.9)
-        : AppConstants.lightBackgroundColor;
+    final Color backgroundColor = isDarkMode ? AppConstants.cardColor : AppConstants.lightBackgroundColor;
+    final double width = isCollapsed ? 80 : 250;
 
-    return Drawer(
-      width: isDrawerMode ? MediaQuery.of(context).size.width * 0.75 : (isCollapsed ? 80 : 250),
-      child: Container(
-        decoration: BoxDecoration(
-          color: backgroundColor,
-        ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      width: width,
+      child: Material(
+        color: backgroundColor,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            profileHeader, // Now using the profile header passed from the parent
-            if (!isDrawerMode)
-              ListTile(
-                title: AnimatedCrossFade(
-                  duration: AppConstants.animationDurationShort,
-                  crossFadeState: isCollapsed ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                  firstChild: Align(
-                    alignment: Alignment.centerRight,
-                    child: Icon(Icons.arrow_forward_ios_rounded, color: textColor.withOpacity(0.7)),
-                  ),
-                  secondChild: Align(
-                    alignment: Alignment.centerRight,
-                    child: Icon(Icons.arrow_back_ios_rounded, color: textColor.withOpacity(0.7)),
-                  ),
-                ),
-                onTap: onToggleCollapse,
-                contentPadding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
-              ),
+            profileHeader,
+            SideMenuItem(
+              title: isCollapsed ? '' : 'Collapse Menu',
+              icon: isCollapsed ? Icons.arrow_forward_ios_rounded : Icons.arrow_back_ios_rounded,
+              onTap: onToggleCollapse,
+              isCollapsed: isCollapsed,
+            ),
             Divider(color: dividerColor.withOpacity(0.5), height: 1),
-            ...children, // Now using the children list passed from the parent
-            // Log Out Button at the bottom
+            ...children,
             Divider(color: dividerColor.withOpacity(0.5), height: 1),
             SideMenuItem(
               icon: Icons.logout_rounded,

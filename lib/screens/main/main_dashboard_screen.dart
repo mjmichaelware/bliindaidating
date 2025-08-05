@@ -10,12 +10,10 @@ import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switcher.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
-import 'package:bliindaidating/widgets/dashboard_shell/side_menu_category_item.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart'; // Use AiLogicService for all AI-related data fetching
-// IMPORTANT: You'll also need the SideMenuProfileHeader widget, which is a dependency
-// of this file, but you did not provide its code. It is assumed it exists.
-// import 'package:bliindaidating/widgets/dashboard_shell/side_menu_profile_header.dart';
-
+// Note: The imports for SideMenuCategoryItem, SideMenuProfileHeader, and
+// SideMenuItem have been removed to prevent duplicate definitions.
+// They are now accessed directly from the dashboard_side_menu.dart file.
+import 'package:bliindaidating/services/ai_logic_service.dart';
 
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
@@ -31,7 +29,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   late final Animation<double> _sideMenuExpandAnimation;
   int _selectedTabIndex = 0;
 
-  // State variable to hold the fetched data
   late Future<Map<String, dynamic>> _dashboardDataFuture;
   final String _userProfileSummary = "A 25-year-old software engineer who enjoys hiking and playing guitar.";
   final List<Map<String, dynamic>> _recentActivity = [
@@ -51,31 +48,22 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       curve: Curves.easeInOut,
     );
     _sideMenuAnimationController.forward();
-
-    // Start fetching all dashboard data on initialization
     _fetchDashboardData();
   }
 
-  /// Fetches all AI-generated data concurrently.
   Future<void> _fetchDashboardData() async {
     final aiLogicService = Provider.of<AiLogicService>(context, listen: false);
-
-    // Use Future.wait to fetch all data concurrently for better performance
     _dashboardDataFuture = Future.wait([
-      // Corrected call to use the AiLogicService for news feed generation
-      // The generateNewsFeed, getAiGeneratedMatches, and getAiGeneratedDates
-      // methods now return nullable types, so we must handle that.
       aiLogicService.generateNewsFeed(_userProfileSummary, _recentActivity),
       aiLogicService.getAiGeneratedMatches(_userProfileSummary),
       aiLogicService.getAiGeneratedDates(_userProfileSummary),
     ]).then((results) {
       return {
-        'news_feed': results[0] ?? [], // Fallback to an empty list
-        'matches': results[1] ?? [],  // Fallback to an empty list
-        'dates': results[2] ?? [],    // Fallback to an empty list
+        'news_feed': results[0] ?? [],
+        'matches': results[1] ?? [],
+        'dates': results[2] ?? [],
       };
     }).catchError((e) {
-      // Catch any errors during the async operations
       debugPrint('Error fetching dashboard data: $e');
       return {
         'news_feed': ['Error loading news feed.'],
@@ -83,7 +71,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         'dates': [],
       };
     });
-    // This setState is crucial to trigger the FutureBuilder to start building
     setState(() {});
   }
 
@@ -108,14 +95,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     setState(() {
       _selectedTabIndex = index;
     });
-    // For smaller screens, collapse the menu after selection
     if (MediaQuery.of(context).size.width < 768) {
       _onToggleCollapse();
     }
   }
 
-  // This is the new widget that will display all the AI-generated data.
-  // It's a method that returns a widget, which is then used in the _screens list.
   Widget _buildDashboardOverviewScreen() {
     return Scaffold(
       appBar: AppBar(
@@ -131,7 +115,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (!snapshot.hasData || snapshot.data == null) {
-               return const Center(child: Text('Failed to load dashboard data.'));
+              return const Center(child: Text('Failed to load dashboard data.'));
             } else {
               final data = snapshot.data!;
               final newsFeed = data['news_feed'] as List<String>? ?? [];
@@ -142,7 +126,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Section for AI-Generated News Feed
                     Text('Your AI-Generated News Feed', style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 10),
                     if (newsFeed.isNotEmpty)
@@ -157,10 +140,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       )
                     else
                       const Text('No news feed items available.'),
-
                     const Divider(height: 32),
-
-                    // Section for AI-Generated Matches
                     Text('AI-Generated Matches for you', style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 10),
                     if (matches.isNotEmpty)
@@ -176,10 +156,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       )
                     else
                       const Text('No new AI-generated matches.'),
-
                     const Divider(height: 32),
-
-                    // Section for AI-Generated Dates
                     Text('Upcoming AI-Generated Dates', style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 10),
                     if (dates.isNotEmpty)
@@ -188,7 +165,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           child: ListTile(
                             leading: const Icon(Icons.calendar_today_rounded, color: Colors.green),
-                            title: Text('Date with ${date['date_idea']}'), // Display the date idea
+                            title: Text('Date with ${date['date_idea']}'),
                             subtitle: Text('Details: ${date['details']}'),
                           ),
                         )).toList(),
@@ -205,9 +182,8 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     );
   }
 
-  // Define a list of all screens
   late final List<Widget> _screens = [
-    _buildDashboardOverviewScreen(), // <-- This is now our main dashboard overview
+    _buildDashboardOverviewScreen(),
     const Center(child: Text('My Matches Screen')),
     const Center(child: Text('Discovery Screen')),
     const Center(child: Text('Newsfeed Screen')),
@@ -235,14 +211,11 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
-
-    // Use a dummy user profile with required fields and a valid DateTime
-    // ADDED: a placeholder URL to prevent the Assertion error
     final dummyUserProfile = UserProfile(
       id: 'dummy-id',
       email: 'dummy@example.com',
       fullLegalName: 'Starlight Seeker',
-      profilePictureUrl: 'https://placehold.co/150x150/252f3f/FFFFFF?text=User', // ADDED this line
+      profilePictureUrl: 'https://placehold.co/150x150/252f3f/FFFFFF?text=User',
       createdAt: DateTime.now(),
     );
 
@@ -251,7 +224,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           ? DashboardAppBar(
               onMenuPressed: _onToggleCollapse,
             )
-          : null, // Hide app bar on desktop
+          : null,
       body: Row(
         children: [
           DashboardSideMenu(
@@ -354,7 +327,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           Expanded(
             child: Column(
               children: [
-                if (!isMobile) // Show app bar on desktop
+                if (!isMobile)
                   DashboardAppBar(
                     onMenuPressed: _onToggleCollapse,
                   ),
