@@ -42,12 +42,12 @@ Deno.serve(async (req) => {
     // For this example, we'll use a placeholder.
     const { user_preferences } = await req.json();
 
-    // --- CORRECTED LINE: Updated prompt_text to request JSON format ---
+    // --- CORRECTED PROMPT ---
     const prompt_text = `You are an AI assistant for a blind dating app. Create a short, engaging news feed for a user based on their preferences: ${user_preferences}. Do not mention any user IDs. Focus on personality and interests, as it's a "blind" dating app.
 
-Return the response as a JSON array of objects, with each object having keys: "headline", "summary", and "related_user_id" (a fictional ID).`;
-    // --- END OF CORRECTED LINE ---
-    
+Return a JSON array of objects. Do not include any other text or formatting. Each object should have keys: "headline", "summary", and "related_user_id" (a fictional ID).`;
+    // --- END OF CORRECTED PROMPT ---
+
     const model_name = 'gemini-1.5-pro'; // CORRECTED LINE (already done in previous step, but keeping for completeness)
     const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/';
     const url = `${BASE_API_URL}models/${model_name}:generateContent?key=${GOOGLE_API_KEY}`;
@@ -69,16 +69,23 @@ Return the response as a JSON array of objects, with each object having keys: "h
     }
 
     const data = await aiResponse.json();
-    const generated_text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No content generated.';
+    const generated_text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]'; // Default to empty array string
 
-    // Attempt to parse the generated_text as JSON, as per the new prompt instructions
+    // --- NEW JSON PARSING LOGIC ---
     let newsFeedData;
     try {
-        newsFeedData = JSON.parse(generated_text);
+        // Use a regular expression to extract the JSON from the AI's response
+        const jsonMatch = generated_text.match(/\[.*\]/s);
+        if (jsonMatch && jsonMatch[0]) {
+            newsFeedData = JSON.parse(jsonMatch[0]);
+        } else {
+            throw new Error('Could not find a valid JSON array in the AI response.');
+        }
     } catch (e) {
         console.error('Failed to parse AI response as JSON:', generated_text, e);
         throw new Error('AI did not return valid JSON for newsfeed despite prompt instructions.');
     }
+    // --- END OF NEW JSON PARSING LOGIC ---
 
     return new Response(
       JSON.stringify({ news_feed: newsFeedData }), // Return the parsed JSON
