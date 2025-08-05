@@ -20,8 +20,19 @@ import 'package:bliindaidating/profile/profile_setup_screen.dart';
 // Service Imports
 import 'package:bliindaidating/services/newsfeed_service.dart';
 import 'package:bliindaidating/services/questionnaire_service.dart';
-import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart'; // FIX: Added the missing import for AiLogicService
 import 'package:bliindaidating/services/matches_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+
+import 'package:bliindaidating/services/ai_logic_service.dart';
 
 // Screen Imports
 import 'package:bliindaidating/auth/login_screen.dart';
@@ -31,6 +42,8 @@ import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
+import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
+import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart'; // FIX: Added the import for daily_prompts_screen.dart
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -209,12 +222,12 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
         GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
         GoRoute(path: '/dashboard-overview', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/newsfeed', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/newsfeed', builder: (context, state) => const NewsfeedScreen()),
         GoRoute(path: '/matches', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/discovery', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/my-profile', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/questionnaire', builder: (context, state) => const MainDashboardScreen()),
-        GoRoute(path: '/daily-prompts', builder: (context, state) => const MainDashboardScreen()),
+        GoRoute(path: '/daily-prompts', builder: (context, state) => const DailyPromptsScreen()), // FIX: Corrected builder for daily-prompts
         GoRoute(path: '/notifications', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/favorites', builder: (context, state) => const MainDashboardScreen()),
         GoRoute(path: '/compatibility-results', builder: (context, state) => const MainDashboardScreen()),

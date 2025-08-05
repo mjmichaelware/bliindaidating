@@ -12,7 +12,7 @@ class AppConstants {
   // --- API Base URL ---
   static String get baseUrl {
     const String supabaseProjectId = 'kynzpohycwdphorxsnzy';
-    
+
     // Corrected for Codespaces: The public URL for port 8000.
     const String codespacesUrl = 'https://fantastic-couscous-r4x67996r9p7cxx9g-8000.app.github.dev/';
 
@@ -35,7 +35,18 @@ class AppConstants {
       }
     }
   }
-  // --- END API Base URL ---
+
+  // --- NEW: Add the supabaseFunctionsUrl constant ---
+  // This is used by the AiLogicService to resolve the endpoint.
+  static String get supabaseFunctionsUrl {
+    const String supabaseProjectId = 'kynzpohycwdphorxsnzy';
+    if (kIsWeb) {
+      return 'https://$supabaseProjectId.supabase.co/functions/v1';
+    } else {
+      return 'https://$supabaseProjectId.supabase.co/functions/v1';
+    }
+  }
+  // --- END NEW ---
 
   // Admin Email
   static const String adminEmail = 'your_admin_email@example.com';

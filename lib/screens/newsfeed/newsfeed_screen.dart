@@ -5,9 +5,14 @@ import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart'; // Import for debugPrint
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase for the JWT token
 
+// Service Imports
 import 'package:bliindaidating/services/newsfeed_service.dart';
 import 'package:bliindaidating/services/profile_service.dart';
+
+// Widget Imports
+import 'package:bliindaidating/widgets/newsfeed/newsfeed_card.dart';
 import 'package:bliindaidating/widgets/common/loading_indicator_widget.dart';
 import 'package:bliindaidating/widgets/common/empty_state_widget.dart';
 
@@ -35,7 +40,6 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     debugPrint('NewsfeedScreen: didChangeDependencies called.');
-    // If you access any InheritedWidgets or Providers here, this is where it happens.
   }
 
   Future<void> _fetchNewsfeedItems() async {
@@ -44,6 +48,19 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
+
+    final session = Supabase.instance.client.auth.currentSession;
+    final jwtToken = session?.accessToken;
+
+    if (jwtToken == null) {
+      debugPrint('NewsfeedScreen: _fetchNewsfeedItems - User not authenticated.');
+      setState(() {
+        _errorMessage = 'User not authenticated. Please log in.';
+        _isLoading = false;
+      });
+      return;
+    }
+
     try {
       debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Accessing NewsfeedService and ProfileService.');
       final newsfeedService = Provider.of<NewsfeedService>(context, listen: false);
@@ -60,11 +77,11 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
       ];
       debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Using mock recent activity: $recentActivity');
 
-
       debugPrint('NewsfeedScreen: _fetchNewsfeedItems - Calling newsfeedService.refreshNewsfeed.');
       final List<String> items = await newsfeedService.refreshNewsfeed(
         userProfileSummary,
         recentActivity,
+        jwtToken, // Pass the JWT token
       );
       debugPrint('NewsfeedScreen: _fetchNewsfeedItems - newsfeedService.refreshNewsfeed COMPLETED. Items received: ${items.length}');
       setState(() {
@@ -157,37 +174,22 @@ class _NewsfeedScreenState extends State<NewsfeedScreen> {
       color: AppConstants.primaryColor,
       backgroundColor: isDarkMode ? AppConstants.surfaceColor : AppConstants.lightSurfaceColor,
       child: ListView.builder(
-        padding: EdgeInsets.all(AppConstants.paddingMedium),
+        padding: const EdgeInsets.all(AppConstants.paddingMedium),
         itemCount: _newsfeedItems.length,
         itemBuilder: (context, index) {
           final item = _newsfeedItems[index];
           debugPrint('NewsfeedScreen: ListView.builder - building item $index: "$item"');
-          return Card(
-            margin: EdgeInsets.only(bottom: AppConstants.spacingMedium),
-            color: isDarkMode ? AppConstants.cardColor : AppConstants.lightCardColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: AppConstants.paddingSmall,
             ),
-            elevation: 2,
-            child: Padding(
-              padding: EdgeInsets.all(AppConstants.paddingMedium),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor,
-                    ),
-                  ),
-                ],
-              ),
+            child: NewsfeedCard(
+              content: item,
             ),
           );
         },
       ),
     );
-    // debugPrint('NewsfeedScreen: build END.'); // Cannot place after return
   }
 
   @override

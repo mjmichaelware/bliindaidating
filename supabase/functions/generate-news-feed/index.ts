@@ -1,32 +1,81 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+// supabase/functions/generate-news-feed/index.ts
+// This function generates a personalized news feed for a user using Google Generative AI.
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-console.log("Hello from Functions!")
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // IMPORTANT: In production, change this to your specific Flutter web domain
+  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 Deno.serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
-  return new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
-  )
-})
+  // Extract the JWT from the Authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // --- START OF FIX: Ensure the 401 response includes CORS headers ---
+    return new Response(
+      JSON.stringify({ code: 401, message: 'Missing or invalid Authorization header.' }),
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 401 }
+    );
+    // --- END OF FIX ---
+  }
+  const token = authHeader.split(' ')[1];
 
-/* To invoke locally:
+  // For this example, we will not verify the JWT, but you would
+  // typically use a library like 'djwt' to do so.
+  // The 'verify_jwt = true' setting in supabase/config.toml handles this.
 
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
+  try {
+    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/generate-news-feed' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
+    if (!GOOGLE_API_KEY) {
+      throw new Error('Google AI Studio API key is not configured.');
+    }
 
-*/
+    // This is where you would get user data from the request body or from the JWT
+    // For this example, we'll use a placeholder.
+    const { user_preferences } = await req.json();
+
+    const prompt_text = `You are an AI assistant for a blind dating app. Create a short, engaging news feed for a user based on their preferences: ${user_preferences}. Do not mention any user IDs. Focus on personality and interests, as it's a "blind" dating app.`;
+    const model_name = 'gemini-pro';
+    const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/';
+    const url = `${BASE_API_URL}models/${model_name}:generateContent?key=${GOOGLE_API_KEY}`;
+    
+    const requestBody = {
+      contents: [{ role: 'user', parts: [{ text: prompt_text }] }],
+    };
+
+    const aiResponse = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('Gemini API Error:', aiResponse.status, errorText);
+      throw new Error(`Gemini API error: ${aiResponse.status} - ${errorText}`);
+    }
+
+    const data = await aiResponse.json();
+    const generated_text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No content generated.';
+
+    return new Response(
+      JSON.stringify({ news_feed: generated_text }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+
+  } catch (error) {
+    console.error('Edge Function Error:', error.message);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
+    );
+  }
+});

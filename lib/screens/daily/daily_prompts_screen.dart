@@ -1,7 +1,19 @@
 // lib/screens/daily/daily_prompts_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Import Provider
+import 'package:provider/provider.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+
+import 'package:bliindaidating/services/ai_logic_service.dart'; // Import Provider
+import 'package:supabase_flutter/supabase_flutter.dart'; // <--- NEW: Import Supabase
 import 'package:bliindaidating/shared/glowing_button.dart';
 import 'package:bliindaidating/services/ai_logic_service.dart'; // Import AiLogicService
 import 'package:bliindaidating/app_constants.dart'; // For colors and spacing
@@ -16,20 +28,18 @@ class DailyPromptsScreen extends StatefulWidget {
 }
 
 class _DailyPromptsScreenState extends State<DailyPromptsScreen> {
-  String? _currentDailyPrompt; // Now holds the fetched prompt
+  String? _currentDailyPrompt;
   bool _isLoadingPrompt = true;
   String? _error;
 
-  // You can keep local answers if you want to store them temporarily on the client
-  // before submitting to a backend questionnaire system.
   final Map<int, String> answers = {};
   final TextEditingController _controller = TextEditingController();
-  int _currentPromptIndex = 0; // Still used for local answer tracking, if needed
+  int _currentPromptIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _fetchDailyPrompt(); // Fetch a prompt when the screen initializes
+    _fetchDailyPrompt();
   }
 
   @override
@@ -38,15 +48,30 @@ class _DailyPromptsScreenState extends State<DailyPromptsScreen> {
     super.dispose();
   }
 
+  // --- FIX: Add logic to get and pass the JWT token ---
   Future<void> _fetchDailyPrompt() async {
     setState(() {
       _isLoadingPrompt = true;
       _error = null;
     });
+
+    final session = Supabase.instance.client.auth.currentSession;
+    final jwtToken = session?.accessToken;
+
+    if (jwtToken == null) {
+      setState(() {
+        _error = 'User not authenticated. Please log in.';
+        _isLoadingPrompt = false;
+      });
+      return;
+    }
+
     try {
       final aiService = Provider.of<AiLogicService>(context, listen: false);
-      // You can pass context if your backend uses it, e.g., user's location, interests
-      final prompt = await aiService.generateDailyPrompt(context: 'dating app user, self-reflection');
+      final prompt = await aiService.generateDailyPrompt(
+        jwtToken, // <--- NEW: Pass the JWT token as the first argument
+        context: 'dating app user, self-reflection'
+      );
       setState(() {
         _currentDailyPrompt = prompt;
       });
@@ -61,20 +86,16 @@ class _DailyPromptsScreenState extends State<DailyPromptsScreen> {
       });
     }
   }
+  // --- END FIX ---
 
   void _submitAnswer() {
     if (_controller.text.trim().isEmpty) return;
 
     setState(() {
-      // This part remains for local answer storage, if you need it.
-      // For actual questionnaire integration, you'd send this to QuestionnaireService.
       answers[_currentPromptIndex] = _controller.text.trim();
       _controller.clear();
-      // If you have multiple AI prompts, you'd fetch a new one here.
-      // For now, it just cycles locally or fetches a new one.
-      _fetchDailyPrompt(); // Fetch a new prompt after submitting an answer
+      _fetchDailyPrompt();
     });
-    // TODO: Integrate with QuestionnaireService.submitAnswers if this is part of a persistent questionnaire
   }
 
   @override
@@ -82,12 +103,12 @@ class _DailyPromptsScreenState extends State<DailyPromptsScreen> {
   context) {
     final theme = Theme.of(context);
 
-    String? previousAnswer = answers[_currentPromptIndex]; // For local display
+    String? previousAnswer = answers[_currentPromptIndex];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Prompts'),
-        backgroundColor: AppConstants.primaryColorShade900, // Using AppConstants colors
+        backgroundColor: AppConstants.primaryColorShade900,
         foregroundColor: AppConstants.textColor,
         centerTitle: true,
         actions: [
@@ -98,7 +119,7 @@ class _DailyPromptsScreenState extends State<DailyPromptsScreen> {
           ),
         ],
       ),
-      backgroundColor: AppConstants.backgroundColor, // Using AppConstants colors
+      backgroundColor: AppConstants.backgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppConstants.paddingLarge),
@@ -177,7 +198,7 @@ class _DailyPromptsScreenState extends State<DailyPromptsScreen> {
                                   text: 'Submit Answer',
                                   onPressed: _submitAnswer,
                                   gradientColors: const [
-                                    AppConstants.tertiaryColor, // Using AppConstants colors
+                                    AppConstants.tertiaryColor,
                                     AppConstants.primaryColorShade700,
                                   ],
                                   height: 48,

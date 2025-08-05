@@ -1,60 +1,49 @@
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
 // lib/services/newsfeed_service.dart
 
-import 'package:flutter/foundation.dart'; // For ChangeNotifier and debugPrint
-import 'package:bliindaidating/models/newsfeed/newsfeed_item.dart'; // Still import for NewsfeedItemType
-import 'dart:convert'; // For jsonEncode, jsonDecode
+import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:bliindaidating/app_constants.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart';
+import 'package:bliindaidating/services/ai_logic_service.dart'; // FIX: This import was missing or incorrect
 
-import 'package:bliindaidating/services/ai_logic_service.dart'; // <--- IMPORT AiLogicService
-
-/// A service to manage newsfeed items, including AI generation.
 class NewsfeedService extends ChangeNotifier {
-  List<String> _newsfeedItems = []; // Now stores strings from LLM
-  List<String> get newsfeedItems => _newsfeedItems;
+  final AiLogicService _aiLogicService;
 
-  // Inject AiLogicService (or create an instance)
-  final AiLogicService _aiLogicService; // <--- This remains the same
+  NewsfeedService(this._aiLogicService);
 
-  // CORRECTED CONSTRUCTOR: It *requires* AiLogicService to be passed.
-  // This ensures that NewsfeedService always gets its dependency from the Provider tree.
-  NewsfeedService(this._aiLogicService) {
-    debugPrint('NewsfeedService initialized with AiLogicService.');
-  }
-
-  // This method generates newsfeed items using an LLM (via AiLogicService)
-  Future<List<String>> generateNewsFeedItems(
-      String userProfileSummary,
-      List<Map<String, dynamic>> recentActivity,
-      {int numItems = 3}) async {
-    debugPrint('NewsfeedService: Requesting newsfeed items from AiLogicService...');
+  Future<List<String>> refreshNewsfeed(
+    String userProfileSummary,
+    List<Map<String, dynamic>> recentActivity,
+    String jwtToken,
+  ) async {
     try {
-      // Call the AiLogicService to get the newsfeed items.
-      // AiLogicService (or your backend it calls) should handle the JSON parsing and markdown stripping.
-      final List<String>? generatedItems = await _aiLogicService.generateNewsFeed(
+      final List<String>? newsfeedItems = await _aiLogicService.generateNewsFeed(
         userProfileSummary,
         recentActivity,
-        numItems: numItems,
+        jwtToken,
       );
 
-      if (generatedItems != null && generatedItems.isNotEmpty) {
-        _newsfeedItems = generatedItems;
-        debugPrint('NewsfeedService: Received ${_newsfeedItems.length} newsfeed items from AiLogicService.');
-      } else {
-        debugPrint('NewsfeedService: AiLogicService returned no newsfeed items or null. Using fallback message.');
-        _newsfeedItems = ['Failed to generate newsfeed items. Please try again later.'];
+      if (newsfeedItems == null) {
+        throw Exception('Failed to get newsfeed items from AI service.');
       }
-      notifyListeners();
-      return _newsfeedItems;
 
+      return newsfeedItems;
+    } on SocketException {
+      debugPrint('No internet connection. Please check your network settings.');
+      rethrow;
+    } on HttpException {
+      debugPrint("Couldn't find the requested data.");
+      rethrow;
     } catch (e) {
-      debugPrint('Error calling AiLogicService for newsfeed generation: $e');
-      _newsfeedItems = ['Error generating newsfeed: ${e.toString()}'];
-      notifyListeners();
-      return _newsfeedItems;
+      debugPrint('Failed to refresh newsfeed: $e');
+      rethrow;
     }
-  }
-
-  // Method to refresh newsfeed (calls the generation method)
-  Future<List<String>> refreshNewsfeed(String userProfileSummary, List<Map<String, dynamic>> recentActivity) async {
-    return await generateNewsFeedItems(userProfileSummary, recentActivity);
   }
 }
