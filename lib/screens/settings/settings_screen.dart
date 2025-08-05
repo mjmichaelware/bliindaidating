@@ -34,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   String? _preferredGender;
   RangeValues _ageRange = const RangeValues(18, 50);
   double _maxDistance = 100; // in miles
+  // --- Profile Visibility State ---
+  Map<String, bool> _profileVisibilityPreferences = {};
 
   // Tab Definitions
   static const List<Tab> _settingsTabs = <Tab>[
@@ -47,7 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _profileService = ProfileService(Supabase.instance.client);
+    _profileService = Provider.of<ProfileService>(context, listen: false);
     _tabController = TabController(length: _settingsTabs.length, vsync: this);
     _tabController.addListener(_handleTabChange);
     _loadPreferences();
@@ -82,6 +84,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 )
               : const RangeValues(20, 40);
           _maxDistance = (userProfile.datingPreferences?['maxDistance'] as double? ?? 50.0);
+          
+          // Initialize visibility preferences
+          _profileVisibilityPreferences = userProfile.profileVisibilityPreferences ?? {};
         });
       }
       debugPrint('SettingsScreen: Preferences loaded.');
@@ -98,6 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   }
 
   Future<void> _savePreferences() async {
+    // Validate only the current tab's form
     if (!_formKeys[_tabController.index].currentState!.validate()) {
       debugPrint('SettingsScreen: Validation failed for current tab.');
       return;
@@ -123,9 +129,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         'maxDistance': _maxDistance.toInt(),
       };
       
-      // Update the local profile object with new dating preferences
+      // Update the local profile object with new preferences
       final updatedProfile = _userProfile!.copyWith(
         datingPreferences: datingPreferencesToSave,
+        profileVisibilityPreferences: _profileVisibilityPreferences, // NEW: Include visibility prefs
       );
 
       // Call the service to update the profile in the database
@@ -154,12 +161,11 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   void _onAgeRangeChanged(RangeValues newValues) { setState(() { _ageRange = newValues; }); }
   void _onMaxDistanceChanged(double newValue) { setState(() { _maxDistance = newValue; }); }
 
+  // NEW: Callback to update visibility preferences from the child widget
   void _onProfileVisibilityChanged(Map<String, bool> newPrefs) {
-    if (_userProfile != null) {
-      setState(() {
-        _userProfile = _userProfile!.copyWith(profileVisibilityPreferences: newPrefs);
-      });
-    }
+    setState(() {
+      _profileVisibilityPreferences = newPrefs;
+    });
   }
 
   @override
@@ -173,13 +179,10 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     final themeController = Provider.of<ThemeController>(context);
     final isDarkMode = themeController.isDarkMode;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final Color primaryColor = isDarkMode ? AppConstants.primaryColor : AppConstants.lightPrimaryColor;
-    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
-    final Color accentColor = isDarkMode ? AppConstants.accentColor : AppConstants.lightAccentColor;
     final Color textColor = isDarkMode ? AppConstants.textColor : AppConstants.lightTextColor;
     final Color iconColor = isDarkMode ? AppConstants.iconColor : AppConstants.lightIconColor;
+    final Color accentColor = isDarkMode ? AppConstants.accentColor : AppConstants.lightAccentColor;
+    final Color secondaryColor = isDarkMode ? AppConstants.secondaryColor : AppConstants.lightSecondaryColor;
 
     return Scaffold(
       appBar: AppBar(
@@ -227,6 +230,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 ProfileVisibilitySettings(
                   formKey: _formKeys[1],
                   profile: _userProfile!,
+                  // Pass the initial visibility preferences to the widget
+                  initialVisibility: _profileVisibilityPreferences,
+                  // Pass the callback to update the parent state
                   onVisibilityChange: _onProfileVisibilityChanged,
                 ),
                 AccountSettingsForm(formKey: _formKeys[2]),

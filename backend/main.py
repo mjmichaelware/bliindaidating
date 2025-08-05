@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+from fastapi.middleware.cors import CORSMiddleware # Added CORSMiddleware import
 
 # --- Load environment variables FIRST ---
 from dotenv import load_dotenv
@@ -71,6 +72,27 @@ app = FastAPI(
     version="0.1.0"
 )
 
+# -----------------------------------------------------------------------------
+# CORS Configuration - THIS IS THE FIX
+# -----------------------------------------------------------------------------
+# This middleware allows your frontend running on one port to make requests
+# to this backend on another. You must include your specific Codespaces URLs.
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://fantastic-couscous-r4x67996r9p7cxx9g-3000.app.github.dev",
+    "https://fantastic-couscous-r4x67996r9p7cxx9g-8000.app.github.dev"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True, # Allows cookies and authentication headers
+    allow_methods=["*"],    # Allows all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],    # Allows all HTTP headers
+)
+
+
 # --- Pydantic Models for Request Bodies ---
 class GenerateProfileRequest(BaseModel):
     user_data: Dict[str, str]
@@ -86,6 +108,16 @@ class GenerateDailyPromptRequest(BaseModel):
 
 class GenerateDummyUsersRequest(BaseModel):
     count: int = Field(5, ge=1, le=50)
+
+# New Pydantic models for the new endpoints
+class GenerateMatchesRequest(BaseModel):
+    user_profile_summary: str
+    num_matches: int = Field(3, ge=1, le=10)
+
+class GenerateDatesRequest(BaseModel):
+    user_profile_summary: str
+    num_dates: int = Field(3, ge=1, le=10)
+
 
 # --- LLM Utility Function (using Google Gemini Pro API) ---
 def generate_text_with_llm(prompt_text: str, max_new_tokens: int = 500, response_schema: Optional[Dict[str, Any]] = None) -> Optional[str]:
@@ -377,3 +409,89 @@ async def generate_dummy_users(request: GenerateDummyUsersRequest, http_request:
     except Exception as e:
         logger.error(f"Error in /generate-dummy-users/ endpoint: {e}", exc_info=True)
         return JSONResponse(content={"error": f"An unexpected error occurred: {e}"}, status_code=500)
+
+# -----------------------------------------------------------------------------
+# NEW Endpoints for AI-Generated Matches and Dates
+# -----------------------------------------------------------------------------
+
+@app.post("/generate-ai-matches/")
+async def generate_ai_matches(request: GenerateMatchesRequest, http_request: Request):
+    """Generates AI-suggested matches based on a user's profile."""
+    logger.info(f"Received POST request to /generate-ai-matches/ from {http_request.client.host}")
+    
+    match_schema = {
+        "type": "ARRAY",
+        "items": {
+            "type": "OBJECT",
+            "properties": {
+                "profile_name": {"type": "STRING", "description": "The name of the matched person."},
+                "reason": {"type": "STRING", "description": "A short, compelling reason for the match based on the user's profile."},
+                "match_id": {"type": "STRING", "description": "A unique identifier for the match (e.g., a dummy UUID)."},
+            },
+            "required": ["profile_name", "reason", "match_id"]
+        }
+    }
+    
+    prompt = f"Based on the user's profile summary: \"{request.user_profile_summary}\"\n" \
+             f"Generate {request.num_matches} highly compatible, personalized dating matches. " \
+             "Provide a name and a compelling, creative reason for each match. " \
+             "Format the output as a JSON list of objects, strictly following the provided schema."
+    
+    generated_json_str = generate_text_with_llm(prompt, max_new_tokens=request.num_matches * 100, response_schema=match_schema)
+
+    if generated_json_str:
+        try:
+            matches = json.loads(generated_json_str)
+            # Add unique IDs
+            for match in matches:
+                match['match_id'] = str(uuid.uuid4())
+            logger.info(f"Successfully generated and parsed {len(matches)} AI matches.")
+            return JSONResponse(content={"matches": matches})
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON from LLM for matches: {e}. Raw response: {generated_json_str}", exc_info=True)
+            return JSONResponse(content={"error": "Failed to parse AI response JSON for matches"}, status_code=500)
+    else:
+        logger.error("Failed to generate AI matches.")
+        return JSONResponse(content={"error": "Failed to generate AI matches"}, status_code=500)
+
+
+@app.post("/generate-ai-dates/")
+async def generate_ai_dates(request: GenerateDatesRequest, http_request: Request):
+    """Generates AI-suggested date ideas based on a user's profile."""
+    logger.info(f"Received POST request to /generate-ai-dates/ from {http_request.client.host}")
+    
+    date_schema = {
+        "type": "ARRAY",
+        "items": {
+            "type": "OBJECT",
+            "properties": {
+                "date_idea": {"type": "STRING", "description": "A creative date idea."},
+                "details": {"type": "STRING", "description": "A brief, intriguing description of the date idea."},
+                "date_id": {"type": "STRING", "description": "A unique identifier for the date idea (e.g., a dummy UUID)."},
+            },
+            "required": ["date_idea", "details", "date_id"]
+        }
+    }
+    
+    prompt = f"Based on the user's profile summary: \"{request.user_profile_summary}\"\n" \
+             f"Generate {request.num_dates} creative and personalized date ideas. " \
+             "For each idea, provide a short title and a one-sentence description. " \
+             "Format the output as a JSON list of objects, strictly following the provided schema."
+    
+    generated_json_str = generate_text_with_llm(prompt, max_new_tokens=request.num_dates * 100, response_schema=date_schema)
+
+    if generated_json_str:
+        try:
+            dates = json.loads(generated_json_str)
+            # Add unique IDs
+            for date in dates:
+                date['date_id'] = str(uuid.uuid4())
+            logger.info(f"Successfully generated and parsed {len(dates)} AI date ideas.")
+            return JSONResponse(content={"dates": dates})
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON from LLM for dates: {e}. Raw response: {generated_json_str}", exc_info=True)
+            return JSONResponse(content={"error": "Failed to parse AI response JSON for dates"}, status_code=500)
+    else:
+        logger.error("Failed to generate AI date ideas.")
+        return JSONResponse(content={"error": "Failed to generate AI date ideas"}, status_code=500)
+

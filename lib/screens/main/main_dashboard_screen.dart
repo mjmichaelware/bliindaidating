@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:bliindaidating/models/user_profile.dart'; // UserProfile
+import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_app_bar.dart';
@@ -12,6 +12,10 @@ import 'package:bliindaidating/widgets/dashboard_shell/dashboard_content_switche
 import 'package:bliindaidating/widgets/dashboard_shell/dashboard_side_menu.dart';
 import 'package:bliindaidating/widgets/dashboard_shell/side_menu_category_item.dart';
 import 'package:bliindaidating/services/ai_logic_service.dart'; // Use AiLogicService for all AI-related data fetching
+// IMPORTANT: You'll also need the SideMenuProfileHeader widget, which is a dependency
+// of this file, but you did not provide its code. It is assumed it exists.
+// import 'package:bliindaidating/widgets/dashboard_shell/side_menu_profile_header.dart';
+
 
 class MainDashboardScreen extends StatefulWidget {
   const MainDashboardScreen({super.key});
@@ -59,14 +63,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     // Use Future.wait to fetch all data concurrently for better performance
     _dashboardDataFuture = Future.wait([
       // Corrected call to use the AiLogicService for news feed generation
+      // The generateNewsFeed, getAiGeneratedMatches, and getAiGeneratedDates
+      // methods now return nullable types, so we must handle that.
       aiLogicService.generateNewsFeed(_userProfileSummary, _recentActivity),
       aiLogicService.getAiGeneratedMatches(_userProfileSummary),
       aiLogicService.getAiGeneratedDates(_userProfileSummary),
     ]).then((results) {
       return {
-        'news_feed': results[0],
-        'matches': results[1],
-        'dates': results[2],
+        'news_feed': results[0] ?? [], // Fallback to an empty list
+        'matches': results[1] ?? [],  // Fallback to an empty list
+        'dates': results[2] ?? [],    // Fallback to an empty list
       };
     }).catchError((e) {
       // Catch any errors during the async operations
@@ -107,7 +113,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
       _onToggleCollapse();
     }
   }
-  
+
   // This is the new widget that will display all the AI-generated data.
   // It's a method that returns a widget, which is then used in the _screens list.
   Widget _buildDashboardOverviewScreen() {
@@ -122,8 +128,10 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError || !snapshot.hasData) {
-              return Center(child: Text('Error: ${snapshot.error ?? 'Failed to load data'}'));
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (!snapshot.hasData || snapshot.data == null) {
+               return const Center(child: Text('Failed to load dashboard data.'));
             } else {
               final data = snapshot.data!;
               final newsFeed = data['news_feed'] as List<String>? ?? [];
@@ -149,7 +157,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       )
                     else
                       const Text('No news feed items available.'),
-                    
+
                     const Divider(height: 32),
 
                     // Section for AI-Generated Matches
@@ -168,7 +176,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                       )
                     else
                       const Text('No new AI-generated matches.'),
-                      
+
                     const Divider(height: 32),
 
                     // Section for AI-Generated Dates
@@ -180,7 +188,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                           margin: const EdgeInsets.symmetric(vertical: 4),
                           child: ListTile(
                             leading: const Icon(Icons.calendar_today_rounded, color: Colors.green),
-                            title: Text('Date with ${date['profile_name']}'),
+                            title: Text('Date with ${date['date_idea']}'), // Display the date idea
                             subtitle: Text('Details: ${date['details']}'),
                           ),
                         )).toList(),
@@ -229,11 +237,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     // Use a dummy user profile with required fields and a valid DateTime
+    // ADDED: a placeholder URL to prevent the Assertion error
     final dummyUserProfile = UserProfile(
       id: 'dummy-id',
       email: 'dummy@example.com',
       fullLegalName: 'Starlight Seeker',
-      profilePictureUrl: null,
+      profilePictureUrl: 'https://placehold.co/150x150/252f3f/FFFFFF?text=User', // ADDED this line
       createdAt: DateTime.now(),
     );
 

@@ -205,11 +205,11 @@ class _DiscoverPeopleScreenState extends State<DiscoverPeopleScreen> {
                                 ),
                               ),
                               const SizedBox(height: AppConstants.spacingMedium),
-                              if (userProfile.hobbiesAndInterests.isNotEmpty)
+                              if (userProfile.hobbiesAndInterests != null && userProfile.hobbiesAndInterests!.isNotEmpty)
                                 Wrap(
                                   spacing: AppConstants.spacingSmall,
                                   runSpacing: AppConstants.spacingExtraSmall,
-                                  children: userProfile.hobbiesAndInterests.map((hobby) => Chip(
+                                  children: userProfile.hobbiesAndInterests!.keys.map((hobby) => Chip(
                                     label: Text(hobby, style: theme.textTheme.bodySmall?.copyWith(color: AppConstants.textColor)),
                                     backgroundColor: AppConstants.secondaryColor.withOpacity(0.3),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall)),

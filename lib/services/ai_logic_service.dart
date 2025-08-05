@@ -2,14 +2,17 @@
 
 import 'dart:convert'; // For jsonEncode and jsonDecode
 import 'package:http/http.dart' as http; // Import the http package
-import '../app_constants.dart'; // Import AppConstants for the base URL
 import 'package:flutter/foundation.dart'; // For debugPrint
+import '../app_constants.dart'; // Import AppConstants for the base URL
 
 /// A service responsible for all AI-related logic,
 /// acting as an intermediary to a backend API that wraps external AI models.
 class AiLogicService {
   // The base URL for your FastAPI backend (or other backend)
-  final String _baseUrl = AppConstants.baseUrl;
+  // We'll clean this up to ensure no trailing slash
+  final String _baseUrl = AppConstants.baseUrl.endsWith('/')
+      ? AppConstants.baseUrl.substring(0, AppConstants.baseUrl.length - 1)
+      : AppConstants.baseUrl;
 
   // Existing method to generate news feed
   Future<List<String>?> generateNewsFeed(String userProfileSummary, List<Map<String, dynamic>> recentActivity, {int numItems = 3}) async {
@@ -43,10 +46,11 @@ class AiLogicService {
       return null;
     }
   }
-  
-  // New method to get AI-generated matches.
-  Future<List<Map<String, dynamic>>?> getAiGeneratedMatches(String userProfileSummary, {int numMatches = 3}) async {
-    final url = Uri.parse('$_baseUrl/get-ai-matches/');
+
+  // UPDATED: Corrected URL to match the new backend endpoint.
+  Future<List<Map<String, dynamic>>?> getAiGeneratedMatches(String userProfileSummary, {int numMatches = 5}) async {
+    // Corrected URL construction
+    final url = Uri.parse('$_baseUrl/generate-ai-matches/');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
       'user_profile_summary': userProfileSummary,
@@ -76,9 +80,10 @@ class AiLogicService {
     }
   }
 
-  // New method to get AI-generated scheduled dates.
+  // UPDATED: Corrected URL to match the new backend endpoint.
   Future<List<Map<String, dynamic>>?> getAiGeneratedDates(String userProfileSummary, {int numDates = 3}) async {
-    final url = Uri.parse('$_baseUrl/get-ai-dates/');
+    // Corrected URL construction
+    final url = Uri.parse('$_baseUrl/generate-ai-dates/');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
       'user_profile_summary': userProfileSummary,
@@ -108,8 +113,8 @@ class AiLogicService {
     }
   }
 
-  // New method to generate a daily prompt.
-  Future<String?> generateDailyPrompt({required String context}) async {
+  // UPDATED: Corrected method to use a POST request as per the backend.
+  Future<String?> generateDailyPrompt({String? context}) async {
     final url = Uri.parse('$_baseUrl/generate-daily-prompt/');
     final headers = {'Content-Type': 'application/json'};
     final body = jsonEncode({
@@ -122,7 +127,7 @@ class AiLogicService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        final String? prompt = data['prompt'] as String?;
+        final String? prompt = data['daily_prompt'] as String?; // The backend key is 'daily_prompt'
         debugPrint('AiLogicService: Daily prompt generated successfully.');
         return prompt;
       } else {
@@ -136,29 +141,27 @@ class AiLogicService {
   }
 
   Future<String?> generateProfileBio(Map<String, String> userData, {String? instructions}) async {
-    final url = Uri.parse('$_baseUrl/generate-profile/'); // Full URL to your FastAPI endpoint
-    final headers = {'Content-Type': 'application/json'}; // Specify content type as JSON
-    final body = jsonEncode({ // Encode Dart Map to JSON string
+    final url = Uri.parse('$_baseUrl/generate-profile/');
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({
       'user_data': userData,
       'prompt_instructions': instructions,
     });
 
     debugPrint('AiLogicService: Requesting profile bio generation from backend...');
     try {
-      final response = await http.post(url, headers: headers, body: body); // Make POST request
+      final response = await http.post(url, headers: headers, body: body);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body); // Decode JSON response
+        final Map<String, dynamic> data = jsonDecode(response.body);
         final String? profileBio = data['profile_bio'] as String?;
         debugPrint('AiLogicService: Profile bio generated successfully.');
-        return profileBio; // Extract the generated bio
+        return profileBio;
       } else {
-        // Log or print error details for debugging
         debugPrint('Failed to generate profile bio: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      // Catch any network or other exceptions
       debugPrint('Error generating profile bio: $e');
       return null;
     }

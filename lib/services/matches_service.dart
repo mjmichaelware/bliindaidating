@@ -29,8 +29,7 @@ class MatchesService extends ChangeNotifier {
         isPhase1Complete: true,
         isPhase2Complete: true,
         astrologicalSign: 'Leo',
-        // Removed: personalityTraits: ['Curious', 'Adventurous'],
-        hobbiesAndInterests: ['Astronomy', 'Hiking', 'Sci-Fi Movies'],
+        hobbiesAndInterests: {'Astronomy': true, 'Hiking': true, 'Sci-Fi Movies': true},
         createdAt: DateTime.now().subtract(const Duration(days: 30)), // Provided
         updatedAt: DateTime.now().subtract(const Duration(days: 5)), // Provided
       ),
@@ -43,8 +42,7 @@ class MatchesService extends ChangeNotifier {
         isPhase1Complete: true,
         isPhase2Complete: true,
         astrologicalSign: 'Taurus',
-        // Removed: personalityTraits: ['Creative', 'Grounded'],
-        hobbiesAndInterests: ['Cooking', 'Gardening', 'Travel'],
+        hobbiesAndInterests: {'Cooking': true, 'Gardening': true, 'Travel': true},
         createdAt: DateTime.now().subtract(const Duration(days: 60)), // Provided
         updatedAt: DateTime.now().subtract(const Duration(days: 10)), // Provided
       ),

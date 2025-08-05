@@ -131,8 +131,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     debugPrint('BlindAIDatingApp: initState called.');
     final profileService = Provider.of<ProfileService>(context, listen: false);
 
-    // Listen for auth state changes to trigger profile initialization.
-    // This is more reliable than addPostFrameCallback.
     _authStateSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final AuthChangeEvent event = data.event;
       if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.signedOut) {
@@ -154,10 +152,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         final bool isLoggedIn = authService.isLoggedIn;
         final bool isProfileLoaded = profileService.isProfileLoaded;
-        final bool isProfileSetupComplete = profileService.userProfile?.isProfileSetupComplete ?? false;
-        final bool isPhase1Complete = profileService.userProfile?.isPhase1Complete ?? false;
-        final bool isPhase2Complete = profileService.userProfile?.isPhase2Complete ?? false;
-
+        
         final String currentPath = state.fullPath ?? '/';
 
         final bool isAuthPath = ['/login', '/signup', '/forgot-password', '/'].contains(currentPath);
@@ -167,9 +162,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         debugPrint('Current Path: $currentPath');
         debugPrint('Is Logged In: $isLoggedIn');
         debugPrint('Is Profile Loaded: $isProfileLoaded');
-        debugPrint('Is Profile Setup Complete: $isProfileSetupComplete');
-        debugPrint('Is Phase 1 Complete: $isPhase1Complete');
-        debugPrint('Is Phase 2 Complete: $isPhase2Complete');
 
         // SCENARIO 1: User is NOT logged in.
         if (!isLoggedIn) {
@@ -179,39 +171,34 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         // SCENARIO 2: User IS logged in.
         debugPrint('Redirect Logic: User IS logged in.');
-
+        
         // If the profile data hasn't finished its initial load, show a loading screen.
         if (!isProfileLoaded) {
           debugPrint('Redirect Logic: Profile data not yet loaded. Redirecting to /loading.');
           return isUtilityPath ? null : '/loading';
         }
-        
+
+        // --- UPDATED LOGIC: CHECK PHASE 1 COMPLETION ---
+        final UserProfile? userProfile = profileService.userProfile;
+
         // At this point, the user is logged in, and profile data is loaded.
-
-        // If the profile setup is not complete.
-        if (!isProfileSetupComplete) {
-            debugPrint('Redirect Logic: Profile setup is NOT complete.');
-            // Check which phase needs to be completed
-            if (!isPhase1Complete) {
-                // User needs to complete Phase 1.
+        if (userProfile != null) {
+            // If Phase 1 is NOT complete, redirect to the profile setup screen.
+            if (!userProfile.isPhase1Complete) {
+                debugPrint('Redirect Logic: Profile exists but Phase 1 is incomplete. Redirecting to profile setup.');
+                // Only redirect if not already on the profile setup screen.
                 return currentPath == '/profile_setup' ? null : '/profile_setup';
-            } else if (!isPhase2Complete) {
-                // User has completed Phase 1 but not Phase 2.
-                // Redirect them to the Phase 2 questionnaire.
-                return currentPath == '/questionnaire-phase2' ? null : '/questionnaire-phase2';
             }
-        }
-        
-        // If the user is logged in and their profile is complete
-        // but they are on a public or utility path, redirect them to the dashboard.
-        if (isAuthPath || isUtilityPath) {
-          debugPrint('Redirect Logic: Logged in and profile complete, redirecting from public/utility path to /dashboard-overview.');
-          return '/dashboard-overview';
+
+            // If Phase 1 IS complete, redirect to the main dashboard.
+            debugPrint('Redirect Logic: Profile Phase 1 complete. Redirecting to main dashboard.');
+            return (isAuthPath || isUtilityPath || currentPath == '/profile_setup') ? '/dashboard-overview' : null;
         }
 
-        // Otherwise, if the user is logged in, profile is complete, and they're on a valid app page, let them through.
-        debugPrint('Redirect Logic: Logged in and profile complete. Allowing current path.');
-        return null;
+        // If the profile data is unexpectedly null after being "loaded", something is wrong.
+        // As a fallback, redirect to the profile setup screen.
+        debugPrint('Redirect Logic: Unexpected state - user is logged in but profile is null. Redirecting to setup.');
+        return currentPath == '/profile_setup' ? null : '/profile_setup';
       },
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),

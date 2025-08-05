@@ -11,11 +11,14 @@ class AppConstants {
 
   // --- API Base URL ---
   static String get baseUrl {
-    const String supabaseProjectId = 'kynzpohycwdphorxsnzy'; // Centralize your Supabase Project ID
+    const String supabaseProjectId = 'kynzpohycwdphorxsnzy';
+    
+    // Corrected for Codespaces: The public URL for port 8000.
+    const String codespacesUrl = 'https://fantastic-couscous-r4x67996r9p7cxx9g-8000.app.github.dev/';
 
     if (kIsWeb) {
       if (kDebugMode) {
-        return 'http://localhost:8000';
+        return codespacesUrl;
       } else {
         return 'https://$supabaseProjectId.supabase.co/functions/v1';
       }
