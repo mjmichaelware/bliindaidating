@@ -1,5 +1,3 @@
-// lib/main.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode;
@@ -13,7 +11,6 @@ import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/theme/app_theme.dart';
-import 'package:bliindaidating/profile/profile_setup_screen.dart';
 
 // Service Imports
 import 'package:bliindaidating/services/ai_logic_service.dart';
@@ -28,13 +25,10 @@ import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
-import 'package:bliindaidating/screens/daily/daily_prompts_screen.dart';
-import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
-import 'package:bliindaidating/screens/matches/matches_list_screen.dart';
-import 'package:bliindaidating/screens/newsfeed/newsfeed_screen.dart';
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Correctly import your dashboard screen
+import 'package:bliindaidating/screens/profile_setup/profile_setup_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
-import 'package:bliindaidating/screens/profile/my_profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -120,9 +114,8 @@ Future<void> main() async {
   );
 }
 
-// Key for the ShellRoute Navigator
+// Key for the root Navigator
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 class BlindAIDatingApp extends StatefulWidget {
   const BlindAIDatingApp({super.key});
@@ -196,7 +189,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
             debugPrint('Redirect Logic: Profile Phase 1 complete. Redirecting to main dashboard.');
             if (isAuthPath || isUtilityPath || currentPath == '/profile_setup') {
-              return '/newsfeed'; // Redirect to a child of the shell
+              return '/dashboard'; // Corrected redirect to the new dashboard route
             }
             return null; // Don't redirect if already in a dashboard route
         }
@@ -213,31 +206,10 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
         GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
         
-        // This is the ShellRoute for the main app navigation
-        ShellRoute(
-          navigatorKey: _shellNavigatorKey,
-          builder: (context, state, child) {
-            // The child is the content of the currently selected route
-            return MainDashboardShell(child: child);
-          },
-          routes: [
-            GoRoute(
-              path: '/newsfeed',
-              builder: (context, state) => const NewsfeedScreen(),
-            ),
-            GoRoute(
-              path: '/matches',
-              builder: (context, state) => const MatchesListScreen(),
-            ),
-            GoRoute(
-              path: '/daily-prompts',
-              builder: (context, state) => const DailyPromptsScreen(),
-            ),
-            GoRoute(
-              path: '/my-profile',
-              builder: (context, state) => const MyProfileScreen(),
-            ),
-          ],
+        // This is the new, single route for the main dashboard screen
+        GoRoute(
+          path: '/dashboard',
+          builder: (context, state) => const MainDashboardScreen(),
         ),
       ],
       errorBuilder: (context, state) => Scaffold(
@@ -268,64 +240,5 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
   }
 }
 
-// A new widget to act as the shell for the main dashboard screens.
-class MainDashboardShell extends StatelessWidget {
-  const MainDashboardShell({required this.child, super.key});
-
-  final Widget child;
-
-  int _calculateSelectedIndex(BuildContext context) {
-    final String location = GoRouterState.of(context).fullPath ?? '/';
-    if (location.startsWith('/newsfeed')) return 0;
-    if (location.startsWith('/matches')) return 1;
-    if (location.startsWith('/daily-prompts')) return 2;
-    if (location.startsWith('/my-profile')) return 3;
-    return 0;
-  }
-
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        GoRouter.of(context).go('/newsfeed');
-        break;
-      case 1:
-        GoRouter.of(context).go('/matches');
-        break;
-      case 2:
-        GoRouter.of(context).go('/daily-prompts');
-        break;
-      case 3:
-        GoRouter.of(context).go('/my-profile');
-        break;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.public),
-            label: 'Newsfeed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Matches',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bolt),
-            label: 'Prompts',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _calculateSelectedIndex(context),
-        onTap: (index) => _onItemTapped(index, context),
-      ),
-    );
-  }
-}
+// The MainDashboardShell widget is now removed as it is no longer needed.
+// The MainDashboardScreen will handle all content display internally.
