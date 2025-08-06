@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kReleaseMode;
@@ -11,6 +13,8 @@ import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/theme/app_theme.dart';
+// CORRECTED IMPORT PATH
+import 'package:bliindaidating/profile/profile_setup_screen.dart';
 
 // Service Imports
 import 'package:bliindaidating/services/ai_logic_service.dart';
@@ -26,7 +30,6 @@ import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
 import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Correctly import your dashboard screen
-import 'package:bliindaidating/screens/profile_setup/profile_setup_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
 
@@ -239,6 +242,3 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
     );
   }
 }
-
-// The MainDashboardShell widget is now removed as it is no longer needed.
-// The MainDashboardScreen will handle all content display internally.
