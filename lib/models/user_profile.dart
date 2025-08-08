@@ -12,7 +12,7 @@ class UserProfile {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? profilePictureUrl;
-  final String? analysisPhotoUrl; // NEW: Added for the blurred photo feature
+  final String? analysisPhotoUrl;
   final DateTime? dateOfBirth;
   final String? phoneNumber;
   final String? locationZipCode;
@@ -56,16 +56,11 @@ class UserProfile {
   final Map<String, dynamic>? questionnaireAnswers;
   final Map<String, dynamic>? personalityAssessmentResults;
   final Map<String, dynamic>? datingPreferences;
-  final Map<String, bool>? profileVisibilityPreferences; // NEW: Added for privacy settings
-  final Map<String, bool>? pushNotificationPreferences; // NEW: Added missing field
-
-  // Getters to provide backward compatibility
-  String? get fullName => fullLegalName;
-  double? get height => heightCm;
-  String? get addressZip => locationZipCode;
-  String? get gender => genderIdentity;
-  Map<String, dynamic>? get interests => hobbiesAndInterests;
-
+  final Map<String, bool>? profileVisibilityPreferences;
+  final Map<String, bool>? pushNotificationPreferences;
+  // NEW: Added fields from dummy data that were missing in constructor
+  final String? governmentIdFrontUrl;
+  final String? governmentIdBackUrl;
 
   UserProfile({
     required this.id,
@@ -121,32 +116,13 @@ class UserProfile {
     this.personalityAssessmentResults,
     this.datingPreferences,
     this.profileVisibilityPreferences,
-    this.pushNotificationPreferences, // NEW: Add to constructor
+    this.pushNotificationPreferences,
+    this.governmentIdFrontUrl,
+    this.governmentIdBackUrl,
   });
 
   // Getter to check if the entire profile setup is complete
   bool get isProfileSetupComplete => isPhase1Complete && isPhase2Complete;
-
-  // A getter that returns a map of only the public profile data
-  Map<String, dynamic> get publicProfileData {
-    final Map<String, dynamic> publicData = {};
-    final Map<String, dynamic> allData = toJson();
-    final Map<String, bool> visibilityPrefs = profileVisibilityPreferences ?? {};
-
-    visibilityPrefs.forEach((key, isPublic) {
-      if (isPublic && allData.containsKey(key)) {
-        publicData[key] = allData[key];
-      }
-    });
-
-    // Always include the ID, display name, and profile picture URL if they exist
-    if (id.isNotEmpty) publicData['id'] = id;
-    if (displayName != null) publicData['display_name'] = displayName;
-    if (profilePictureUrl != null) publicData['profile_picture_url'] = profilePictureUrl;
-    if (analysisPhotoUrl != null) publicData['analysis_photo_url'] = analysisPhotoUrl;
-
-    return publicData;
-  }
 
   UserProfile copyWith({
     String? id,
@@ -202,7 +178,9 @@ class UserProfile {
     Map<String, dynamic>? personalityAssessmentResults,
     Map<String, dynamic>? datingPreferences,
     Map<String, bool>? profileVisibilityPreferences,
-    Map<String, bool>? pushNotificationPreferences, // NEW: Add to copyWith
+    Map<String, bool>? pushNotificationPreferences,
+    String? governmentIdFrontUrl,
+    String? governmentIdBackUrl,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -258,7 +236,9 @@ class UserProfile {
       personalityAssessmentResults: personalityAssessmentResults ?? this.personalityAssessmentResults,
       datingPreferences: datingPreferences ?? this.datingPreferences,
       profileVisibilityPreferences: profileVisibilityPreferences ?? this.profileVisibilityPreferences,
-      pushNotificationPreferences: pushNotificationPreferences ?? this.pushNotificationPreferences, // NEW
+      pushNotificationPreferences: pushNotificationPreferences ?? this.pushNotificationPreferences,
+      governmentIdFrontUrl: governmentIdFrontUrl ?? this.governmentIdFrontUrl,
+      governmentIdBackUrl: governmentIdBackUrl ?? this.governmentIdBackUrl,
     );
   }
 
@@ -272,7 +252,7 @@ class UserProfile {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'] as String) : null,
       profilePictureUrl: json['profile_picture_url'] as String?,
-      analysisPhotoUrl: json['analysis_photo_url'] as String?, // NEW
+      analysisPhotoUrl: json['analysis_photo_url'] as String?,
       dateOfBirth: json['date_of_birth'] != null ? DateTime.parse(json['date_of_birth'] as String) : null,
       phoneNumber: json['phone_number'] as String?,
       locationZipCode: json['location_zip_code'] as String?,
@@ -280,8 +260,8 @@ class UserProfile {
       locationState: json['location_state'] as String?,
       sexualOrientation: json['sexual_orientation'] as String?,
       heightCm: (json['height_cm'] as num?)?.toDouble(),
-      agreedToTerms: json['agreed_to_terms'] as bool,
-      agreedToCommunityGuidelines: json['agreed_to_community_guidelines'] as bool,
+      agreedToTerms: json['agreed_to_terms'] as bool? ?? false, // Handle null case
+      agreedToCommunityGuidelines: json['agreed_to_community_guidelines'] as bool? ?? false, // Handle null case
       fullLegalName: json['full_legal_name'] as String?,
       genderIdentity: json['gender_identity'] as String?,
       ethnicity: json['ethnicity'] as String?,
@@ -309,15 +289,18 @@ class UserProfile {
       mentalHealthDisclosures: json['mental_health_disclosures'] as String?,
       petOwnership: json['pet_ownership'] as String?,
       travelFrequencyOrFavoriteDestinations: json['travel_frequency_or_favorite_destinations'] as String?,
-      isPhase1Complete: json['is_phase_1_complete'] as bool,
-      isPhase2Complete: json['is_phase_2_complete'] as bool,
+      isPhase1Complete: json['is_phase_1_complete'] as bool? ?? false, // Handle null case
+      isPhase2Complete: json['is_phase_2_complete'] as bool? ?? false, // Handle null case
       hobbiesAndInterests: json['hobbies_and_interests'] as Map<String, dynamic>?,
       loveLanguages: json['love_languages'] as Map<String, dynamic>?,
       questionnaireAnswers: json['questionnaire_answers'] as Map<String, dynamic>?,
       personalityAssessmentResults: json['personality_assessment_results'] as Map<String, dynamic>?,
       datingPreferences: json['dating_preferences'] as Map<String, dynamic>?,
-      profileVisibilityPreferences: (json['profile_visibility_preferences'] as Map<String, dynamic>?)?.cast<String, bool>(), // NEW
-      pushNotificationPreferences: (json['push_notification_preferences'] as Map<String, dynamic>?)?.cast<String, bool>(), // NEW: Added missing field
+      profileVisibilityPreferences: (json['profile_visibility_preferences'] as Map<String, dynamic>?)?.cast<String, bool>(),
+      pushNotificationPreferences: (json['push_notification_preferences'] as Map<String, dynamic>?)?.cast<String, bool>(),
+      // NEW: Added to fromJson
+      governmentIdFrontUrl: json['government_id_front_url'] as String?,
+      governmentIdBackUrl: json['government_id_back_url'] as String?,
     );
   }
 
@@ -331,7 +314,7 @@ class UserProfile {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'profile_picture_url': profilePictureUrl,
-      'analysis_photo_url': analysisPhotoUrl, // NEW
+      'analysis_photo_url': analysisPhotoUrl,
       'date_of_birth': dateOfBirth?.toIso8601String(),
       'phone_number': phoneNumber,
       'location_zip_code': locationZipCode,
@@ -375,8 +358,11 @@ class UserProfile {
       'questionnaire_answers': questionnaireAnswers,
       'personality_assessment_results': personalityAssessmentResults,
       'dating_preferences': datingPreferences,
-      'profile_visibility_preferences': profileVisibilityPreferences, // NEW
-      'push_notification_preferences': pushNotificationPreferences, // NEW
+      'profile_visibility_preferences': profileVisibilityPreferences,
+      'push_notification_preferences': pushNotificationPreferences,
+      // NEW: Added to toJson
+      'government_id_front_url': governmentIdFrontUrl,
+      'government_id_back_url': governmentIdBackUrl,
     };
   }
 }

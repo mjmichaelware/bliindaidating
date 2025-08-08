@@ -13,7 +13,6 @@ import 'package:bliindaidating/app_constants.dart';
 import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'package:bliindaidating/models/user_profile.dart';
 import 'package:bliindaidating/theme/app_theme.dart';
-// CORRECTED IMPORT PATH
 import 'package:bliindaidating/profile/profile_setup_screen.dart';
 
 // Service Imports
@@ -29,7 +28,7 @@ import 'package:bliindaidating/auth/login_screen.dart';
 import 'package:bliindaidating/auth/signup_screen.dart';
 import 'package:bliindaidating/landing_page/landing_page.dart';
 import 'package:bliindaidating/screens/auth/forgot_password_screen.dart';
-import 'package:bliindaidating/screens/main/main_dashboard_screen.dart'; // Correctly import your dashboard screen
+import 'package:bliindaidating/screens/main/main_dashboard_screen.dart';
 import 'package:bliindaidating/screens/profile_setup/phase2_setup_screen.dart';
 import 'package:bliindaidating/screens/utility/loading_screen.dart';
 
@@ -97,11 +96,9 @@ Future<void> main() async {
             Provider.of<ProfileService>(context, listen: false),
           ),
         ),
-        // AiLogicService should be provided first since other services depend on it
         Provider<AiLogicService>(
           create: (context) => AiLogicService(),
         ),
-        // NewsfeedService and MatchesService now directly create an instance of AiLogicService
         ChangeNotifierProvider<NewsfeedService>(
           create: (context) => NewsfeedService(aiLogicService: context.read<AiLogicService>()),
         ),
@@ -117,7 +114,6 @@ Future<void> main() async {
   );
 }
 
-// Key for the root Navigator
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class BlindAIDatingApp extends StatefulWidget {
@@ -159,46 +155,55 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
 
         final bool isLoggedIn = authService.isLoggedIn;
         final bool isProfileLoaded = profileService.isProfileLoaded;
-        
         final String currentPath = state.fullPath ?? '/';
 
-        final bool isAuthPath = ['/login', '/signup', '/forgot-password', '/'].contains(currentPath);
-        final bool isUtilityPath = currentPath == '/loading';
+        final bool onLandingPage = currentPath == '/';
+        final bool onLoginOrSignup = ['/login', '/signup', '/forgot-password'].contains(currentPath);
+        final bool onSetupFlow = ['/profile_setup', '/questionnaire-phase2'].contains(currentPath);
+        final bool onCoreApp = currentPath.startsWith('/dashboard');
 
         debugPrint('--- GoRouter Redirect Evaluation ---');
         debugPrint('Current Path: $currentPath');
         debugPrint('Is Logged In: $isLoggedIn');
         debugPrint('Is Profile Loaded: $isProfileLoaded');
 
+        // 1. User is NOT logged in.
         if (!isLoggedIn) {
           debugPrint('Redirect Logic: User NOT logged in.');
-          return isAuthPath ? null : '/login';
+          if (onLandingPage) {
+            // Explicitly redirect from the landing page to the login page.
+            return '/login';
+          }
+          // Allow navigation to login, signup, or forgot password pages.
+          return onLoginOrSignup ? null : '/login';
         }
 
+        // 2. User IS logged in.
         debugPrint('Redirect Logic: User IS logged in.');
-        
+
+        // Redirect to loading screen if profile data isn't ready.
         if (!isProfileLoaded) {
           debugPrint('Redirect Logic: Profile data not yet loaded. Redirecting to /loading.');
-          return isUtilityPath ? null : '/loading';
+          return currentPath == '/loading' ? null : '/loading';
         }
 
         final UserProfile? userProfile = profileService.userProfile;
 
-        if (userProfile != null) {
-            if (!userProfile.isPhase1Complete) {
-                debugPrint('Redirect Logic: Profile exists but Phase 1 is incomplete. Redirecting to profile setup.');
-                return currentPath == '/profile_setup' ? null : '/profile_setup';
-            }
-
-            debugPrint('Redirect Logic: Profile Phase 1 complete. Redirecting to main dashboard.');
-            if (isAuthPath || isUtilityPath || currentPath == '/profile_setup') {
-              return '/dashboard'; // Corrected redirect to the new dashboard route
-            }
-            return null; // Don't redirect if already in a dashboard route
+        // 3. Profile is loaded, check completion status.
+        if (userProfile == null || !userProfile.isPhase1Complete) {
+          debugPrint('Redirect Logic: Profile incomplete. Redirecting to setup.');
+          return onSetupFlow ? null : '/profile_setup';
         }
 
-        debugPrint('Redirect Logic: Unexpected state - user is logged in but profile is null. Redirecting to setup.');
-        return currentPath == '/profile_setup' ? null : '/profile_setup';
+        // 4. All checks passed: User is logged in and profile is complete.
+        // Redirect to the main dashboard if they are on an auth or setup page.
+        if (onLoginOrSignup || onLandingPage || onSetupFlow || currentPath == '/loading') {
+          debugPrint('Redirect Logic: User is fully authenticated and profiled. Redirecting to /dashboard.');
+          return '/dashboard';
+        }
+
+        // 5. Default: No redirect needed.
+        return null;
       },
       routes: [
         GoRoute(path: '/', builder: (context, state) => const LandingPage()),
@@ -209,7 +214,6 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         GoRoute(path: '/profile_setup', builder: (context, state) => const ProfileSetupScreen()),
         GoRoute(path: '/questionnaire-phase2', builder: (context, state) => const Phase2SetupScreen()),
         
-        // This is the new, single route for the main dashboard screen
         GoRoute(
           path: '/dashboard',
           builder: (context, state) => const MainDashboardScreen(),
