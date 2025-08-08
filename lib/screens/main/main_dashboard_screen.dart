@@ -34,11 +34,11 @@ class ProfileSetupBanner extends StatelessWidget {
         children: [
           Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.onErrorContainer),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
               'Please complete your profile setup to unlock all features.',
               style: TextStyle(
-                color: Colors.white, // Ensure text is visible
+                color: Theme.of(context).colorScheme.onErrorContainer, // Ensure text color is readable
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -106,8 +106,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
   }
 
   void _onMenuItemSelected(int index, bool isProfileComplete) {
-    // Only allow navigation to non-core features if the profile is incomplete.
-    // Core features (index > 0) are disabled.
     if (!isProfileComplete && index > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -159,7 +157,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
         final userProfile = profileService.userProfile;
         final isMobile = MediaQuery.of(context).size.width < 768;
 
-        // The main layout is a Scaffold.
         return Scaffold(
           key: _scaffoldKey,
           appBar: isMobile
@@ -167,90 +164,89 @@ class _MainDashboardScreenState extends State<MainDashboardScreen>
                   onMenuPressed: _onToggleCollapse,
                 )
               : null,
-          body: Column(
+          body: Stack(
             children: [
-              // Display the banner at the top if the profile is NOT complete.
-              if (!isProfileComplete) const ProfileSetupBanner(),
-              // The rest of the dashboard UI.
-              Expanded(
-                child: Stack(
-                  children: [
-                    Row(
-                      children: [
-                        DashboardSideMenu(
-                          isCollapsed: _isCollapsed,
-                          expandAnimation: _sideMenuExpandAnimation,
-                          onToggleCollapse: _onToggleCollapse,
-                          profileHeader: SideMenuProfileHeader(
-                            userProfile: userProfile,
-                            profilePictureUrl: userProfile?.profilePictureUrl,
-                            isCollapsed: _isCollapsed,
-                            expandAnimation: _sideMenuExpandAnimation,
-                          ),
-                          children: [
-                            SideMenuItem(
-                              title: _screenTitles[0],
-                              icon: Icons.dashboard_rounded,
-                              onTap: () => _onMenuItemSelected(0, isProfileComplete),
-                              isCollapsed: _isCollapsed,
-                            ),
-                            SideMenuCategoryItem(
-                              title: 'Core Features',
-                              icon: Icons.favorite_rounded,
-                              isCollapsed: _isCollapsed,
-                              expandAnimation: _sideMenuExpandAnimation,
-                              children: [
-                                SideMenuItem(
-                                  title: _screenTitles[1],
-                                  icon: Icons.people_rounded,
-                                  onTap: () => _onMenuItemSelected(1, isProfileComplete),
-                                  isCollapsed: _isCollapsed,
-                                ),
-                                SideMenuItem(
-                                  title: _screenTitles[2],
-                                  icon: Icons.search_rounded,
-                                  onTap: () => _onMenuItemSelected(2, isProfileComplete),
-                                  isCollapsed: _isCollapsed,
-                                ),
-                                SideMenuItem(
-                                  title: _screenTitles[3],
-                                  icon: Icons.article_rounded,
-                                  onTap: () => _onMenuItemSelected(3, isProfileComplete),
-                                  isCollapsed: _isCollapsed,
-                                ),
-                                SideMenuItem(
-                                  title: _screenTitles[4],
-                                  icon: Icons.calendar_today_rounded,
-                                  onTap: () => _onMenuItemSelected(4, isProfileComplete),
-                                  isCollapsed: _isCollapsed,
-                                ),
-                              ],
-                            ),
-                            // ... rest of your side menu items
-                          ],
-                        ),
-                        // This is the main content area.
-                        Expanded(
-                          child: DashboardContentSwitcher(
-                            selectedTabIndex: _selectedTabIndex,
-                            screens: _screens,
-                          ),
-                        ),
-                      ],
+              // This is the main dashboard content that will be blurred
+              Row(
+                children: [
+                  DashboardSideMenu(
+                    isCollapsed: _isCollapsed,
+                    expandAnimation: _sideMenuExpandAnimation,
+                    onToggleCollapse: _onToggleCollapse,
+                    profileHeader: SideMenuProfileHeader(
+                      userProfile: userProfile,
+                      profilePictureUrl: userProfile?.profilePictureUrl,
+                      isCollapsed: _isCollapsed,
+                      expandAnimation: _sideMenuExpandAnimation,
                     ),
-                    // NEW: Apply a blur effect over the entire dashboard content if profile is not complete
-                    if (!isProfileComplete)
-                      Positioned.fill(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                          child: Container(
-                            color: Colors.black.withOpacity(0.1),
-                          ),
-                        ),
+                    children: [
+                      SideMenuItem(
+                        title: _screenTitles[0],
+                        icon: Icons.dashboard_rounded,
+                        onTap: () => _onMenuItemSelected(0, isProfileComplete),
+                        isCollapsed: _isCollapsed,
                       ),
-                  ],
-                ),
+                      SideMenuCategoryItem(
+                        title: 'Core Features',
+                        icon: Icons.favorite_rounded,
+                        isCollapsed: _isCollapsed,
+                        expandAnimation: _sideMenuExpandAnimation,
+                        children: [
+                          SideMenuItem(
+                            title: _screenTitles[1],
+                            icon: Icons.people_rounded,
+                            onTap: () => _onMenuItemSelected(1, isProfileComplete),
+                            isCollapsed: _isCollapsed,
+                          ),
+                          SideMenuItem(
+                            title: _screenTitles[2],
+                            icon: Icons.search_rounded,
+                            onTap: () => _onMenuItemSelected(2, isProfileComplete),
+                            isCollapsed: _isCollapsed,
+                          ),
+                          SideMenuItem(
+                            title: _screenTitles[3],
+                            icon: Icons.article_rounded,
+                            onTap: () => _onMenuItemSelected(3, isProfileComplete),
+                            isCollapsed: _isCollapsed,
+                          ),
+                          SideMenuItem(
+                            title: _screenTitles[4],
+                            icon: Icons.calendar_today_rounded,
+                            onTap: () => _onMenuItemSelected(4, isProfileComplete),
+                            isCollapsed: _isCollapsed,
+                          ),
+                        ],
+                      ),
+                      // ... rest of your side menu items
+                    ],
+                  ),
+                  Expanded(
+                    child: DashboardContentSwitcher(
+                      selectedTabIndex: _selectedTabIndex,
+                      screens: _screens,
+                    ),
+                  ),
+                ],
               ),
+              
+              // This is the blurred overlay that covers the entire content.
+              if (!isProfileComplete)
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.1),
+                    ),
+                  ),
+                ),
+
+              // This is the banner that sits on top of everything and is not blurred.
+              if (!isProfileComplete)
+                const Align(
+                  alignment: Alignment.topCenter,
+                  child: ProfileSetupBanner(),
+                ),
             ],
           ),
         );

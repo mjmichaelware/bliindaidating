@@ -3,23 +3,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:bliindaidating/app_constants.dart';
-import 'package:bliindaidating/controllers/theme_controller.dart';
 import 'dart:math' as math;
 import 'dart:ui'; // For ImageFilter
 import 'package:go_router/go_router.dart'; // Import go_router for navigation
 import 'package:supabase_flutter/supabase_flutter.dart'; // For Supabase and User
 import 'package:bliindaidating/models/user_profile.dart'; // Import UserProfile
 import 'package:bliindaidating/services/profile_service.dart'; // Import ProfileService
+// lib/screens/profile_setup/phase2_setup_screen.dart
 
+import 'package:bliindaidating/controllers/theme_controller.dart';
 // Import remaining 5 sub-tab form files (assuming these are widgets, not full screens)
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/education_and_career_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/family_and_background_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/lifestyle_and_values_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/personality_and_self_reflection_form.dart';
 import 'package:bliindaidating/screens/profile_setup/widgets/phase2_profile_sub_tabs/physical_attributes_and_health_form.dart';
-
-// Removed: import 'package:bliindaidating/profile/ai_profile_generator_widget.dart';
-
 
 // --- Custom Painter for Animated Nebula Background (similar to landing page but adapted) ---
 class Phase2NebulaBackgroundPainter extends CustomPainter {
@@ -255,7 +253,7 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
           ),
         );
         // Navigate back to the main dashboard
-        context.go('/home');
+        context.go('/dashboard');
       }
     } on PostgrestException catch (e) {
       debugPrint('Supabase Postgrest Error completing Phase 2: ${e.message}');
@@ -331,10 +329,8 @@ class _Phase2SetupScreenState extends State<Phase2SetupScreen> with TickerProvid
             padding: const EdgeInsets.only(right: AppConstants.paddingMedium),
             child: TextButton(
               onPressed: _isSaving ? null : () {
-                // Assuming you want to allow closing and seeing dashboard
-                // This will pop the current route, but the main.dart redirect
-                // might still push it back if the logic isn't relaxed.
-                context.go('/home'); // Navigate to home instead of pop, to handle redirect logic
+                // This is the crucial line: navigate to the dashboard
+                context.go('/dashboard');
               },
               style: TextButton.styleFrom(
                 foregroundColor: textColor,

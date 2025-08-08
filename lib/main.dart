@@ -170,12 +170,7 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
         // 1. User is NOT logged in.
         if (!isLoggedIn) {
           debugPrint('Redirect Logic: User NOT logged in.');
-          if (onLandingPage) {
-            // Explicitly redirect from the landing page to the login page.
-            return '/login';
-          }
-          // Allow navigation to login, signup, or forgot password pages.
-          return onLoginOrSignup ? null : '/login';
+          return onLoginOrSignup || onLandingPage ? null : '/login';
         }
 
         // 2. User IS logged in.
@@ -186,19 +181,27 @@ class _BlindAIDatingAppState extends State<BlindAIDatingApp> {
           debugPrint('Redirect Logic: Profile data not yet loaded. Redirecting to /loading.');
           return currentPath == '/loading' ? null : '/loading';
         }
-
+        
         final UserProfile? userProfile = profileService.userProfile;
-
-        // 3. Profile is loaded, check completion status.
-        if (userProfile == null || !userProfile.isPhase1Complete) {
-          debugPrint('Redirect Logic: Profile incomplete. Redirecting to setup.');
+        
+        // 3. User is logged in and profile data is loaded.
+        // Check for full profile completion.
+        if (userProfile != null && !userProfile.isPhase1Complete) {
+          debugPrint('Redirect Logic: Profile Phase 1 is incomplete. Redirecting to profile setup.');
           return onSetupFlow ? null : '/profile_setup';
         }
 
-        // 4. All checks passed: User is logged in and profile is complete.
-        // Redirect to the main dashboard if they are on an auth or setup page.
-        if (onLoginOrSignup || onLandingPage || onSetupFlow || currentPath == '/loading') {
-          debugPrint('Redirect Logic: User is fully authenticated and profiled. Redirecting to /dashboard.');
+        if (userProfile != null && !userProfile.isPhase2Complete) {
+          // If the user tries to navigate to a restricted page, redirect them back to the setup flow.
+          if (!onSetupFlow && !onCoreApp) { // Allow them to go to dashboard or setup, but not other pages.
+            debugPrint('Redirect Logic: Phase 2 incomplete and trying to access a restricted page. Redirecting to questionnaire-phase2.');
+            return '/questionnaire-phase2';
+          }
+        }
+        
+        // 4. If all is good, allow them to navigate.
+        if (onLoginOrSignup || onLandingPage || currentPath == '/loading') {
+          debugPrint('Redirect Logic: User is fully authenticated and profiled, or on an auth screen. Redirecting to /dashboard.');
           return '/dashboard';
         }
 
